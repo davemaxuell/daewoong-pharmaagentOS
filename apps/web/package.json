@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@iconify-icons/simple-icons": "^1.2.53",
+    "@iconify-icons/simple-icons": "^2.0.1",
     "@iconify/react": "^6.0.2",
     "jose": "^6.2.10",
     "lucide-react": "1.35.0",
