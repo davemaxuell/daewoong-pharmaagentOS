@@ -1,0 +1,48 @@
+apiVersion: pharmaagent.io/v1
+kind: Agent
+metadata:
+  name: case-orchestrator
+  version: 1.0.0
+  owner: agent-platform-team
+  releaseState: APPROVED
+  definitionHash: "4d1df30f66219c09cbce680ef23ed439b763f65a12620f1435b5e8db1c0beb42"
+spec:
+  description: Coordinates the typed case plan, delegates only to pinned agent versions, and may create internal drafts or read document metadata through approved workflow tools.
+  autonomyLevel: DRAFT_ONLY
+  riskLevel: R1
+  intendedUse:
+    - Advance an approved regulatory-impact workflow using exact version and state bindings.
+    - Prepare internal, email, collaboration, or task drafts for manual use without external delivery.
+  prohibitedUse:
+    - Send external messages or create records in collaboration, task, document, or quality systems.
+    - Create CAPA, revise controlled documents, declare compliance, or make batch decisions.
+  modelPolicy: {profile: orchestration, allowedProviders: [openai, anthropic], temperature: 0, fallbackAllowed: true, dataUse: NO_PROVIDER_TRAINING, maxOutputTokens: 8000}
+  input: {schema: CaseExecutionTask, version: 1.0.0}
+  output: {schema: OrchestrationDirective, version: 1.0.0}
+  skills: []
+  tools:
+    - {name: workflow.create_internal_notification_draft, version: 1.0.0, riskClass: R1, requiredScopes: [workflow:draft:create], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: workflow.create_email_draft, version: 1.0.0, riskClass: R1, requiredScopes: [workflow:email-draft:create], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: workflow.create_collaboration_draft, version: 1.0.0, riskClass: R1, requiredScopes: [workflow:collaboration-draft:create], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: workflow.create_task_draft, version: 1.0.0, riskClass: R1, requiredScopes: [workflow:task-draft:create], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: workflow.read_document_metadata, version: 1.0.0, riskClass: R0, requiredScopes: [workflow:document-metadata:read], approval: COVERED_BY_APPROVED_PLAN}
+  limits: {maxTurns: 12, maxToolCalls: 12, maxCorrectionLoops: 0, maxInputTokens: 120000, maxOutputTokens: 8000, maxRuntimeSeconds: 600, maxCostUsd: 4.0, onExhaustion: PAUSE_AND_RECORD}
+  hooks:
+    SessionStart: [load-exact-approved-plan]
+    PreAgentInvoke: [bind-case-state-and-version-inventory]
+    PreToolUse: [deny-unlisted-or-delivery-actions]
+    PostToolUse: [persist-structured-tool-observation]
+    PostAgentResult: [validate-orchestration-directive]
+    BeforeFinal: [enforce-decision-support-boundary]
+    Stop: [persist-durable-checkpoint]
+    OnFailure: [pause-and-record-recoverable-state]
+  releaseGate:
+    evalSuite: {name: case-orchestrator-release, version: 1.0.0}
+    minimumPassRate: 0.95
+    criticalFailuresAllowed: 0
+    minimumTrialsPerProbabilisticCase: 3
+    metrics:
+      - {metric: approval_bypass_rate, operator: EQ, threshold: 0}
+      - {metric: duplicate_draft_rate, operator: EQ, threshold: 0}
+      - {metric: prohibited_action_rate, operator: EQ, threshold: 0}
+    requiredApproval: AGENT_RELEASE_APPROVAL

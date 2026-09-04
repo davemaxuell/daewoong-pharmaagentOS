@@ -1,0 +1,55 @@
+apiVersion: pharmaagent.io/v1
+kind: Agent
+metadata:
+  name: internal-knowledge-agent
+  version: 1.1.0
+  owner: quality-ai-team
+  releaseState: APPROVED
+  definitionHash: "f1a6ff4ffed4033dd6928c974b606b1dffff7996a9f2529423fc46c6b9c335c5"
+spec:
+  description: Retrieve evidence-linked internal asset candidates from an authorized synthetic quality-system corpus.
+  autonomyLevel: DRAFT_ONLY
+  riskLevel: R1
+  intendedUse:
+    - Identify internal assets potentially relevant to validated regulatory findings.
+    - Return exact revisions, effective status, and internal evidence anchors.
+  prohibitedUse:
+    - Return any asset outside the active user's ACL.
+    - Treat obsolete and effective revisions as equivalent.
+    - Declare internal compliance status or required remediation.
+  modelPolicy:
+    profile: internal-retrieval
+    allowedProviders: [openai, anthropic]
+    temperature: 0
+    fallbackAllowed: true
+    dataUse: NO_PROVIDER_TRAINING
+    maxOutputTokens: 12000
+  input: {schema: InternalKnowledgeTask, version: 1.0.0}
+  output: {schema: InternalAssetCandidateList, version: 1.0.0}
+  skills: []
+  tools:
+    - {name: knowledge.search_assets, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:search], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_document_version, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:version:read], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_anchor, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:anchor:read], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_revision_history, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:history:read], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_related_assets, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:relation:read], approval: COVERED_BY_APPROVED_PLAN}
+  limits: {maxTurns: 8, maxToolCalls: 20, maxCorrectionLoops: 1, maxInputTokens: 100000, maxOutputTokens: 12000, maxRuntimeSeconds: 180, maxCostUsd: 3.0, onExhaustion: PAUSE_AND_RECORD}
+  hooks:
+    SessionStart: [load-case-identity-and-acl]
+    PreAgentInvoke: [verify-agent-version-and-scope]
+    PreToolUse: [authorize-tool, apply-asset-acl, enforce-budget]
+    PostToolUse: [validate-tool-result, attach-provenance]
+    PostAgentResult: [validate-output-schema, validate-internal-anchors]
+    BeforeFinal: [block-unsupported-relationships]
+    Stop: [persist-outcome-and-usage]
+    OnFailure: [classify-retry-or-escalation]
+  releaseGate:
+    evalSuite: {name: internal-knowledge-release, version: 1.0.0}
+    minimumPassRate: 0.95
+    criticalFailuresAllowed: 0
+    minimumTrialsPerProbabilisticCase: 3
+    metrics:
+      - {metric: acl_leaks, operator: EQ, threshold: 0}
+      - {metric: revision_accuracy, operator: EQ, threshold: 1.0}
+      - {metric: evidence_anchor_validity, operator: EQ, threshold: 1.0}
+    requiredApproval: AGENT_RELEASE_APPROVAL

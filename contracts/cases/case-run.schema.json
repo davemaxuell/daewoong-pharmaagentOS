@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/case-run/v1.0.0",
+  "title": "PharmaAgent OS durable CaseRun",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "case_id",
+    "plan_id",
+    "plan_version",
+    "plan_hash",
+    "bound_state_hash",
+    "workflow_template",
+    "status",
+    "checkpoint_version",
+    "active_step_key",
+    "steps",
+    "budget"
+  ],
+  "properties": {
+    "run_id": { "type": "string", "format": "uuid" },
+    "case_id": { "type": "string", "format": "uuid" },
+    "plan_id": { "type": "string", "format": "uuid" },
+    "plan_version": { "type": "integer", "minimum": 1 },
+    "plan_hash": { "$ref": "#/$defs/sha256" },
+    "bound_state_hash": { "$ref": "#/$defs/sha256" },
+    "workflow_template": { "$ref": "#/$defs/workflowBinding" },
+    "status": {
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "PAUSED",
+        "WAITING_FOR_APPROVAL",
+        "COMPLETED",
+        "BLOCKED",
+        "FAILED",
+        "CANCELLED"
+      ]
+    },
+    "checkpoint_version": { "type": "integer", "minimum": 1 },
+    "active_step_key": {
+      "type": ["string", "null"],
+      "pattern": "^[a-z][a-z0-9_]{1,63}$"
+    },
+    "steps": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/stepState" },
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]{1,63}$" }
+    },
+    "budget": { "$ref": "#/$defs/usage" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "workflowBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "workflow_key", "version", "manifest_sha256"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "workflow_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,159}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "manifest_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turns",
+        "tool_calls",
+        "input_tokens",
+        "output_tokens",
+        "runtime_seconds",
+        "cost_usd"
+      ],
+      "properties": {
+        "turns": { "type": "integer", "minimum": 0 },
+        "tool_calls": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "runtime_seconds": { "type": "number", "minimum": 0 },
+        "cost_usd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "stepState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "attempt",
+        "invocation_id",
+        "approval_id",
+        "output_sha256",
+        "usage"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "PENDING",
+            "RUNNING",
+            "WAITING_FOR_APPROVAL",
+            "COMPLETED",
+            "BLOCKED",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "attempt": { "type": "integer", "minimum": 0 },
+        "invocation_id": { "type": ["string", "null"], "format": "uuid" },
+        "approval_id": { "type": ["string", "null"], "format": "uuid" },
+        "output_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "usage": { "$ref": "#/$defs/usage" }
+      }
+    }
+  }
+}

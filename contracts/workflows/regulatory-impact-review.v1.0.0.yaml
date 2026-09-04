@@ -1,0 +1,180 @@
+apiVersion: pharmaagent.io/v1
+kind: Workflow
+metadata:
+  name: regulatory-impact-review
+  version: 1.0.0
+  owner: quality-ai-platform
+  releaseState: APPROVED
+  definitionHash: "6f535115bbfe1cb2e9fe29ee80b3c8b15c4409157829e1ae836fcb3adc36ce67"
+spec:
+  description: Convert a pinned FDA warning-letter version into an independently verified, human-reviewed regulatory impact package.
+  executionEnabled: true
+  intendedUse: Decision support only; identify potentially relevant evidence and human review questions without determining compliance or CAPA requirements.
+  triggers: [MANUAL, REGULATORY_SIGNAL_CREATED]
+  states:
+    - planning
+    - awaiting_plan_approval
+    - extracting_regulatory_evidence
+    - validating_regulatory_evidence
+    - retrieving_internal_assets
+    - generating_impact_hypotheses
+    - verifying
+    - awaiting_artifact_review
+    - completed
+    - blocked
+    - cancelled
+    - stale
+  initialState: planning
+  terminalStates: [completed, blocked, cancelled]
+  steps:
+    - id: generate_plan
+      state: planning
+      dependsOn: []
+      executor: {type: AGENT, ref: case-orchestrator@1.0.0}
+      inputSchema: CasePlanningRequest@1.0.0
+      outputSchema: CasePlan@1.0.0
+      tools: []
+      riskClass: R0
+      permissionMode: AUTO_ALLOWED
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: STOP
+    - id: approve_plan
+      state: awaiting_plan_approval
+      dependsOn: [generate_plan]
+      executor: {type: HUMAN, ref: qa-reviewer@1.0.0}
+      inputSchema: CasePlan@1.0.0
+      outputSchema: ApprovalBinding@1.0.0
+      tools: []
+      riskClass: R1
+      permissionMode: HUMAN_DECISION
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: STOP
+    - id: extract_findings
+      state: extracting_regulatory_evidence
+      dependsOn: [approve_plan]
+      executor: {type: AGENT, ref: regulatory-evidence-agent@1.3.0}
+      inputSchema: RegulatoryEvidenceTask@1.0.0
+      outputSchema: RegulatoryFindingList@2.0.0
+      tools:
+        - {name: regulatory.get_version, version: 1.0.0}
+        - {name: regulatory.get_section, version: 1.0.0}
+        - {name: regulatory.get_anchor, version: 1.0.0}
+        - {name: regulatory.compare_versions, version: 1.0.0}
+        - {name: regulatory.search_regulatory_references, version: 1.0.0}
+      riskClass: R0
+      permissionMode: COVERED_BY_PLAN_APPROVAL
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: STOP
+    - id: validate_findings
+      state: validating_regulatory_evidence
+      dependsOn: [extract_findings]
+      executor: {type: DETERMINISTIC_SERVICE, ref: citation-validator@1.0.0}
+      inputSchema: RegulatoryFindingList@2.0.0
+      outputSchema: ValidationResult@1.0.0
+      tools: []
+      riskClass: R0
+      permissionMode: AUTO_ALLOWED
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: TARGETED_CORRECTION
+    - id: retrieve_internal_assets
+      state: retrieving_internal_assets
+      dependsOn: [validate_findings]
+      executor: {type: AGENT, ref: internal-knowledge-agent@1.1.0}
+      inputSchema: InternalKnowledgeTask@1.0.0
+      outputSchema: InternalAssetCandidateList@1.0.0
+      tools:
+        - {name: knowledge.search_assets, version: 1.0.0}
+        - {name: knowledge.get_document_version, version: 1.0.0}
+        - {name: knowledge.get_anchor, version: 1.0.0}
+        - {name: knowledge.get_revision_history, version: 1.0.0}
+        - {name: knowledge.get_related_assets, version: 1.0.0}
+      riskClass: R1
+      permissionMode: COVERED_BY_PLAN_APPROVAL
+      parallelizable: true
+      onSuccess: CONTINUE
+      onFailure: REQUEST_INPUT
+    - id: analyze_impact
+      state: generating_impact_hypotheses
+      dependsOn: [retrieve_internal_assets]
+      executor: {type: AGENT, ref: impact-analysis-agent@1.0.2}
+      inputSchema: ImpactAnalysisTask@1.0.0
+      outputSchema: ImpactHypothesisList@1.0.0
+      tools:
+        - {name: knowledge.get_asset, version: 1.0.0}
+        - {name: knowledge.get_related_assets, version: 1.0.0}
+        - {name: knowledge.get_anchor, version: 1.0.0}
+      riskClass: R2
+      permissionMode: COVERED_BY_PLAN_APPROVAL
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: REQUEST_INPUT
+    - id: verify
+      state: verifying
+      dependsOn: [analyze_impact]
+      executor: {type: AGENT, ref: verification-agent@1.2.1}
+      inputSchema: VerificationTask@1.0.0
+      outputSchema: VerificationReport@1.0.0
+      tools: []
+      riskClass: R2
+      permissionMode: COVERED_BY_PLAN_APPROVAL
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: TARGETED_CORRECTION
+    - id: compose_artifact
+      state: awaiting_artifact_review
+      dependsOn: [verify]
+      executor: {type: DETERMINISTIC_SERVICE, ref: artifact-composer@1.0.0}
+      inputSchema: ValidatedImpactRecords@1.0.0
+      outputSchema: RegulatoryImpactReviewPackage@1.0.0
+      tools: []
+      riskClass: R2
+      permissionMode: AUTO_ALLOWED
+      parallelizable: false
+      onSuccess: CONTINUE
+      onFailure: STOP
+    - id: review_artifact
+      state: awaiting_artifact_review
+      dependsOn: [compose_artifact]
+      executor: {type: HUMAN, ref: qa-reviewer@1.0.0}
+      inputSchema: RegulatoryImpactReviewPackage@1.0.0
+      outputSchema: ArtifactApproval@1.0.0
+      tools: []
+      riskClass: R2
+      permissionMode: HUMAN_DECISION
+      parallelizable: false
+      onSuccess: COMPLETE_WORKFLOW
+      onFailure: TARGETED_CORRECTION
+  limits:
+    maximumCorrectionLoops: 2
+    maximumParallelAgents: 3
+    maximumAgentInvocations: 12
+    maximumToolCalls: 32
+    maximumRuntimeSeconds: 86400
+    maximumCostUsd: 20.0
+  approvals:
+    plan: POLICY_BASED
+    artifact: QA_REVIEWER_REQUIRED
+    sideEffects: EXPLICIT_ACTION_APPROVAL
+    staleProtection:
+      bindingFields: [case_id, current_state_hash, plan_id, plan_version, plan_hash, workflow, agent_versions, tool_scopes, data_scope, budget]
+  prohibitedActions:
+    - MODIFY_CONTROLLED_DOCUMENT
+    - CREATE_CAPA
+    - APPROVE_CAPA
+    - UPDATE_QMS_RECORD
+    - UPDATE_EDMS_RECORD
+    - UPDATE_MES_RECORD
+    - UPDATE_LIMS_RECORD
+    - RELEASE_OR_REJECT_PRODUCT
+    - SUBMIT_TO_REGULATOR
+  failurePolicies:
+    - {condition: SOURCE_UPDATED, behavior: MARK_STALE_AND_PAUSE}
+    - {condition: INSUFFICIENT_EVIDENCE, behavior: RETURN_INCOMPLETE_EVIDENCE}
+    - {condition: ACCESS_DENIED, behavior: RETURN_MINIMAL_ACCESS_BLOCKED}
+    - {condition: TOOL_FAILURE, behavior: BOUNDED_RETRY_THEN_BLOCK}
+    - {condition: PROMPT_INJECTION, behavior: ISOLATE_RECORD_AND_REVIEW}
+    - {condition: BUDGET_EXCEEDED, behavior: PAUSE_WITH_USAGE}

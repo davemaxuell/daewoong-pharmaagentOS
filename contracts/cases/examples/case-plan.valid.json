@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0.0",
+  "plan_id": "33333333-3333-4333-8333-333333333333",
+  "case_id": "11111111-1111-4111-8111-111111111111",
+  "version": 1,
+  "status": "AWAITING_APPROVAL",
+  "objective": "Extract evidence-backed findings from the pinned FDA source version.",
+  "scope": {
+    "included": ["Pinned FDA warning-letter version"],
+    "excluded": ["Internal compliance determination", "Controlled-system writes"],
+    "domain_lenses": ["REGULATORY_EVIDENCE"]
+  },
+  "workflow": {
+    "name": "regulatory-impact-review",
+    "version": "1.0.0",
+    "definition_hash": "cc1db3e1977968774324e17497cb8b5ab93f7aa4099eb6f2cf9e008b1cb0c71c"
+  },
+  "source_pins": [
+    {
+      "case_source_id": "22222222-2222-4222-8222-222222222222",
+      "source_type": "FDA_WARNING_LETTER_DOCUMENT_VERSION",
+      "source_version_id": "77777777-7777-4777-8777-777777777777",
+      "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "trust_level": "AUTHORITATIVE_EXTERNAL"
+    }
+  ],
+  "agent_versions": [
+    {
+      "name": "regulatory-evidence-agent",
+      "version": "1.3.0",
+      "definition_hash": "5b19303a147b12c07533523127a58577ff7fe5d27a19413443d7f32a5d775daa"
+    }
+  ],
+  "tool_permissions": [
+    {
+      "name": "regulatory.get_version",
+      "version": "1.0.0",
+      "required_scopes": ["regulatory:version:read"]
+    },
+    {
+      "name": "regulatory.get_section",
+      "version": "1.0.0",
+      "required_scopes": ["regulatory:section:read"]
+    },
+    {
+      "name": "regulatory.get_anchor",
+      "version": "1.0.0",
+      "required_scopes": ["regulatory:anchor:read"]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "source_available",
+      "text": "The retained source version remains readable during this run."
+    }
+  ],
+  "risks": [
+    {
+      "id": "source_injection",
+      "risk_class": "R0",
+      "description": "Regulatory source text may contain instruction-like content.",
+      "mitigation": "Treat all source text as untrusted quoted evidence and sanitize tool results."
+    }
+  ],
+  "steps": [
+    {
+      "step_id": "extract_findings",
+      "ordinal": 1,
+      "title": "Extract regulatory findings",
+      "objective": "Return structured findings with exact anchors from the pinned source version.",
+      "state": "PENDING",
+      "depends_on": [],
+      "executor": {
+        "type": "AGENT",
+        "name": "regulatory-evidence-agent",
+        "version": "1.3.0",
+        "definition_hash": "5b19303a147b12c07533523127a58577ff7fe5d27a19413443d7f32a5d775daa"
+      },
+      "skills": [
+        { "name": "warning-letter-analysis", "version": "2.1.0" },
+        { "name": "citation-validation", "version": "1.0.0" }
+      ],
+      "tools": [
+        {
+          "name": "regulatory.get_version",
+          "version": "1.0.0",
+          "required_scopes": ["regulatory:version:read"]
+        },
+        {
+          "name": "regulatory.get_section",
+          "version": "1.0.0",
+          "required_scopes": ["regulatory:section:read"]
+        },
+        {
+          "name": "regulatory.get_anchor",
+          "version": "1.0.0",
+          "required_scopes": ["regulatory:anchor:read"]
+        }
+      ],
+      "input_refs": [
+        {
+          "type": "CASE_SOURCE",
+          "id": "22222222-2222-4222-8222-222222222222",
+          "version": "77777777-7777-4777-8777-777777777777",
+          "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "output_schema_ref": {
+        "name": "RegulatoryFindingList",
+        "version": "2.0.0"
+      },
+      "risk_class": "R0",
+      "side_effect": "NONE",
+      "permission_mode": "COVERED_BY_PLAN_APPROVAL",
+      "parallelizable": false,
+      "budget": {
+        "max_turns": 8,
+        "max_tool_calls": 15,
+        "max_input_tokens": 100000,
+        "max_output_tokens": 12000,
+        "max_runtime_seconds": 120,
+        "max_cost_usd": 2.0
+      },
+      "validation": {
+        "schema_required": true,
+        "citation_validation": "EXACT_ANCHOR_REQUIRED",
+        "required_trust_levels": ["AUTHORITATIVE_EXTERNAL"],
+        "done_condition": "All findings validate and every material claim resolves to a pinned exact source anchor."
+      },
+      "failure_policy": {
+        "max_attempts": 2,
+        "on_failure": "STOP_PLAN",
+        "retryable_error_codes": ["TIMEOUT", "UPSTREAM_UNAVAILABLE"]
+      }
+    }
+  ],
+  "budget": {
+    "max_agent_invocations": 1,
+    "max_parallel_agents": 1,
+    "max_turns": 8,
+    "max_tool_calls": 15,
+    "max_correction_loops": 1,
+    "max_input_tokens": 100000,
+    "max_output_tokens": 12000,
+    "max_runtime_seconds": 180,
+    "max_cost_usd": 2.0
+  },
+  "approval_requirement": "PLAN_APPROVAL_REQUIRED",
+  "prohibited_actions": [
+    "MODIFY_CONTROLLED_DOCUMENT",
+    "CREATE_CAPA",
+    "APPROVE_CAPA",
+    "UPDATE_QMS_RECORD",
+    "UPDATE_EDMS_RECORD",
+    "UPDATE_MES_RECORD",
+    "UPDATE_LIMS_RECORD",
+    "RELEASE_OR_REJECT_PRODUCT",
+    "SUBMIT_TO_REGULATOR"
+  ],
+  "based_on_plan_version": null,
+  "plan_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "hash_algorithm": "SHA-256",
+  "canonicalization": "RFC8785",
+  "created_by_user_id": "orchestrator-service",
+  "created_at": "2026-09-04T01:04:00Z"
+}

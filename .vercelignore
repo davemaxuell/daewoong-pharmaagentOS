@@ -1,0 +1,25 @@
+# The Services deployment only needs the two service roots and root config.
+/*
+!vercel.json
+!.vercelignore
+!apps
+!services
+
+# Never upload local dependencies, build products, tests, data, or secrets.
+/apps/web/node_modules/
+/apps/web/.next/
+/apps/web/tests/
+/apps/web/test-results/
+/apps/web/playwright-report/
+/apps/web/output/
+/apps/web/.env*
+
+/services/api/.venv*/
+/services/api/.pytest_cache/
+/services/api/.ruff_cache/
+/services/api/__pycache__/
+/services/api/tests/
+/services/api/data/
+/services/api/.env*
+**/__pycache__/
+**/*.py[cod]

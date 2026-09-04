@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/case-event/v1.0.0",
+  "title": "PharmaAgent OS append-only CaseEvent",
+  "description": "Strict audit event envelope. Mutable projections may be rebuilt from this append-only history.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "case_id",
+    "sequence",
+    "event_type",
+    "actor",
+    "entity_ref",
+    "outcome",
+    "correlation_id",
+    "causation_event_id",
+    "occurred_at",
+    "append_only"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "case_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "event_type": {
+      "enum": [
+        "CASE_CREATED",
+        "CASE_UPDATED",
+        "SOURCE_PINNED",
+        "SOURCE_BECAME_STALE",
+        "PLAN_GENERATED",
+        "PLAN_APPROVAL_REQUESTED",
+        "PLAN_APPROVED",
+        "PLAN_REJECTED",
+        "PLAN_APPROVAL_EXPIRED",
+        "RUN_STARTED",
+        "AGENT_STARTED",
+        "TOOL_CALLED",
+        "TOOL_RESULT_RECORDED",
+        "AGENT_COMPLETED",
+        "RUN_PAUSED",
+        "RUN_RESUMED",
+        "APPROVAL_REQUESTED",
+        "APPROVAL_DECIDED",
+        "ARTIFACT_CREATED",
+        "ARTIFACT_APPROVED",
+        "RUN_FAILED",
+        "RUN_CANCELLED",
+        "CASE_COMPLETED"
+      ]
+    },
+    "actor": {
+      "$ref": "#/$defs/actor"
+    },
+    "entity_ref": {
+      "$ref": "#/$defs/entityRef"
+    },
+    "outcome": {
+      "$ref": "#/$defs/outcome"
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "causation_event_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "append_only": {
+      "const": true
+    }
+  },
+  "$defs": {
+    "sha256OrNull": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "agent_ref"],
+      "properties": {
+        "type": {
+          "enum": ["USER", "SERVICE", "AGENT", "SYSTEM"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "agent_ref": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{1,62}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "entityRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_type", "entity_id", "entity_version", "entity_hash"],
+      "properties": {
+        "entity_type": {
+          "enum": [
+            "CASE",
+            "CASE_SOURCE",
+            "CASE_PLAN",
+            "CASE_RUN",
+            "AGENT_INVOCATION",
+            "TOOL_INVOCATION",
+            "APPROVAL",
+            "ARTIFACT"
+          ]
+        },
+        "entity_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "entity_version": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entity_hash": {
+          "$ref": "#/$defs/sha256OrNull"
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason_code", "summary", "reference_ids"],
+      "properties": {
+        "status": {
+          "enum": ["RECORDED", "SUCCEEDED", "DENIED", "FAILED", "CANCELLED"]
+        },
+        "reason_code": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "reference_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "uniqueItems": true,
+          "maxItems": 50
+        }
+      }
+    }
+  }
+}

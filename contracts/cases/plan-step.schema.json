@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/plan-step/v1.0.0",
+  "title": "PharmaAgent OS PlanStep",
+  "description": "A bounded, permissioned, independently auditable unit in a case plan.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "step_id",
+    "ordinal",
+    "title",
+    "objective",
+    "state",
+    "depends_on",
+    "executor",
+    "skills",
+    "tools",
+    "input_refs",
+    "output_schema_ref",
+    "risk_class",
+    "side_effect",
+    "permission_mode",
+    "parallelizable",
+    "budget",
+    "validation",
+    "failure_policy"
+  ],
+  "properties": {
+    "step_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$"
+    },
+    "ordinal": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "state": {
+      "enum": ["PENDING", "READY", "RUNNING", "WAITING", "COMPLETED", "FAILED", "CANCELLED"]
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{1,63}$"
+      },
+      "uniqueItems": true,
+      "maxItems": 20
+    },
+    "executor": {
+      "$ref": "#/$defs/executor"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/versionedReference"
+      },
+      "uniqueItems": true,
+      "maxItems": 20
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/toolPermission"
+      },
+      "uniqueItems": true,
+      "maxItems": 30
+    },
+    "input_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/inputReference"
+      },
+      "uniqueItems": true,
+      "maxItems": 100
+    },
+    "output_schema_ref": {
+      "$ref": "#/$defs/schemaReference"
+    },
+    "risk_class": {
+      "enum": ["R0", "R1", "R2", "R3"]
+    },
+    "side_effect": {
+      "enum": ["NONE", "DRAFT_ARTIFACT", "CREATE_INTERNAL_TASK", "SEND_INTERNAL_NOTIFICATION", "EXPORT_PACKAGE"]
+    },
+    "permission_mode": {
+      "enum": ["AUTO_ALLOWED", "COVERED_BY_PLAN_APPROVAL", "EXPLICIT_ACTION_APPROVAL"]
+    },
+    "parallelizable": {
+      "type": "boolean"
+    },
+    "budget": {
+      "$ref": "#/$defs/stepBudget"
+    },
+    "validation": {
+      "$ref": "#/$defs/validation"
+    },
+    "failure_policy": {
+      "$ref": "#/$defs/failurePolicy"
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "versionedReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}$"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        }
+      }
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name", "version", "definition_hash"],
+      "properties": {
+        "type": {
+          "enum": ["AGENT", "DETERMINISTIC_SERVICE", "HUMAN"]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}$"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "definition_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "toolPermission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "required_scopes"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "required_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+$"
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 20
+        }
+      }
+    },
+    "inputReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "version", "hash"],
+      "properties": {
+        "type": {
+          "enum": ["CASE_SOURCE", "PLAN_STEP_OUTPUT", "USER_INPUT", "POLICY_PROFILE"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "version": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          ]
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "schemaReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]{1,127}$"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        }
+      }
+    },
+    "stepBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_turns", "max_tool_calls", "max_input_tokens", "max_output_tokens", "max_runtime_seconds", "max_cost_usd"],
+      "properties": {
+        "max_turns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        },
+        "max_input_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000000
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200000
+        },
+        "max_runtime_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "max_cost_usd": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_required", "citation_validation", "required_trust_levels", "done_condition"],
+      "properties": {
+        "schema_required": {
+          "const": true
+        },
+        "citation_validation": {
+          "enum": ["NOT_APPLICABLE", "EXACT_ANCHOR_REQUIRED", "SEMANTIC_SUPPORT_REQUIRED"]
+        },
+        "required_trust_levels": {
+          "type": "array",
+          "items": {
+            "enum": ["AUTHORITATIVE_EXTERNAL", "CONTROLLED_INTERNAL", "USER_PROVIDED_CONTEXT", "AI_DERIVED"]
+          },
+          "uniqueItems": true,
+          "maxItems": 4
+        },
+        "done_condition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "failurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_attempts", "on_failure", "retryable_error_codes"],
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "on_failure": {
+          "enum": ["STOP_PLAN", "PAUSE_FOR_REVIEW", "REQUEST_INPUT", "SKIP_OPTIONAL"]
+        },
+        "retryable_error_codes": {
+          "type": "array",
+          "items": {
+            "enum": ["TIMEOUT", "RATE_LIMITED", "UPSTREAM_UNAVAILABLE", "TRANSIENT_INTERNAL_ERROR"]
+          },
+          "uniqueItems": true,
+          "maxItems": 4
+        }
+      }
+    }
+  }
+}

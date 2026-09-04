@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/case/v1.0.0",
+  "title": "PharmaAgent OS Case",
+  "description": "Durable, case-first control object. Conversation state is never the system of record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "tenant_id",
+    "title",
+    "objective",
+    "state",
+    "priority",
+    "owner_user_id",
+    "qa_reviewer_user_id",
+    "workflow_template",
+    "internal_scope",
+    "state_version",
+    "current_state_hash",
+    "source_freshness",
+    "created_by_user_id",
+    "created_at",
+    "updated_at",
+    "closed_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "case_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "state": {
+      "enum": [
+        "DRAFT",
+        "PLANNING",
+        "AWAITING_PLAN_APPROVAL",
+        "READY",
+        "RUNNING",
+        "WAITING_FOR_INPUT",
+        "WAITING_FOR_REVIEW",
+        "NEEDS_REVISION",
+        "COMPLETED",
+        "BLOCKED",
+        "FAILED",
+        "CANCELLED",
+        "STALE"
+      ]
+    },
+    "priority": {
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "owner_user_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "qa_reviewer_user_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workflow_template": {
+      "$ref": "#/$defs/versionedReference"
+    },
+    "internal_scope": {
+      "$ref": "#/$defs/internalScope"
+    },
+    "state_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "current_state_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_freshness": {
+      "enum": ["CURRENT", "STALE", "UNKNOWN"]
+    },
+    "created_by_user_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "versionedReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+        }
+      }
+    },
+    "internalScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "asset_ids", "domains", "data_classifications"],
+      "properties": {
+        "mode": {
+          "enum": ["NONE", "EXPLICIT_ASSETS", "AUTHORIZED_COLLECTIONS"]
+        },
+        "asset_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "uniqueItems": true,
+          "maxItems": 500
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "REGULATORY_EVIDENCE",
+              "DATA_INTEGRITY",
+              "STERILE_MANUFACTURING",
+              "LABORATORY_CONTROLS",
+              "TRAINING_QUALIFICATION",
+              "QUALITY_SYSTEMS",
+              "OTHER"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 6
+        },
+        "data_classifications": {
+          "type": "array",
+          "items": {
+            "enum": ["PUBLIC", "INTERNAL", "INTERNAL_CONFIDENTIAL"]
+          },
+          "uniqueItems": true,
+          "maxItems": 3
+        }
+      }
+    }
+  }
+}

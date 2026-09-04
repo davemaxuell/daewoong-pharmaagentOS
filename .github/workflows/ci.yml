@@ -1,0 +1,227 @@
+name: quality-and-security
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      APP_ENV: test
+      DATABASE_URL: sqlite+aiosqlite:///./data/ci.db
+      DEV_AUTH_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check app tests
+      - run: pytest --cov=app --cov-report=term-missing
+
+  postgres-schema:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg16-bookworm
+        env:
+          POSTGRES_DB: fda_intel_test
+          POSTGRES_USER: fda_test
+          POSTGRES_PASSWORD: fda_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fda_test -d fda_intel_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql+asyncpg://fda_test:fda_test_password@127.0.0.1:5432/fda_intel_test
+      OBJECT_STORE_PATH: ${{ github.workspace }}/.tmp/postgres-schema-objects
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGDATABASE: fda_intel_test
+      PGUSER: fda_test
+      PGPASSWORD: fda_test_password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y postgresql-client
+      - name: Create migration prerequisites only
+        run: python tests/prepare_agent_os_postgres.py
+      - run: psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_agent_os_control_plane.sql
+      - name: Complete current schema
+        run: fda-intel init-db
+      - name: Apply PharmaAgent OS migrations and immutable guards
+        run: |
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_agent_os_orchestration.sql
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_internal_knowledge_and_impact.sql
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_verification_and_artifacts.sql
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_evaluation_and_control_tower.sql
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_durable_commercial_hardening.sql
+          psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260904_controlled_integrations.sql
+      - name: Validate least-privilege runtime grants
+        run: |
+          psql --set ON_ERROR_STOP=1 --file ../../infra/policies/postgres-runtime-roles.sql
+      - run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_agent_platform_postgres.py
+      - name: Seed restore canary and create isolated target
+        run: |
+          psql --set ON_ERROR_STOP=1 --command "INSERT INTO platform_controls (id, control_key, scope, suspended, reason, revision, updated_by) VALUES ('00000000-0000-4000-8000-000000000001', 'global', 'GLOBAL', false, 'CI backup restore canary', 1, 'ci') ON CONFLICT (control_key) DO NOTHING"
+          psql --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE DATABASE fda_intel_restore"
+          mkdir -p ../../.tmp/restore-evidence
+      - name: Demonstrate backup restoration
+        shell: pwsh
+        env:
+          SOURCE_DATABASE_URL: postgresql://fda_test:fda_test_password@127.0.0.1:5432/fda_intel_test
+          RESTORE_DATABASE_URL: postgresql://fda_test:fda_test_password@127.0.0.1:5432/fda_intel_restore
+        run: ../../scripts/verify-pharma-backup-restore.ps1 -EvidenceDirectory ../../.tmp/restore-evidence -AcknowledgeIsolatedRestoreTarget
+      - name: Verify restored canary
+        env:
+          PGDATABASE: fda_intel_restore
+        run: test "$(psql --tuples-only --no-align --command "SELECT count(*) FROM platform_controls WHERE control_key = 'global' AND reason = 'CI backup restore canary'")" = "1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: postgres-restore-evidence
+          path: |
+            .tmp/restore-evidence/*.sha256
+            .tmp/restore-evidence/*-counts.txt
+
+  temporal-recovery:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    env:
+      APP_ENV: test
+      TEMPORAL_TEST_ADDRESS: 127.0.0.1:7233
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Start isolated Temporal server
+        run: |
+          docker run -d --name temporal-qualification -p 127.0.0.1:7233:7233 temporalio/temporal:1.4.1 server start-dev --ip 0.0.0.0 --namespace pharma-agent-os
+          for attempt in $(seq 1 30); do
+            if docker exec temporal-qualification temporal operator cluster health --address 127.0.0.1:7233; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - run: pytest tests/test_runtime_hardening.py --junitxml=temporal-recovery.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: temporal-recovery-evidence
+          path: services/api/temporal-recovery.xml
+
+  containers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build locked non-root runtime
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          if [ "$COMPONENT" = api ]; then
+            docker build -f services/api/Dockerfile --target test -t pharma-api-tests:ci .
+            docker run --rm pharma-api-tests:ci
+            docker build -f services/api/Dockerfile -t pharma-api:ci .
+            docker run --rm --read-only --tmpfs /tmp:rw,size=128m -e APP_ENV=test -e OBJECT_STORE_PATH=/tmp/objects -v "$PWD/scripts/container-smoke.py:/smoke.py:ro" pharma-api:ci python /smoke.py
+          else
+            docker build -t pharma-web:ci apps/web
+            docker run -d --name web-smoke -p 127.0.0.1:3000:3000 pharma-web:ci
+            for attempt in $(seq 1 20); do
+              if curl --fail --silent http://127.0.0.1:3000/api/health; then exit 0; fi
+              sleep 2
+            done
+            exit 1
+          fi
+      - name: Scan runtime image and generate SBOM
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          mkdir -p .artifacts
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.artifacts:/reports" aquasec/trivy:0.74.0 image --format cyclonedx --output "/reports/$COMPONENT.cdx.json" "pharma-$COMPONENT:ci"
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.artifacts:/reports" aquasec/trivy:0.74.0 image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output "/reports/$COMPONENT.vulnerabilities.json" "pharma-$COMPONENT:ci"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-evidence-${{ matrix.component }}
+          path: .artifacts/*.json
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r contracts/requirements-validation.txt
+      - run: python contracts/validate_contracts.py
+
+  deployment-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.34.1
+      - run: kubectl kustomize infra/deployment/kubernetes/base > /dev/null
+      - run: docker compose --env-file infra/local/.env.example -f infra/local/compose.yaml config --quiet
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

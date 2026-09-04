@@ -1,0 +1,230 @@
+apiVersion: pharmaagent.io/v1
+kind: ToolBundle
+metadata:
+  name: knowledge-mcp
+  version: 1.0.0
+  owner: quality-ai-platform
+  releaseState: APPROVED
+  definitionHash: "324b65c53afbdcaa6e9af759a467fb86eccef99de97a9703419d34d460d3e2b1"
+spec:
+  server: knowledge-mcp
+  transport: STREAMABLE_HTTP
+  credentialPolicy:
+    audienceBound: true
+    tokenForwarding: PROHIBITED
+    modelCredentialAccess: PROHIBITED
+  egressPolicy:
+    mode: DENY_ALL
+    destinations: []
+  tools:
+    - name: knowledge.search_assets
+      version: 1.0.0
+      description: Search only internal assets admitted by the trusted runtime after positive ACL filtering, with effective and obsolete revisions kept distinct.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission: &search_permission
+        allowlisted: true
+        enforcementHook: PreToolUse
+        requiredScopes: [knowledge:search]
+        approval: COVERED_BY_APPROVED_PLAN
+        sourcePinRequired: false
+        modelMaySupplyRuntimeContext: false
+        requiredRuntimeContext: &runtime_context [user_id, tenant_id, case_id, run_id, agent_name, agent_version, runtime_service, idempotency_key]
+      execution: &execution
+        timeoutSeconds: 10
+        maximumAttempts: 2
+        retryPolicy: TRANSIENT_ONLY
+        idempotencyKeyRequired: true
+      outputLimits: &limits
+        maximumItems: 20
+        maximumResultCharacters: 40000
+        maximumExcerptCharacters: 4000
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [query, limit, include_obsolete]
+        properties:
+          query: {type: string, minLength: 2, maxLength: 500}
+          limit: {type: integer, minimum: 1, maximum: 20}
+          include_obsolete: {type: boolean}
+      resultSchema: &result_schema
+        $schema: https://json-schema.org/draft/2020-12/schema
+        $defs:
+          record:
+            type: object
+            additionalProperties: false
+            required: [asset_id, asset_version_id, asset_key, asset_type, title, domain, revision, status, content, content_sha256, anchor_id, excerpt, relation_type, score]
+            properties:
+              asset_id: {type: string, format: uuid}
+              asset_version_id:
+                oneOf: [{type: string, format: uuid}, {type: "null"}]
+              asset_key: {type: string, minLength: 1, maxLength: 160}
+              asset_type: {type: string, minLength: 1, maxLength: 80}
+              title: {type: string, minLength: 1, maxLength: 500}
+              domain: {type: string, minLength: 1, maxLength: 160}
+              revision:
+                oneOf: [{type: integer, minimum: 1}, {type: "null"}]
+              status: {type: string, minLength: 1, maxLength: 32}
+              content:
+                oneOf: [{type: string, maxLength: 40000}, {type: "null"}]
+              content_sha256:
+                oneOf: [{type: string, pattern: "^[a-f0-9]{64}$"}, {type: "null"}]
+              anchor_id:
+                oneOf: [{type: string, minLength: 1, maxLength: 256}, {type: "null"}]
+              excerpt:
+                oneOf: [{type: string, maxLength: 4000}, {type: "null"}]
+              relation_type:
+                oneOf: [{type: string, minLength: 1, maxLength: 80}, {type: "null"}]
+              score:
+                oneOf: [{type: number, minimum: 0, maximum: 1}, {type: "null"}]
+          provenance:
+            type: object
+            additionalProperties: false
+            required: [source_version_id, source_hash, anchor_id]
+            properties:
+              source_version_id: {type: string, format: uuid}
+              source_hash: {type: string, pattern: "^[a-f0-9]{64}$"}
+              anchor_id:
+                oneOf: [{type: string, minLength: 1, maxLength: 256}, {type: "null"}]
+          error:
+            type: object
+            additionalProperties: false
+            required: [code, message, retryable]
+            properties:
+              code: {enum: [INVALID_ARGUMENTS, PERMISSION_DENIED, APPROVAL_REQUIRED, AUTH_EXPIRED, ACCESS_BLOCKED, NOT_FOUND, CONFLICT, RATE_LIMITED, INTERNAL_ERROR]}
+              message: {type: string, minLength: 1, maxLength: 1000}
+              retryable: {type: boolean}
+        oneOf:
+          - type: object
+            additionalProperties: false
+            required: [status, request_id, tool_name, tool_version, data, provenance, warnings]
+            properties:
+              status: {const: success}
+              request_id: {type: string, format: uuid}
+              tool_name: {type: string, pattern: "^knowledge\\.[a-z][a-z0-9_]*$"}
+              tool_version: {const: 1.0.0}
+              data:
+                type: object
+                additionalProperties: false
+                required: [resource_type, records, acl_filtered_before_retrieval]
+                properties:
+                  resource_type: {enum: [SEARCH_RESULTS, ASSET, DOCUMENT_VERSION, ANCHOR, REVISION_HISTORY, RELATED_ASSETS]}
+                  records: {type: array, items: {$ref: "#/$defs/record"}, maxItems: 20}
+                  acl_filtered_before_retrieval: {const: true}
+              provenance: {type: array, items: {$ref: "#/$defs/provenance"}, maxItems: 100}
+              warnings: {type: array, items: {type: string, maxLength: 500}, maxItems: 20}
+          - type: object
+            additionalProperties: false
+            required: [status, request_id, tool_name, tool_version, error, next_valid_actions]
+            properties:
+              status: {const: error}
+              request_id: {type: string, format: uuid}
+              tool_name: {type: string, pattern: "^knowledge\\.[a-z][a-z0-9_]*$"}
+              tool_version: {const: 1.0.0}
+              error: {$ref: "#/$defs/error"}
+              next_valid_actions: {type: array, items: {type: string, pattern: "^[a-z][a-z0-9_]{1,63}$"}, uniqueItems: true, maxItems: 10}
+      auditFields: &audit [user_id, tenant_id, case_id, run_id, agent_name, agent_version, tool_name, tool_version, arguments_hash, policy_decision, source_version_ids, result_hash, latency_ms]
+
+    - name: knowledge.get_asset
+      version: 1.0.0
+      description: Read the authorized current revision of one exact internal asset identity.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *search_permission
+        requiredScopes: [knowledge:asset:read]
+      execution: *execution
+      outputLimits: *limits
+      inputSchema: &asset_input
+        type: object
+        additionalProperties: false
+        required: [asset_id]
+        properties: {asset_id: {type: string, format: uuid}}
+      resultSchema: *result_schema
+      auditFields: *audit
+
+    - name: knowledge.get_document_version
+      version: 1.0.0
+      description: Read one exact authorized internal asset revision without substituting the current revision.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *search_permission
+        requiredScopes: [knowledge:version:read]
+        sourcePinRequired: true
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [asset_version_id]
+        properties: {asset_version_id: {type: string, format: uuid}}
+      resultSchema: *result_schema
+      auditFields: *audit
+
+    - name: knowledge.get_anchor
+      version: 1.0.0
+      description: Resolve one exact anchor from an authorized internal asset revision.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *search_permission
+        requiredScopes: [knowledge:anchor:read]
+        sourcePinRequired: true
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [asset_version_id, anchor_id]
+        properties:
+          asset_version_id: {type: string, format: uuid}
+          anchor_id: {type: string, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$", maxLength: 256}
+      resultSchema: *result_schema
+      auditFields: *audit
+
+    - name: knowledge.get_revision_history
+      version: 1.0.0
+      description: List metadata and hashes for all authorized revisions while keeping effective and obsolete states explicit.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *search_permission
+        requiredScopes: [knowledge:history:read]
+      execution: *execution
+      outputLimits: *limits
+      inputSchema: *asset_input
+      resultSchema: *result_schema
+      auditFields: *audit
+
+    - name: knowledge.get_related_assets
+      version: 1.0.0
+      description: Return only approved relationship edges whose source and target assets are both authorized.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *search_permission
+        requiredScopes: [knowledge:relation:read]
+      execution: *execution
+      outputLimits: *limits
+      inputSchema: *asset_input
+      resultSchema: *result_schema
+      auditFields: *audit

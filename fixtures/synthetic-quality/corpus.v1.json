@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "pharma-agent-os-synthetic-quality-seed-v1",
+  "classification": "FICTIONAL_TEST_DATA",
+  "display_label": "FICTIONAL TEST DATA — NOT A COMPANY RECORD",
+  "organization": "Northstar Therapeutics Harbor Site (fictional)",
+  "intended_use": "Agent-platform development, deterministic evaluation, and demonstrations only.",
+  "prohibited_use": [
+    "production quality-system operation",
+    "compliance determination",
+    "product disposition",
+    "regulatory submission",
+    "training qualification"
+  ],
+  "documents": [
+    {
+      "document_id": "SYN-POL-001",
+      "document_type": "POLICY",
+      "title": "Synthetic quality records and access governance",
+      "revision": "1.0",
+      "effective_date": "2026-01-15",
+      "owner": "Fictional Quality Systems Owner",
+      "status": "EFFECTIVE",
+      "synthetic": true,
+      "acl": {
+        "classification": "SYNTHETIC_INTERNAL",
+        "allow_roles": ["analyst", "reviewer", "domain_sme", "system_owner"],
+        "deny_export": true
+      },
+      "relationships": [
+        {
+          "relation": "GOVERNS",
+          "target_document_id": "SYN-SOP-014",
+          "target_revision": "2.1"
+        },
+        {
+          "relation": "REQUIRES_QUALIFICATION",
+          "target_document_id": "SYN-TRN-003",
+          "target_revision": "1"
+        }
+      ],
+      "sections": [
+        {
+          "anchor_id": "purpose",
+          "heading": "1. Purpose",
+          "text": "This fictional policy defines test-only governance for synthetic quality records used by the PharmaAgent OS demonstration environment. It creates no authority over a real quality system."
+        },
+        {
+          "anchor_id": "access-principle",
+          "heading": "2. Access principle",
+          "text": "Access is granted by role and record classification before retrieval. A search result, model instruction, or document relationship cannot grant access. Denied records are excluded before content reaches an agent context."
+        },
+        {
+          "anchor_id": "human-authority",
+          "heading": "3. Human authority",
+          "text": "Agent output is a draft evidence package. A fictional qualified reviewer evaluates the cited record revision and records a reasoned decision. The agent cannot approve a record, assign training, open CAPA, or modify a controlled system."
+        },
+        {
+          "anchor_id": "revision-control",
+          "heading": "4. Revision control",
+          "text": "An effective revision remains immutable. A proposed change creates a new revision linked to its predecessor; both the evidence used and the review history remain inspectable."
+        }
+      ]
+    },
+    {
+      "document_id": "SYN-SOP-014",
+      "document_type": "SOP",
+      "title": "Periodic audit-trail review for a fictional laboratory system",
+      "revision": "2.1",
+      "effective_date": "2026-02-01",
+      "owner": "Fictional Laboratory Systems Manager",
+      "status": "EFFECTIVE",
+      "synthetic": true,
+      "acl": {
+        "classification": "SYNTHETIC_INTERNAL",
+        "allow_roles": ["analyst", "reviewer", "domain_sme", "system_owner"],
+        "deny_export": true
+      },
+      "relationships": [
+        {
+          "relation": "GOVERNED_BY",
+          "target_document_id": "SYN-POL-001",
+          "target_revision": "1.0"
+        },
+        {
+          "relation": "TRAINING_EVIDENCE",
+          "target_document_id": "SYN-TRN-003",
+          "target_revision": "1"
+        }
+      ],
+      "sections": [
+        {
+          "anchor_id": "scope",
+          "heading": "1. Scope",
+          "text": "This fictional procedure covers periodic review of create, modify, delete, login, role-change, and result-approval events in the simulated HarborLIMS application."
+        },
+        {
+          "anchor_id": "review-frequency",
+          "heading": "2. Review frequency",
+          "text": "A designated fictional reviewer performs the review every thirty calendar days and before the associated monthly data package is closed. A late review is documented as an exception for human assessment."
+        },
+        {
+          "anchor_id": "review-procedure",
+          "heading": "3. Procedure",
+          "text": "The reviewer exports the immutable event listing, verifies the covered date interval, filters for critical event types, compares privileged activity with approved access records, and records each examined event identifier. The original export hash is retained with the review record."
+        },
+        {
+          "anchor_id": "exception-handling",
+          "heading": "4. Exception handling",
+          "text": "Unexpected activity is described factually and routed to a qualified fictional quality reviewer. The reviewer determines whether additional investigation is appropriate; the demonstration agent may only identify evidence and prepare review questions."
+        },
+        {
+          "anchor_id": "records",
+          "heading": "5. Records",
+          "text": "The review package includes the system identifier, review interval, export hash, event identifiers, reviewer identity, completion time, questions raised, and the final human decision."
+        }
+      ]
+    },
+    {
+      "document_id": "SYN-TRN-003",
+      "document_type": "TRAINING_RECORD",
+      "title": "Synthetic qualification record — audit-trail reviewer",
+      "revision": "1",
+      "effective_date": "2026-02-05",
+      "owner": "Fictional Learning Coordinator",
+      "status": "COMPLETED",
+      "synthetic": true,
+      "acl": {
+        "classification": "SYNTHETIC_RESTRICTED",
+        "allow_roles": ["reviewer", "domain_sme", "system_owner"],
+        "deny_export": true
+      },
+      "relationships": [
+        {
+          "relation": "QUALIFIES_FOR",
+          "target_document_id": "SYN-SOP-014",
+          "target_revision": "2.1"
+        },
+        {
+          "relation": "REQUIRED_BY",
+          "target_document_id": "SYN-POL-001",
+          "target_revision": "1.0"
+        }
+      ],
+      "sections": [
+        {
+          "anchor_id": "learner",
+          "heading": "1. Fictional learner",
+          "text": "Learner: Avery Example; role: simulated laboratory reviewer; identifier: SYN-USER-104. No real person is represented."
+        },
+        {
+          "anchor_id": "assignment",
+          "heading": "2. Assignment",
+          "text": "Assigned content: SYN-SOP-014 revision 2.1. Assignment date: 2026-02-02. Due date: 2026-02-09."
+        },
+        {
+          "anchor_id": "assessment",
+          "heading": "3. Assessment",
+          "text": "The fictional learner completed a ten-question knowledge check and a supervised review simulation. Recorded score: 90 percent. Simulation result: satisfactory for demonstration purposes only."
+        },
+        {
+          "anchor_id": "approval",
+          "heading": "4. Human record",
+          "text": "Completion was recorded by Fictional Learning Coordinator on 2026-02-05. This record cannot confer qualification in any real organization or regulated system."
+        }
+      ]
+    }
+  ]
+}

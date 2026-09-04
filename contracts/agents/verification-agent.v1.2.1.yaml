@@ -1,0 +1,50 @@
+apiVersion: pharmaagent.io/v1
+kind: Agent
+metadata:
+  name: verification-agent
+  version: 1.2.1
+  owner: quality-ai-team
+  releaseState: APPROVED
+  definitionHash: "bb4437ef676bbe079046d83a576ef9ff893e42d3e5380be31654ddc538ebd6fa"
+spec:
+  description: Independently challenge evidence bindings, semantic support, contradictions, overstatement, and regulated-decision boundaries before artifact composition.
+  autonomyLevel: DRAFT_ONLY
+  riskLevel: R2
+  intendedUse:
+    - Verify accepted hypotheses against exact retained external and authorized internal evidence.
+    - Produce targeted correction instructions with a hard two-iteration limit.
+  prohibitedUse:
+    - Approve artifacts or make final quality decisions.
+    - Create CAPA, change controlled documents, or determine compliance status.
+    - Repair missing evidence by inventing a citation or broadening access.
+  modelPolicy:
+    profile: verification
+    allowedProviders: [openai, anthropic]
+    temperature: 0
+    fallbackAllowed: true
+    dataUse: NO_PROVIDER_TRAINING
+    maxOutputTokens: 12000
+  input: {schema: VerificationTask, version: 1.0.0}
+  output: {schema: VerificationReport, version: 1.0.0}
+  skills: []
+  tools: []
+  limits: {maxTurns: 6, maxToolCalls: 0, maxCorrectionLoops: 2, maxInputTokens: 120000, maxOutputTokens: 12000, maxRuntimeSeconds: 180, maxCostUsd: 3.0, onExhaustion: PAUSE_AND_RECORD}
+  hooks:
+    SessionStart: [load-exact-plan-and-accepted-hypotheses]
+    PreAgentInvoke: [verify-independent-context-and-input-hashes]
+    PreToolUse: [deny-all-tools]
+    PostToolUse: [reject-unexpected-tool-result]
+    PostAgentResult: [validate-verification-report-schema]
+    BeforeFinal: [enforce-correction-limit-and-compliance-boundary]
+    Stop: [persist-immutable-verification-report]
+    OnFailure: [block-and-route-to-human-review]
+  releaseGate:
+    evalSuite: {name: verification-release, version: 1.0.0}
+    minimumPassRate: 0.95
+    criticalFailuresAllowed: 0
+    minimumTrialsPerProbabilisticCase: 3
+    metrics:
+      - {metric: seeded_unsupported_claim_detection, operator: GTE, threshold: 0.95}
+      - {metric: invalid_citation_acceptance_rate, operator: EQ, threshold: 0}
+      - {metric: prohibited_conclusion_acceptance_rate, operator: EQ, threshold: 0}
+    requiredApproval: AGENT_RELEASE_APPROVAL

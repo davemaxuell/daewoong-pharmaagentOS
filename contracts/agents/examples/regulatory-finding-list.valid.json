@@ -1,0 +1,42 @@
+{
+  "schema_version": "2.0.0",
+  "taxonomy_version": "drug-taxonomy-v1.0.0",
+  "findings": [
+    {
+      "finding_id": "rf-001",
+      "source_version_id": "00000000-0000-0000-0000-000000000101",
+      "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Laboratory investigation records were incomplete",
+      "finding_text": "FDA stated that the laboratory investigation did not include a documented review of all relevant chromatographic data.",
+      "quality_system_categories": [
+        "Laboratory Controls / Method Validation / Microbiology",
+        "Deviations / Investigations / OOS / OOT / CAPA"
+      ],
+      "process_lenses": ["retrospective"],
+      "regulatory_references": [
+        {
+          "reference": "21 CFR 211.192",
+          "evidence_anchor_ids": ["violation-1"]
+        }
+      ],
+      "fda_requested_actions": [
+        {
+          "action": "Provide a retrospective assessment of laboratory investigations.",
+          "evidence_anchor_ids": ["violation-1"]
+        }
+      ],
+      "evidence": [
+        {
+          "source_version_id": "00000000-0000-0000-0000-000000000101",
+          "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "anchor_id": "violation-1",
+          "excerpt": "Your laboratory investigation did not include a documented review of all relevant chromatographic data under 21 CFR 211.192. Provide a retrospective assessment of laboratory investigations.",
+          "excerpt_sha256": "ae6fbbe2f7504cdaeb68fe44b286d1019a6755a634af1e36c085611802fc43cf",
+          "evidence_class": "PRIMARY_AUTHORITATIVE"
+        }
+      ],
+      "confidence": 0.96,
+      "extraction_warnings": []
+    }
+  ]
+}

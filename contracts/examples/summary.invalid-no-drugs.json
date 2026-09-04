@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "document_identity": {
+    "company_name": "Out of Scope Biologic Example",
+    "document_type": "warning_letter",
+    "marcs_cms_number": null,
+    "issue_date": null,
+    "posted_date": null,
+    "issuing_offices": [],
+    "source_url": "https://www.fda.gov/warning-letters/out-of-scope-example"
+  },
+  "executive_summary": "This payload must be rejected because its Product scope does not contain Drugs.",
+  "scope": {
+    "product_types": [
+      "Biologics"
+    ],
+    "drug_subtypes": [],
+    "facility_types": []
+  },
+  "violations": [],
+  "response_deadline": null,
+  "enforcement_consequences": [],
+  "uncertainties": []
+}
+

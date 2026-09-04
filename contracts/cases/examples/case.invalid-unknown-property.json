@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "11111111-1111-4111-8111-111111111111",
+  "tenant_id": "portfolio-demo",
+  "title": "FDA warning letter regulatory impact review",
+  "objective": "Identify evidence-backed FDA findings.",
+  "state": "DRAFT",
+  "priority": "HIGH",
+  "owner_user_id": "regulatory-analyst-001",
+  "qa_reviewer_user_id": null,
+  "workflow_template": {
+    "name": "regulatory-impact-review",
+    "version": "1.0.0"
+  },
+  "internal_scope": {
+    "mode": "NONE",
+    "asset_ids": [],
+    "domains": ["REGULATORY_EVIDENCE"],
+    "data_classifications": ["PUBLIC"]
+  },
+  "state_version": 1,
+  "current_state_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "source_freshness": "CURRENT",
+  "created_by_user_id": "regulatory-analyst-001",
+  "created_at": "2026-09-04T01:00:00Z",
+  "updated_at": "2026-09-04T01:00:00Z",
+  "closed_at": null,
+  "model_may_expand_scope": true
+}

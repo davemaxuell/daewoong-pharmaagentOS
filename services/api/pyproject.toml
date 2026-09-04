@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fda-drug-warning-api"
+version = "0.1.0"
+description = "Evidence-first FDA Product: Drugs warning-letter intelligence API"
+requires-python = ">=3.12"
+dependencies = [
+  "aiosqlite>=0.20,<1",
+  "asyncpg>=0.30,<1",
+  "beautifulsoup4>=4.12,<5",
+  "boto3>=1.42,<2",
+  "fastapi>=0.115,<1",
+  "httpx>=0.28,<1",
+  "lxml>=5.3,<7",
+  "langgraph>=1.2.11,<2",
+  "openpyxl>=3.1,<4",
+  "opentelemetry-api>=1.30,<2",
+  "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
+  "opentelemetry-instrumentation-fastapi>=0.51b0,<1",
+  "opentelemetry-sdk>=1.30,<2",
+  "pgvector>=0.4,<1",
+  "pydantic-settings>=2.7,<3",
+  "PyYAML>=6,<7",
+  "PyJWT[crypto]>=2.10,<3",
+  "sqlalchemy>=2.0.36,<3",
+  "temporalio>=1.10,<2",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0.3,<10",
+  "pytest-asyncio>=1,<2",
+  "pytest-cov>=6,<8",
+  "ruff>=0.9,<1",
+]
+
+[project.scripts]
+fda-intel = "app.cli:main"
+pharma-temporal-worker = "app.agent_platform.temporal.worker:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]

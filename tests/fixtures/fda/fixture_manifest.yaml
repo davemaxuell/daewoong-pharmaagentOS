@@ -1,0 +1,64 @@
+schema_version: "1.0"
+source_kind: synthetic_fda_compatible
+fixtures:
+  - path: drugs/cder_finished_rx.html
+    canonical_url: https://www.fda.gov/warning-letters/example-finished-rx-900001
+    expected_scope_status: IN_SCOPE_DRUGS
+    expected_product_classes: [Drugs]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: drugs/cder_otc.html
+    canonical_url: https://www.fda.gov/warning-letters/example-otc-900002
+    expected_scope_status: IN_SCOPE_DRUGS
+    expected_product_classes: [Drugs, Over-the-Counter Drugs]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: drugs/cder_api_with_lifecycle.html
+    canonical_url: https://www.fda.gov/warning-letters/example-api-900003
+    expected_scope_status: IN_SCOPE_DRUGS
+    expected_product_classes: [Drugs]
+    expected_body_non_empty: true
+    expected_lifecycle_links: [response, closeout]
+  - path: drugs/legacy_table_metadata.html
+    canonical_url: https://www.fda.gov/warning-letters/example-legacy-drug-900004
+    expected_scope_status: IN_SCOPE_DRUGS
+    expected_product_classes: [Drugs]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: out_of_scope/biologics.html
+    canonical_url: https://www.fda.gov/warning-letters/example-biologics-910001
+    expected_scope_status: OUT_OF_SCOPE
+    expected_product_classes: [Biologics]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: out_of_scope/medical_device.html
+    canonical_url: https://www.fda.gov/warning-letters/example-device-910002
+    expected_scope_status: OUT_OF_SCOPE
+    expected_product_classes: [Medical Devices]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: out_of_scope/food.html
+    canonical_url: https://www.fda.gov/warning-letters/example-food-910003
+    expected_scope_status: OUT_OF_SCOPE
+    expected_product_classes: [Food & Beverages]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: ambiguous/missing_product.html
+    canonical_url: https://www.fda.gov/warning-letters/example-missing-product-920001
+    expected_scope_status: AMBIGUOUS
+    expected_product_classes: []
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: ambiguous/empty_product.html
+    canonical_url: https://www.fda.gov/warning-letters/example-empty-product-920002
+    expected_scope_status: AMBIGUOUS
+    expected_product_classes: []
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+  - path: ambiguous/conflicting_product.html
+    canonical_url: https://www.fda.gov/warning-letters/example-conflicting-product-920003
+    expected_scope_status: AMBIGUOUS
+    expected_product_classes: [Drugs, Biologics]
+    expected_body_non_empty: true
+    expected_lifecycle_links: []
+

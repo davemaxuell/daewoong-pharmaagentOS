@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: fda-drug-intel
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - serviceaccounts.yaml
+  - workloads.yaml
+  - services.yaml
+  - pod-disruption-budgets.yaml
+  - network-policies.yaml
+  - agent-platform-workloads.yaml
+  - agent-platform-network-policies.yaml
+  - backup.yaml

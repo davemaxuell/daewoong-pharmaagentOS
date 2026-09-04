@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pharma-orchestrator
+  labels: &orchestrator-labels
+    app.kubernetes.io/name: pharma-orchestrator
+    app.kubernetes.io/component: workflow-worker
+    app.kubernetes.io/part-of: pharma-agent-os
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pharma-orchestrator
+  template:
+    metadata:
+      labels: *orchestrator-labels
+    spec:
+      serviceAccountName: pharma-orchestrator
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: temporal-worker
+          image: registry.example.invalid/daewoong/fda-api@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          command: ["pharma-temporal-worker"]
+          envFrom:
+            - configMapRef: { name: fda-runtime-config }
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: pharma-orchestrator-runtime, key: database-url } }
+          volumeMounts:
+            - { name: temporal-mtls, mountPath: /var/run/secrets/temporal, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+          resources:
+            requests: { cpu: 200m, memory: 384Mi, ephemeral-storage: 128Mi }
+            limits: { cpu: "2", memory: 1Gi, ephemeral-storage: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+      volumes:
+        - name: temporal-mtls
+          secret: { secretName: pharma-temporal-mtls }
+        - name: tmp
+          emptyDir: { sizeLimit: 128Mi }
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pharma-mcp-gateway
+  labels: &mcp-labels
+    app.kubernetes.io/name: pharma-mcp-gateway
+    app.kubernetes.io/component: private-tool-gateway
+    app.kubernetes.io/part-of: pharma-agent-os
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pharma-mcp-gateway
+  template:
+    metadata:
+      labels: *mcp-labels
+    spec:
+      serviceAccountName: pharma-mcp-gateway
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: gateway
+          image: registry.example.invalid/daewoong/fda-api@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          command:
+            - uvicorn
+            - app.agent_platform.mcp.server:private_mcp_app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8001"
+            - --no-access-log
+          ports: [{ name: http, containerPort: 8001 }]
+          envFrom:
+            - configMapRef: { name: fda-runtime-config }
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: pharma-mcp-runtime, key: database-url } }
+            - name: OIDC_PUBLIC_KEY
+              valueFrom: { secretKeyRef: { name: pharma-mcp-runtime, key: service-token-public-key } }
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }
+            limits: { cpu: "1", memory: 768Mi, ephemeral-storage: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 128Mi }
+      terminationGracePeriodSeconds: 30

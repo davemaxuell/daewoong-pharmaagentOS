@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/tool-bundle/v1.0.0",
+  "title": "PharmaAgent OS MCP ToolBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "pharmaagent.io/v1" },
+    "kind": { "const": "ToolBundle" },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "owner", "releaseState", "definitionHash"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "version": { "$ref": "#/$defs/semver" },
+        "owner": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "releaseState": { "enum": ["DRAFT", "DEVELOPMENT", "TESTING", "STAGING", "APPROVED", "PRODUCTION", "SUSPENDED", "RETIRED"] },
+        "definitionHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "permission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowlisted", "enforcementHook", "requiredScopes", "approval", "sourcePinRequired", "modelMaySupplyRuntimeContext", "requiredRuntimeContext"],
+      "properties": {
+        "allowlisted": { "const": true },
+        "enforcementHook": { "const": "PreToolUse" },
+        "requiredScopes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+$" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "approval": { "enum": ["NOT_REQUIRED", "COVERED_BY_APPROVED_PLAN", "EXPLICIT_ACTION_APPROVAL"] },
+        "sourcePinRequired": { "type": "boolean" },
+        "modelMaySupplyRuntimeContext": { "const": false },
+        "requiredRuntimeContext": {
+          "type": "array",
+          "items": { "enum": ["user_id", "tenant_id", "case_id", "run_id", "agent_name", "agent_version", "runtime_service", "idempotency_key"] },
+          "uniqueItems": true,
+          "minItems": 8,
+          "maxItems": 8
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeoutSeconds", "maximumAttempts", "retryPolicy", "idempotencyKeyRequired"],
+      "properties": {
+        "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 120 },
+        "maximumAttempts": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "retryPolicy": { "enum": ["NONE", "TRANSIENT_ONLY"] },
+        "idempotencyKeyRequired": { "const": true }
+      }
+    },
+    "outputLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximumItems", "maximumResultCharacters", "maximumExcerptCharacters"],
+      "properties": {
+        "maximumItems": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maximumResultCharacters": { "type": "integer", "minimum": 1, "maximum": 200000 },
+        "maximumExcerptCharacters": { "type": "integer", "minimum": 1, "maximum": 10000 }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "description", "sideEffect", "riskClass", "dataClassification", "trustLevel", "defaultPolicy", "permission", "execution", "outputLimits", "inputSchema", "resultSchema", "auditFields"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$" },
+        "version": { "$ref": "#/$defs/semver" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "sideEffect": { "enum": ["NONE", "INTERNAL_DRAFT"] },
+        "riskClass": { "enum": ["R0", "R1"] },
+        "dataClassification": { "enum": ["PUBLIC_REGULATORY", "INTERNAL", "CONFIDENTIAL"] },
+        "trustLevel": { "enum": ["AUTHORITATIVE_EXTERNAL", "GOVERNED_INTERNAL"] },
+        "defaultPolicy": { "const": "DENY" },
+        "permission": { "$ref": "#/$defs/permission" },
+        "execution": { "$ref": "#/$defs/execution" },
+        "outputLimits": { "$ref": "#/$defs/outputLimits" },
+        "inputSchema": { "type": "object" },
+        "resultSchema": { "type": "object" },
+        "auditFields": {
+          "type": "array",
+          "items": { "enum": ["user_id", "tenant_id", "case_id", "run_id", "agent_name", "agent_version", "tool_name", "tool_version", "arguments_hash", "policy_decision", "source_version_ids", "result_hash", "latency_ms"] },
+          "uniqueItems": true,
+          "minItems": 13,
+          "maxItems": 13
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["server", "transport", "credentialPolicy", "egressPolicy", "tools"],
+      "properties": {
+        "server": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "transport": { "enum": ["STDIO", "STREAMABLE_HTTP"] },
+        "credentialPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["audienceBound", "tokenForwarding", "modelCredentialAccess"],
+          "properties": {
+            "audienceBound": { "const": true },
+            "tokenForwarding": { "const": "PROHIBITED" },
+            "modelCredentialAccess": { "const": "PROHIBITED" }
+          }
+        },
+        "egressPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "destinations"],
+          "properties": {
+            "mode": { "enum": ["ALLOWLIST_ONLY", "DENY_ALL"] },
+            "destinations": {
+              "type": "array",
+              "items": { "type": "string", "format": "hostname" },
+              "uniqueItems": true,
+              "minItems": 0,
+              "maxItems": 20
+            }
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tool" },
+          "minItems": 1,
+          "maxItems": 50
+        }
+      }
+    }
+  }
+}

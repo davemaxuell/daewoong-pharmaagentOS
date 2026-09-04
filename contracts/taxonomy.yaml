@@ -1,0 +1,162 @@
+schema_version: "1.0"
+taxonomy_version: "drug-taxonomy-v1.0.0"
+status: proposed
+effective_date: "2026-08-29"
+scope:
+  source_authority: U.S. FDA canonical warning-letter metadata
+  required_product_class: Drugs
+  admission_rule: exact_normalized_product_class_contains_Drugs
+  note: Finding labels and drug subtypes never override the deterministic Product scope gate.
+
+categories:
+  - id: quality-unit-qa-oversight
+    label: Quality Unit / QA Oversight
+    description: Independence, authority, review, approval, and effectiveness of the quality unit.
+    aliases: [quality unit, QU, QA oversight, 21 CFR 211.22]
+  - id: documentation-gdp-batch-records
+    label: Documentation / GDP / Batch Records
+    description: Controlled records, contemporaneous documentation, master records, and batch traceability.
+    aliases: [GDP, batch record, master production record, documentation practices]
+  - id: data-integrity-computerized-systems-audit-trail
+    label: Data Integrity / Computerized Systems / Audit Trail
+    description: Data lifecycle controls, access, electronic records, audit trails, backup, and review.
+    aliases: [data integrity, audit trail, computerized system, electronic records]
+  - id: training-qualification-personnel
+    label: Training / Qualification / Personnel Practices
+    description: Role qualification, training effectiveness, hygiene, and personnel practices.
+    aliases: [training, qualification, personnel, 21 CFR 211.25]
+  - id: deviations-investigations-oos-oot-capa
+    label: Deviations / Investigations / OOS / OOT / CAPA
+    description: Investigation scope, root cause, impact assessment, corrective action, and effectiveness.
+    aliases: [deviation, investigation, OOS, OOT, CAPA, 21 CFR 211.192]
+  - id: aseptic-processing-sterility-media-fill
+    label: Aseptic Processing / Sterility Assurance / Media Fill
+    description: Aseptic controls, process simulation, sterilization, interventions, and sterility assurance.
+    aliases: [aseptic, sterility, media fill, process simulation, 21 CFR 211.113]
+  - id: contamination-control-cleaning-disinfection
+    label: Contamination Control / Cleaning / Disinfection
+    description: Cross-contamination prevention, cleaning validation, disinfection, and contamination-control strategy.
+    aliases: [cleaning, disinfection, contamination, cross-contamination]
+  - id: process-validation-ppq-cpv
+    label: Process Validation / PPQ / Continued Process Verification
+    description: Lifecycle process validation, PPQ, state of control, and continued process verification.
+    aliases: [process validation, PPQ, CPV, continued verification, state of control]
+  - id: equipment-qualification-calibration-maintenance
+    label: Equipment / Qualification / Calibration / Maintenance
+    description: Equipment design, qualification, calibration, preventive maintenance, and fitness for use.
+    aliases: [equipment, qualification, calibration, maintenance]
+  - id: facilities-utilities-hvac-water
+    label: Facilities / Utilities / HVAC / Water Systems
+    description: Facility design and controlled utilities including HVAC, water, gases, and environmental systems.
+    aliases: [facility, utility, HVAC, water system, purified water, WFI]
+  - id: laboratory-controls-method-validation-microbiology
+    label: Laboratory Controls / Method Validation / Microbiology
+    description: Laboratory governance, specifications, method validation/verification, sampling, and microbiology.
+    aliases: [laboratory control, analytical method, method validation, microbiology, 21 CFR 211.160]
+  - id: stability-expiry-retest-reserve-samples
+    label: Stability / Expiry / Retest / Reserve Samples
+    description: Stability programs, stability-indicating methods, expiry/retest dating, and reserve samples.
+    aliases: [stability, expiry, expiration, retest, reserve sample, 21 CFR 211.166]
+  - id: materials-components-suppliers-coa
+    label: Materials / Components / Supplier Qualification / COA Reliability
+    description: Incoming materials, supplier oversight, component testing, and certificate-of-analysis reliance.
+    aliases: [supplier qualification, materials, component, COA, certificate of analysis, 21 CFR 211.84]
+  - id: packaging-labeling-container-closure
+    label: Packaging / Labeling / Container-Closure
+    description: Packaging/label control, reconciliation, line clearance, and container-closure suitability.
+    aliases: [packaging, labeling, label control, container closure]
+  - id: complaints-adverse-events-recall-market-action
+    label: Complaints / Adverse Events / Recall / Market Action
+    description: Complaint and adverse-event handling, field alerts, recalls, and other market actions.
+    aliases: [complaint, adverse event, recall, field alert, market action]
+  - id: contract-manufacturing-laboratory-outsourcing
+    label: Contract Manufacturing / Contract Laboratory / Outsourced Activities
+    description: Quality agreements and oversight of contracted manufacturing, testing, and other outsourced work.
+    aliases: [contract manufacturer, contract laboratory, quality agreement, outsourced]
+  - id: api-manufacturing-ich-q7
+    label: API Manufacturing / ICH Q7-related CGMP
+    description: Active pharmaceutical ingredient manufacturing and ICH Q7-related CGMP expectations.
+    aliases: [API, active pharmaceutical ingredient, ICH Q7, drug substance]
+  - id: establishment-registration-listing-ndc
+    label: Drug Establishment Registration / Listing / NDC
+    description: Establishment registration, drug listing, National Drug Code, and associated records.
+    aliases: [registration, drug listing, NDC, establishment]
+  - id: misbranding-unapproved-drug-marketing-authorization
+    label: Misbranding / Unapproved Drug / Marketing Authorization
+    description: Unapproved new drugs, misbranding, labeling claims, and marketing-authorization status.
+    aliases: [misbranding, unapproved drug, marketing authorization, intended use]
+  - id: distribution-warehousing-supply-chain
+    label: Distribution / Warehousing / Supply Chain
+    description: Storage, distribution, traceability, transportation, and supply-chain controls.
+    aliases: [distribution, warehousing, storage, transportation, supply chain]
+  - id: change-management
+    label: Change Management
+    description: Assessment, approval, implementation, and effectiveness of controlled changes.
+    aliases: [change control, change management]
+  - id: other-drug-regulatory-cgmp
+    label: Other Drug Regulatory / CGMP
+    description: Drug-related regulatory or CGMP finding that does not fit another approved category.
+    aliases: [other drug regulatory, other CGMP]
+
+drug_subtypes:
+  - id: finished-pharmaceutical
+    label: Finished pharmaceutical
+  - id: prescription-drug
+    label: Prescription drug
+  - id: otc-drug
+    label: OTC drug
+  - id: api
+    label: API
+  - id: sterile-drug
+    label: Sterile drug
+  - id: non-sterile-drug
+    label: Non-sterile drug
+  - id: compounded-context
+    label: Compounded/503A/503B-related context
+  - id: contract-manufacturer
+    label: Contract manufacturer
+  - id: contract-testing-laboratory
+    label: Contract testing laboratory
+  - id: registration-listing-enforcement
+    label: Registration/listing-focused enforcement
+  - id: other-unknown
+    label: Other/unknown
+
+process_lenses:
+  - id: preventive
+    label: Preventive
+    examples: [qualification, training, procedure design, validation, supplier qualification, change control, access control]
+  - id: monitoring
+    label: Monitoring
+    examples: [environmental monitoring, utility monitoring, calibration, ongoing stability, audit-trail review, IPC, QC testing, trending]
+  - id: retrospective
+    label: Retrospective
+    examples: [investigation, root cause, CAPA, complaint review, effectiveness check, recall, historical review]
+
+attention_levels:
+  levels:
+    - id: low
+      label: Low
+    - id: medium
+      label: Medium
+    - id: high
+      label: High
+    - id: unknown
+      label: Unknown
+  disclaimer: Internal triage aid only; not an FDA severity classification.
+
+comparison_point_policy:
+  prefix: "Internal comparison questions - human assessment required"
+  grammatical_form: question
+  prohibited_conclusions:
+    - Daewoong gap
+    - noncompliant
+    - regulation changed
+    - FDA-approved corrective action
+    - compliant
+
+change_control:
+  owner: Regulatory Intelligence / QA product owner
+  requires_regression_evaluation: true
+  retain_historical_versions: true
+  breaking_change_rule: Removing or semantically changing an identifier requires a new major taxonomy version.

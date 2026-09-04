@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pharmaagent.example.internal/contracts/agents/regulatory-finding-list/2.0.0",
+  "title": "RegulatoryFindingList",
+  "description": "Draft-only, evidence-backed findings extracted from exact retained FDA document versions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "taxonomy_version", "findings"],
+  "properties": {
+    "schema_version": { "const": "2.0.0" },
+    "taxonomy_version": {
+      "type": "string",
+      "pattern": "^drug-taxonomy-v[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "maxLength": 80
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" },
+      "minItems": 1,
+      "maxItems": 50
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "anchorId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 256
+    },
+    "anchorIdList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/anchorId" },
+      "minItems": 1,
+      "maxItems": 20,
+      "uniqueItems": true
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_version_id",
+        "source_hash",
+        "anchor_id",
+        "excerpt",
+        "excerpt_sha256",
+        "evidence_class"
+      ],
+      "properties": {
+        "source_version_id": { "type": "string", "format": "uuid" },
+        "source_hash": { "$ref": "#/$defs/sha256" },
+        "anchor_id": { "$ref": "#/$defs/anchorId" },
+        "excerpt": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "excerpt_sha256": { "$ref": "#/$defs/sha256" },
+        "evidence_class": { "const": "PRIMARY_AUTHORITATIVE" }
+      }
+    },
+    "regulatoryReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "evidence_anchor_ids"],
+      "properties": {
+        "reference": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence_anchor_ids": { "$ref": "#/$defs/anchorIdList" }
+      }
+    },
+    "requestedAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "evidence_anchor_ids"],
+      "properties": {
+        "action": { "type": "string", "minLength": 1, "maxLength": 3000 },
+        "evidence_anchor_ids": { "$ref": "#/$defs/anchorIdList" }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "evidence_anchor_ids"],
+      "properties": {
+        "code": {
+          "enum": [
+            "AMBIGUOUS_SCOPE",
+            "MISSING_CONTEXT",
+            "OCR_QUALITY",
+            "PARTIAL_SOURCE",
+            "OTHER"
+          ]
+        },
+        "message": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "evidence_anchor_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/anchorId" },
+          "maxItems": 20,
+          "uniqueItems": true
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "source_version_id",
+        "source_hash",
+        "title",
+        "finding_text",
+        "quality_system_categories",
+        "process_lenses",
+        "regulatory_references",
+        "fda_requested_actions",
+        "evidence",
+        "confidence",
+        "extraction_warnings"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "pattern": "^rf-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 80
+        },
+        "source_version_id": { "type": "string", "format": "uuid" },
+        "source_hash": { "$ref": "#/$defs/sha256" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "finding_text": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "quality_system_categories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "Quality Unit / QA Oversight",
+              "Documentation / GDP / Batch Records",
+              "Data Integrity / Computerized Systems / Audit Trail",
+              "Training / Qualification / Personnel Practices",
+              "Deviations / Investigations / OOS / OOT / CAPA",
+              "Aseptic Processing / Sterility Assurance / Media Fill",
+              "Contamination Control / Cleaning / Disinfection",
+              "Process Validation / PPQ / Continued Process Verification",
+              "Equipment / Qualification / Calibration / Maintenance",
+              "Facilities / Utilities / HVAC / Water Systems",
+              "Laboratory Controls / Method Validation / Microbiology",
+              "Stability / Expiry / Retest / Reserve Samples",
+              "Materials / Components / Supplier Qualification / COA Reliability",
+              "Packaging / Labeling / Container-Closure",
+              "Complaints / Adverse Events / Recall / Market Action",
+              "Contract Manufacturing / Contract Laboratory / Outsourced Activities",
+              "API Manufacturing / ICH Q7-related CGMP",
+              "Drug Establishment Registration / Listing / NDC",
+              "Misbranding / Unapproved Drug / Marketing Authorization",
+              "Distribution / Warehousing / Supply Chain",
+              "Change Management",
+              "Other Drug Regulatory / CGMP"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 22,
+          "uniqueItems": true
+        },
+        "process_lenses": {
+          "type": "array",
+          "items": { "enum": ["preventive", "monitoring", "retrospective"] },
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true
+        },
+        "regulatory_references": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/regulatoryReference" },
+          "maxItems": 50
+        },
+        "fda_requested_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requestedAction" },
+          "maxItems": 30
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" },
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "extraction_warnings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/warning" },
+          "maxItems": 20
+        }
+      }
+    }
+  }
+}

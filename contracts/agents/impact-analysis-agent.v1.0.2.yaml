@@ -1,0 +1,53 @@
+apiVersion: pharmaagent.io/v1
+kind: Agent
+metadata:
+  name: impact-analysis-agent
+  version: 1.0.2
+  owner: quality-ai-team
+  releaseState: APPROVED
+  definitionHash: "df2372f12bb1bac165608c7722e38e3d6954dae962365ef66cbdaebab1d591f5"
+spec:
+  description: Convert validated external findings and authorized internal candidates into explicit review hypotheses.
+  autonomyLevel: DRAFT_ONLY
+  riskLevel: R2
+  intendedUse:
+    - Propose evidence-linked relationships for qualified human review.
+    - Distinguish facts, derivations, assumptions, counterevidence, and unknowns.
+  prohibitedUse:
+    - Declare an internal GMP violation or compliance status.
+    - Decide that CAPA or a controlled-document revision is required.
+    - Search the unrestricted internal corpus or hide counterevidence.
+  modelPolicy:
+    profile: impact-analysis
+    allowedProviders: [openai, anthropic]
+    temperature: 0
+    fallbackAllowed: true
+    dataUse: NO_PROVIDER_TRAINING
+    maxOutputTokens: 12000
+  input: {schema: ImpactAnalysisTask, version: 1.0.0}
+  output: {schema: ImpactHypothesisList, version: 1.0.0}
+  skills: []
+  tools:
+    - {name: knowledge.get_asset, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:asset:read], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_related_assets, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:relation:read], approval: COVERED_BY_APPROVED_PLAN}
+    - {name: knowledge.get_anchor, version: 1.0.0, riskClass: R0, requiredScopes: [knowledge:anchor:read], approval: COVERED_BY_APPROVED_PLAN}
+  limits: {maxTurns: 8, maxToolCalls: 12, maxCorrectionLoops: 1, maxInputTokens: 100000, maxOutputTokens: 12000, maxRuntimeSeconds: 180, maxCostUsd: 3.0, onExhaustion: PAUSE_AND_RECORD}
+  hooks:
+    SessionStart: [load-case-identity-and-candidates]
+    PreAgentInvoke: [verify-agent-version-and-scope]
+    PreToolUse: [authorize-tool, apply-asset-acl, enforce-budget]
+    PostToolUse: [validate-tool-result, attach-provenance]
+    PostAgentResult: [validate-output-schema, validate-dual-evidence]
+    BeforeFinal: [block-compliance-conclusions]
+    Stop: [persist-outcome-and-usage]
+    OnFailure: [classify-retry-or-escalation]
+  releaseGate:
+    evalSuite: {name: impact-analysis-release, version: 1.0.0}
+    minimumPassRate: 0.95
+    criticalFailuresAllowed: 0
+    minimumTrialsPerProbabilisticCase: 3
+    metrics:
+      - {metric: dual_evidence_coverage, operator: EQ, threshold: 1.0}
+      - {metric: unsupported_mapping_rate, operator: EQ, threshold: 0}
+      - {metric: compliance_boundary_violations, operator: EQ, threshold: 0}
+    requiredApproval: AGENT_RELEASE_APPROVAL

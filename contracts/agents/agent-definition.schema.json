@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/agent-definition/v1.0.0",
+  "title": "PharmaAgent OS AgentDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "pharmaagent.io/v1" },
+    "kind": { "const": "Agent" },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "owner", "releaseState", "definitionHash"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "version": { "$ref": "#/$defs/semver" },
+        "owner": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "releaseState": {
+          "enum": ["DRAFT", "DEVELOPMENT", "TESTING", "STAGING", "APPROVED", "PRODUCTION", "SUSPENDED", "RETIRED"]
+        },
+        "definitionHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "versionedRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "toolRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "riskClass", "requiredScopes", "approval"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$" },
+        "version": { "$ref": "#/$defs/semver" },
+        "riskClass": { "enum": ["R0", "R1", "R2", "R3"] },
+        "requiredScopes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+$" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "approval": { "enum": ["NOT_REQUIRED", "COVERED_BY_APPROVED_PLAN", "EXPLICIT_ACTION_APPROVAL"] }
+      }
+    },
+    "modelPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "allowedProviders", "temperature", "fallbackAllowed", "dataUse", "maxOutputTokens"],
+      "properties": {
+        "profile": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "allowedProviders": {
+          "type": "array",
+          "items": { "enum": ["openai", "anthropic", "openai-compatible"] },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 3
+        },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "fallbackAllowed": { "type": "boolean" },
+        "dataUse": { "const": "NO_PROVIDER_TRAINING" },
+        "maxOutputTokens": { "type": "integer", "minimum": 1, "maximum": 200000 }
+      }
+    },
+    "ioContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "version"],
+      "properties": {
+        "schema": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]{1,127}$" },
+        "version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxTurns", "maxToolCalls", "maxCorrectionLoops", "maxInputTokens", "maxOutputTokens", "maxRuntimeSeconds", "maxCostUsd", "onExhaustion"],
+      "properties": {
+        "maxTurns": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maxToolCalls": { "type": "integer", "minimum": 0, "maximum": 500 },
+        "maxCorrectionLoops": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maxInputTokens": { "type": "integer", "minimum": 1, "maximum": 2000000 },
+        "maxOutputTokens": { "type": "integer", "minimum": 1, "maximum": 200000 },
+        "maxRuntimeSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+        "maxCostUsd": { "type": "number", "minimum": 0, "maximum": 10000 },
+        "onExhaustion": { "const": "PAUSE_AND_RECORD" }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["SessionStart", "PreAgentInvoke", "PreToolUse", "PostToolUse", "PostAgentResult", "BeforeFinal", "Stop", "OnFailure"],
+      "properties": {
+        "SessionStart": { "$ref": "#/$defs/hookList" },
+        "PreAgentInvoke": { "$ref": "#/$defs/hookList" },
+        "PreToolUse": { "$ref": "#/$defs/hookList" },
+        "PostToolUse": { "$ref": "#/$defs/hookList" },
+        "PostAgentResult": { "$ref": "#/$defs/hookList" },
+        "BeforeFinal": { "$ref": "#/$defs/hookList" },
+        "Stop": { "$ref": "#/$defs/hookList" },
+        "OnFailure": { "$ref": "#/$defs/hookList" }
+      }
+    },
+    "hookList": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "metricGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "operator", "threshold"],
+      "properties": {
+        "metric": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+        "operator": { "enum": ["GTE", "LTE", "EQ"] },
+        "threshold": { "type": "number", "minimum": 0 }
+      }
+    },
+    "releaseGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evalSuite", "minimumPassRate", "criticalFailuresAllowed", "minimumTrialsPerProbabilisticCase", "metrics", "requiredApproval"],
+      "properties": {
+        "evalSuite": { "$ref": "#/$defs/versionedRef" },
+        "minimumPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "criticalFailuresAllowed": { "const": 0 },
+        "minimumTrialsPerProbabilisticCase": { "type": "integer", "minimum": 3, "maximum": 100 },
+        "metrics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/metricGate" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 50
+        },
+        "requiredApproval": { "const": "AGENT_RELEASE_APPROVAL" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "autonomyLevel", "riskLevel", "intendedUse", "prohibitedUse", "modelPolicy", "input", "output", "skills", "tools", "limits", "hooks", "releaseGate"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "autonomyLevel": { "enum": ["ANSWER_ONLY", "DRAFT_ONLY", "APPROVAL_GATED_ACTION"] },
+        "riskLevel": { "enum": ["R0", "R1", "R2", "R3"] },
+        "intendedUse": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 30
+        },
+        "prohibitedUse": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 30
+        },
+        "modelPolicy": { "$ref": "#/$defs/modelPolicy" },
+        "input": { "$ref": "#/$defs/ioContract" },
+        "output": { "$ref": "#/$defs/ioContract" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/versionedRef" },
+          "uniqueItems": true,
+          "maxItems": 30
+        },
+        "tools": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/toolRef" },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "limits": { "$ref": "#/$defs/limits" },
+        "hooks": { "$ref": "#/$defs/hooks" },
+        "releaseGate": { "$ref": "#/$defs/releaseGate" }
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+# False-positive fingerprint for the retired idempotency test fixture in the initial commit.
+1db72c3dbca30a194fe2e4759cd0c45c7f3a52e7:services/api/tests/test_api.py:generic-api-key:180

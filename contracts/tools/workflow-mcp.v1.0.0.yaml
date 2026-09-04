@@ -1,0 +1,178 @@
+apiVersion: pharmaagent.io/v1
+kind: ToolBundle
+metadata:
+  name: workflow-mcp
+  version: 1.0.0
+  owner: agent-platform-team
+  releaseState: APPROVED
+  definitionHash: "a0896543a821f9ee474e9ede7219cd689af09e141186908d0cf1ec5f4ea2f67c"
+spec:
+  server: workflow-mcp
+  transport: STREAMABLE_HTTP
+  credentialPolicy: {audienceBound: true, tokenForwarding: PROHIBITED, modelCredentialAccess: PROHIBITED}
+  egressPolicy: {mode: DENY_ALL, destinations: []}
+  tools:
+    - name: workflow.create_internal_notification_draft
+      version: 1.0.0
+      description: Create a case-scoped internal notification draft without delivering it.
+      sideEffect: INTERNAL_DRAFT
+      riskClass: R1
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission: &draft_permission
+        allowlisted: true
+        enforcementHook: PreToolUse
+        requiredScopes: [workflow:draft:create]
+        approval: COVERED_BY_APPROVED_PLAN
+        sourcePinRequired: false
+        modelMaySupplyRuntimeContext: false
+        requiredRuntimeContext: &runtime_context [user_id, tenant_id, case_id, run_id, agent_name, agent_version, runtime_service, idempotency_key]
+      execution: &execution {timeoutSeconds: 10, maximumAttempts: 2, retryPolicy: TRANSIENT_ONLY, idempotencyKeyRequired: true}
+      outputLimits: &limits {maximumItems: 1, maximumResultCharacters: 12000, maximumExcerptCharacters: 4000}
+      inputSchema: &internal_input
+        type: object
+        additionalProperties: false
+        required: [destination, title, body]
+        properties:
+          destination: {type: string, minLength: 1, maxLength: 320}
+          title: {type: string, minLength: 3, maxLength: 300}
+          body: {type: string, minLength: 8, maxLength: 10000}
+      resultSchema: &result
+        $schema: https://json-schema.org/draft/2020-12/schema
+        oneOf:
+          - type: object
+            additionalProperties: false
+            required: [status, request_id, tool_name, tool_version, data, warnings]
+            properties:
+              status: {const: success}
+              request_id: {type: string, format: uuid}
+              tool_name: {type: string, pattern: "^workflow\\.[a-z][a-z0-9_]*$"}
+              tool_version: {const: 1.0.0}
+              data:
+                type: object
+                additionalProperties: false
+                required: [resource_type, draft_id, channel, draft_status, content_sha256, external_delivery_allowed, asset_id, asset_version_id, asset_key, title, revision, document_status, access_filtered, integration_mode]
+                properties:
+                  resource_type: {enum: [INTEGRATION_DRAFT, DOCUMENT_METADATA]}
+                  draft_id: {type: [string, "null"], format: uuid}
+                  channel: {type: [string, "null"]}
+                  draft_status: {type: [string, "null"]}
+                  content_sha256: {type: [string, "null"], pattern: "^[a-f0-9]{64}$"}
+                  external_delivery_allowed: {const: false}
+                  asset_id: {type: [string, "null"], format: uuid}
+                  asset_version_id: {type: [string, "null"], format: uuid}
+                  asset_key: {type: [string, "null"]}
+                  title: {type: [string, "null"]}
+                  revision: {type: [integer, "null"], minimum: 1}
+                  document_status: {type: [string, "null"]}
+                  access_filtered: {type: boolean}
+                  integration_mode: {enum: [DRAFT_ONLY, READ_ONLY]}
+              warnings: {type: array, items: {type: string, maxLength: 500}, maxItems: 10}
+          - type: object
+            additionalProperties: false
+            required: [status, request_id, tool_name, tool_version, error, next_valid_actions]
+            properties:
+              status: {const: error}
+              request_id: {type: string, format: uuid}
+              tool_name: {type: string, pattern: "^workflow\\.[a-z][a-z0-9_]*$"}
+              tool_version: {const: 1.0.0}
+              error:
+                type: object
+                additionalProperties: false
+                required: [code, message, retryable]
+                properties:
+                  code: {enum: [INVALID_ARGUMENTS, PERMISSION_DENIED, APPROVAL_REQUIRED, ACCESS_BLOCKED, CONFLICT, RATE_LIMITED, PROHIBITED_ACTION, INTERNAL_ERROR]}
+                  message: {type: string, minLength: 1, maxLength: 1000}
+                  retryable: {type: boolean}
+              next_valid_actions: {type: array, items: {type: string, pattern: "^[a-z][a-z0-9_]{1,63}$"}, uniqueItems: true, maxItems: 10}
+      auditFields: &audit [user_id, tenant_id, case_id, run_id, agent_name, agent_version, tool_name, tool_version, arguments_hash, policy_decision, source_version_ids, result_hash, latency_ms]
+
+    - name: workflow.create_email_draft
+      version: 1.0.0
+      description: Create an email draft in the internal outbox without SMTP or provider delivery.
+      sideEffect: INTERNAL_DRAFT
+      riskClass: R1
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission: {<<: *draft_permission, requiredScopes: [workflow:email-draft:create]}
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        <<: *internal_input
+        properties:
+          destination: {type: string, format: email, maxLength: 320}
+          title: {type: string, minLength: 3, maxLength: 300}
+          body: {type: string, minLength: 8, maxLength: 10000}
+      resultSchema: *result
+      auditFields: *audit
+
+    - name: workflow.create_collaboration_draft
+      version: 1.0.0
+      description: Create a Slack or Teams preview draft without posting a message.
+      sideEffect: INTERNAL_DRAFT
+      riskClass: R1
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission: {<<: *draft_permission, requiredScopes: [workflow:collaboration-draft:create]}
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [platform, destination, title, body]
+        properties:
+          platform: {enum: [SLACK, TEAMS]}
+          destination: {type: string, minLength: 1, maxLength: 320}
+          title: {type: string, minLength: 3, maxLength: 300}
+          body: {type: string, minLength: 8, maxLength: 10000}
+      resultSchema: *result
+      auditFields: *audit
+
+    - name: workflow.create_task_draft
+      version: 1.0.0
+      description: Create a Notion or approved task-system preview without creating an external task.
+      sideEffect: INTERNAL_DRAFT
+      riskClass: R1
+      dataClassification: INTERNAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission: {<<: *draft_permission, requiredScopes: [workflow:task-draft:create]}
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [system, destination, title, body]
+        properties:
+          system: {enum: [NOTION, TASK]}
+          destination: {type: string, minLength: 1, maxLength: 320}
+          title: {type: string, minLength: 3, maxLength: 300}
+          body: {type: string, minLength: 8, maxLength: 10000}
+      resultSchema: *result
+      auditFields: *audit
+
+    - name: workflow.read_document_metadata
+      version: 1.0.0
+      description: Read ACL-filtered metadata for one approved document revision without modifying the document system.
+      sideEffect: NONE
+      riskClass: R0
+      dataClassification: CONFIDENTIAL
+      trustLevel: GOVERNED_INTERNAL
+      defaultPolicy: DENY
+      permission:
+        <<: *draft_permission
+        requiredScopes: [workflow:document-metadata:read]
+        approval: COVERED_BY_APPROVED_PLAN
+        sourcePinRequired: true
+      execution: *execution
+      outputLimits: *limits
+      inputSchema:
+        type: object
+        additionalProperties: false
+        required: [asset_version_id]
+        properties: {asset_version_id: {type: string, format: uuid}}
+      resultSchema: *result
+      auditFields: *audit

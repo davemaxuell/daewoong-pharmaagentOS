@@ -1,0 +1,20 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fda-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fda-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fda-web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fda-web
+

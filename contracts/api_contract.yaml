@@ -1,0 +1,2883 @@
+openapi: 3.1.0
+info:
+  title: FDA Drug Warning Letter Intelligence API
+  version: 0.1.0
+  summary: Internal evidence-first API for FDA Product=Drugs warning letters
+  license:
+    name: Proprietary - Daewoong Pharmaceutical internal use
+    identifier: LicenseRef-Proprietary
+  description: >-
+    Draft implementation contract. Business endpoints always enforce canonical FDA
+    Product=Drugs scope server-side. Caller-controlled product-scope expansion is not supported.
+servers:
+  - url: /api/v1
+    description: Same-origin API base
+tags:
+  - name: Letters
+    description: Authorized Drug-only warning-letter browsing and immutable source history.
+  - name: Cases
+    description: Versioned agent cases, immutable source pins, reviewable plans, and hash-chained history.
+  - name: Changes
+    description: Versioned warning-letter lifecycle and source-state changes.
+  - name: RAG
+    description: Agent-routed grounded retrieval over the authorized FDA Product=Drugs corpus.
+  - name: Chat
+    description: Owner-scoped persistent conversations and model/retrieval preferences.
+  - name: Taxonomy
+    description: Active controlled pharmaceutical finding vocabulary.
+  - name: Reviews
+    description: Attributable human review of versioned AI-derived content.
+  - name: Administration
+    description: Controlled ingestion and reprocessing operations.
+  - name: Health
+    description: Orchestrator liveness and dependency-readiness probes.
+
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: live
+      summary: Process liveness
+      security: []
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: ready
+      summary: Service readiness
+      security: []
+      responses:
+        "200":
+          description: Required local dependencies are ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessStatus"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /letters:
+    get:
+      tags: [Letters]
+      operationId: listLetters
+      summary: List authorized, current in-scope Drug warning letters
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: posted_from
+          in: query
+          schema: { type: string, format: date }
+        - name: posted_to
+          in: query
+          schema: { type: string, format: date }
+        - name: issuing_office
+          in: query
+          schema: { type: string, maxLength: 300 }
+        - name: company
+          in: query
+          schema: { type: string, maxLength: 300 }
+        - name: drug_subtype
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: category
+          in: query
+          schema: { type: string, maxLength: 300 }
+        - name: process_lens
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProcessLens"
+        - name: regulatory_reference
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: has_response
+          in: query
+          schema: { type: boolean }
+        - name: has_closeout
+          in: query
+          schema: { type: boolean }
+        - name: review_state
+          in: query
+          schema:
+            $ref: "#/components/schemas/ReviewState"
+        - name: lifecycle_state
+          in: query
+          schema:
+            enum: [active, unavailable, closed, retired_by_retention]
+      responses:
+        "200":
+          description: Cursor page of authorized Drug letters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LetterPage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /letters/{letter_id}:
+    parameters:
+      - $ref: "#/components/parameters/LetterId"
+    get:
+      tags: [Letters]
+      operationId: getLetter
+      summary: Get one authorized Drug warning-letter lifecycle
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      responses:
+        "200":
+          description: Evidence-first letter detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LetterDetail"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /letters/{letter_id}/versions:
+    parameters:
+      - $ref: "#/components/parameters/LetterId"
+    get:
+      tags: [Letters]
+      operationId: listLetterVersions
+      summary: List retained source versions for an authorized Drug letter
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Immutable version metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionPage"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /letters/{letter_id}/ai-artifacts/{artifact_type}:
+    parameters:
+      - $ref: "#/components/parameters/LetterId"
+      - name: artifact_type
+        in: path
+        required: true
+        schema:
+          enum: [translation, findings, summary]
+    post:
+      tags: [Letters]
+      operationId: generateLetterAiArtifact
+      summary: Generate or reuse a source-version-bound Korean letter artifact
+      description: Returns a validated cached artifact when one already exists for the current retained FDA source version.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      responses:
+        "200":
+          description: Persisted translation, findings, or summary artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LetterAiArtifact"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "502":
+          description: Provider output failed closed validation
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /cases:
+    post:
+      tags: [Cases]
+      operationId: createCase
+      summary: Create a case with one exact retained Drug source-version pin
+      description: >-
+        Creates a case owned by the authenticated subject and pins the requested warning-letter
+        document version and canonical SHA-256. Replaying the same subject-scoped idempotency key
+        with the same body returns the original case with status 201.
+      x-required-roles: [analyst, system_owner]
+      x-idempotency-scope: authenticated-subject
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaseCreateRequest"
+      responses:
+        "201":
+          description: Created case with immutable source pin and controlled planning-state hash
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    get:
+      tags: [Cases]
+      operationId: listCases
+      summary: List cases visible to the authenticated identity
+      description: >-
+        Analysts see only cases they own. Reviewers, domain SMEs, system owners, and auditors see
+        all cases. Results are ordered by updated_at descending and then case ID.
+      x-required-roles: [analyst, reviewer, domain_sme, system_owner, auditor]
+      x-authorization-scope: analyst-owner-or-global-case-reader
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/CaseLimit"
+        - name: status
+          in: query
+          schema:
+            anyOf:
+              - $ref: "#/components/schemas/AgentCaseStatus"
+              - type: "null"
+      responses:
+        "200":
+          description: Cursor page of visible cases
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CasePage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+    get:
+      tags: [Cases]
+      operationId: getCase
+      summary: Get a case and its exact source pins
+      description: >-
+        Available to the case owner or a reviewer, domain SME, system owner, or auditor.
+      x-required-roles: [reviewer, domain_sme, system_owner, auditor]
+      x-owner-access: true
+      responses:
+        "200":
+          description: Case header and immutable source pins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}/plans:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+    post:
+      tags: [Cases]
+      operationId: createCasePlan
+      summary: Create an immutable plan version and its approval request
+      description: >-
+        The case-owner analyst or a system owner may create a plan. The objective must equal the
+        case planning-input objective, dependency references must point to preceding steps, and
+        every supplied registry version must be APPROVED or PRODUCTION. The assigned reviewer,
+        when present, must be independent from both the case owner and plan creator.
+      x-required-roles: [analyst, system_owner]
+      x-authorization-scope: analyst-must-own-case
+      x-idempotency-scope: authenticated-subject-and-case
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CasePlanCreateRequest"
+      responses:
+        "201":
+          description: Versioned plan bound to the exact case state and a pending approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CasePlanResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}/plans/{version}:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+      - $ref: "#/components/parameters/PlanVersion"
+    get:
+      tags: [Cases]
+      operationId: getCasePlan
+      summary: Get one immutable case-plan version and approval binding
+      description: >-
+        Available to the case owner or a reviewer, domain SME, system owner, or auditor.
+      x-required-roles: [reviewer, domain_sme, system_owner, auditor]
+      x-owner-access: true
+      responses:
+        "200":
+          description: Exact plan version, ordered steps, hashes, and approval state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CasePlanResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}/plans/{version}/approve:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+      - $ref: "#/components/parameters/PlanVersion"
+    post:
+      tags: [Cases]
+      operationId: decideCasePlan
+      summary: Approve or reject an exact current plan binding
+      description: >-
+        Only an independent reviewer may decide a pending, unexpired approval assigned to that
+        reviewer (or unassigned). The submitted plan and state hashes, approval binding, latest
+        plan version, case state, and awaiting-approval status must all still match. An expired
+        request is persistently closed and moves the case to NEEDS_REVISION before returning 409.
+      x-required-roles: [reviewer]
+      x-separation-of-duties: case-owner-and-plan-creator-denied
+      x-idempotency-scope: authenticated-subject-and-case
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanDecisionRequest"
+      responses:
+        "200":
+          description: Plan with terminal approval decision and attributable reviewer metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CasePlanResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}/events:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+    get:
+      tags: [Cases]
+      operationId: listCaseEvents
+      summary: List an ordered case event hash chain
+      description: >-
+        Available to the case owner or a reviewer, domain SME, system owner, or auditor. Events
+        are returned in ascending sequence order.
+      x-required-roles: [reviewer, domain_sme, system_owner, auditor]
+      x-owner-access: true
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/CaseEventLimit"
+      responses:
+        "200":
+          description: Cursor page of append-only case events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseEventPage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /cases/{case_id}/runs:
+    parameters:
+      - $ref: "#/components/parameters/CaseId"
+    post:
+      tags: [Case runs]
+      operationId: startCaseRun
+      summary: Start a durable run from the latest exactly approved plan
+      x-required-roles: [analyst, system_owner]
+      x-authorization-scope: analyst-must-own-case
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunStartRequest" }
+      responses:
+        "201":
+          description: Persisted run and queued first orchestration transition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /runs/{run_id}:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    get:
+      tags: [Case runs]
+      operationId: getCaseRun
+      summary: Get a durable run, checkpoint projection, and active invocation
+      x-required-roles: [analyst, reviewer, domain_sme, system_owner, auditor]
+      x-owner-access: true
+      responses:
+        "200":
+          description: Exact run binding and current persisted state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /runs/{run_id}/pause:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    post:
+      tags: [Case runs]
+      operationId: pauseCaseRun
+      summary: Interrupt an active run at its persisted boundary
+      x-required-roles: [analyst, system_owner]
+      x-owner-access: true
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunControlRequest" }
+      responses:
+        "200":
+          description: Paused run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /runs/{run_id}/resume:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    post:
+      tags: [Case runs]
+      operationId: resumeCaseRun
+      summary: Resume a paused run after revalidating all immutable release bindings
+      x-required-roles: [analyst, system_owner]
+      x-owner-access: true
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunControlRequest" }
+      responses:
+        "200":
+          description: Resumed or re-queued run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /runs/{run_id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    post:
+      tags: [Case runs]
+      operationId: cancelCaseRun
+      summary: Cancel a non-terminal run and close pending work
+      x-required-roles: [analyst, system_owner]
+      x-owner-access: true
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunControlRequest" }
+      responses:
+        "200":
+          description: Cancelled run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /runs/{run_id}/events:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    get:
+      tags: [Case runs]
+      operationId: listRunEvents
+      summary: Stream or page the ordered run-event hash chain
+      x-required-roles: [analyst, reviewer, domain_sme, system_owner, auditor]
+      x-owner-access: true
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/RunEventLimit"
+      responses:
+        "200":
+          description: Run timeline as JSON or newline-delimited JSON
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RunEventPage" }
+            application/x-ndjson:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /runs/{run_id}/steps/{step_key}/result:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+      - $ref: "#/components/parameters/StepKey"
+    post:
+      tags: [Case runs]
+      operationId: submitRunStepResult
+      summary: Submit one structured specialist result under enforced step limits
+      x-internal-runtime-endpoint: true
+      x-required-roles: [service, system_owner]
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StepResultRequest" }
+      responses:
+        "200":
+          description: Accepted result and queued next transition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /runs/{run_id}/steps/{step_key}/approval:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+      - $ref: "#/components/parameters/StepKey"
+    post:
+      tags: [Case runs]
+      operationId: decideRunStepApproval
+      summary: Independently approve or reject an exact step invocation
+      x-required-roles: [reviewer]
+      parameters:
+        - $ref: "#/components/parameters/CaseIdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StepApprovalDecisionRequest" }
+      responses:
+        "200":
+          description: Run after the attributable approval decision
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaseRunResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /changes:
+    get:
+      tags: [Changes]
+      operationId: listChanges
+      summary: List authorized Drug lifecycle changes
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: event_type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ChangeEventType"
+        - name: detected_from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: detected_to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Cursor page of changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /rag/query:
+    post:
+      tags: [RAG]
+      operationId: queryRag
+      summary: Ask a grounded question against authorized FDA Drug evidence
+      description: Authorization and the fixed FDA Product=Drugs filter are applied before lexical/vector retrieval.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagQueryRequest"
+      responses:
+        "200":
+          description: Grounded answer or explicit insufficient-evidence result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RagQueryResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /rag/query/stream:
+    post:
+      tags: [RAG]
+      operationId: streamRagQuery
+      summary: Stream a provisional grounded answer and finish with a durable response
+      description: >-
+        Uses the same request, authorization, retrieval, validation, citation, and persistence
+        contract as /rag/query. The response is UTF-8 NDJSON with exactly one RagStreamEvent per
+        line. draft_delta text is provisional and must be cleared for its attempt after a
+        draft_reset. Only complete.data is validated, committed, and authoritative. Provider
+        thought parts and signatures are never emitted or persisted.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagQueryRequest"
+      responses:
+        "200":
+          description: >-
+            NDJSON event stream. Runtime failures after streaming begins are represented by an
+            error event rather than a second HTTP response.
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: "#/components/schemas/RagStreamEvent"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /chat/threads:
+    get:
+      tags: [Chat]
+      operationId: listChatThreads
+      summary: List the authenticated caller's conversations
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: include_archived
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Caller-owned conversation page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Chat]
+      operationId: createChatThread
+      summary: Create an owner-scoped conversation
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatThreadCreate" }
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /chat/threads/{thread_id}:
+    parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Chat]
+      operationId: getChatThread
+      summary: Read one caller-owned conversation and its messages
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      responses:
+        "200":
+          description: Conversation detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    patch:
+      tags: [Chat]
+      operationId: updateChatThread
+      summary: Change title, model, retrieval, scope, or archive state
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatThreadPatch" }
+      responses:
+        "200":
+          description: Updated conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [Chat]
+      operationId: archiveChatThread
+      summary: Archive one caller-owned conversation
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      responses:
+        "204": { description: Conversation archived }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /chat/threads/{thread_id}/focus:
+    parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Chat]
+      operationId: focusChatThreadOnCitation
+      summary: Focus a conversation on a document cited by one completed assistant answer
+      description: >-
+        Resolves the citation's current admitted Drug warning-letter document and version on
+        the server, persists exact provenance, and changes retrieval to that single letter.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatDocumentFocusSelect" }
+      responses:
+        "200":
+          description: Conversation focused on the cited current document
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [Chat]
+      operationId: clearChatThreadFocus
+      summary: Clear the selected document and active-letter scope from a conversation
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      responses:
+        "200":
+          description: Conversation with document focus cleared
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatThreadDetail" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /chat/threads/{thread_id}/messages/{client_message_id}/cancel:
+    parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: client_message_id
+        in: path
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 100 }
+    post:
+      tags: [Chat]
+      operationId: cancelPendingChatMessage
+      summary: Cancel one caller-owned pending assistant response
+      description: >-
+        Idempotently marks the pending assistant response for the supplied client message ID as
+        cancelled. A response that has already reached a terminal state is returned unchanged.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator]
+      responses:
+        "200":
+          description: Cancelled response, or the existing terminal response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /taxonomy:
+    get:
+      tags: [Taxonomy]
+      operationId: getTaxonomy
+      summary: Get the active controlled Drug taxonomy
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      responses:
+        "200":
+          description: Active taxonomy and version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Taxonomy"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /saved-views:
+    get:
+      tags: [Letters]
+      operationId: listSavedViews
+      summary: List the caller's saved Drug-letter views and subscriptions
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Cursor page of caller-owned saved views
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedViewPage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Letters]
+      operationId: createSavedView
+      summary: Persist a caller-owned Drug-letter filter set and alert cadence
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedViewCreate" }
+      responses:
+        "201":
+          description: Persisted caller-owned saved view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /saved-views/{saved_view_id}:
+    parameters:
+      - name: saved_view_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [Letters]
+      operationId: updateSavedView
+      summary: Update one caller-owned saved view
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedViewPatch" }
+      responses:
+        "200":
+          description: Updated saved view with evaluated matches and alert readiness
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [Letters]
+      operationId: deleteSavedView
+      summary: Delete one caller-owned saved view
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      responses:
+        "204": { description: Saved view deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /reviews:
+    get:
+      tags: [Reviews]
+      operationId: listReviewQueue
+      summary: List versioned in-scope Drug summaries for human review
+      x-required-roles: [reviewer]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: page_size
+          in: query
+          description: Compatibility alias for limit used by the review console.
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: view
+          in: query
+          description: Queue view; open includes pending and needs-revision work.
+          schema: { enum: [open, high_attention, all], default: open }
+        - name: state
+          in: query
+          description: Optional exact-state override for audit and compatibility clients.
+          schema:
+            $ref: "#/components/schemas/ReviewState"
+      responses:
+        "200":
+          description: Cursor page of review work
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewQueuePage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/ingestion-runs:
+    get:
+      tags: [Administration]
+      operationId: listIngestionRuns
+      summary: List ingestion and reprocessing runs
+      x-required-roles: [system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/JobStatus"
+      responses:
+        "200":
+          description: Cursor page of ingestion runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionRunPage"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Administration]
+      operationId: createIngestionRun
+      summary: Queue a controlled ingestion run
+      x-required-roles: [system_administrator]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIngestionRun"
+      responses:
+        "202":
+          description: Run accepted or prior idempotent result returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionRun"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /admin/runtime-configuration:
+    get:
+      tags: [Administration]
+      operationId: getRuntimeConfiguration
+      summary: Get active non-secret runtime component versions
+      x-required-roles: [system_administrator, security_auditor]
+      responses:
+        "200":
+          description: Active runtime versions and AI activation state; never includes credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeConfiguration"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/notification-settings:
+    get:
+      tags: [Administration]
+      operationId: getNotificationSettings
+      summary: Get the warning-letter email target and non-secret delivery status
+      x-required-roles: [system_administrator, security_auditor]
+      responses:
+        "200":
+          description: Current automatic NEW/UPDATED email configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      tags: [Administration]
+      operationId: updateNotificationSettings
+      summary: Change the warning-letter email target or enablement
+      x-required-roles: [system_administrator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettingsPatch"
+      responses:
+        "200":
+          description: Updated notification configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /admin/letters/{letter_id}/reprocess:
+    parameters:
+      - $ref: "#/components/parameters/LetterId"
+    post:
+      tags: [Administration]
+      operationId: reprocessLetter
+      summary: Queue controlled reprocessing without changing source evidence
+      x-required-roles: [system_administrator]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReprocessRequest"
+      responses:
+        "202":
+          description: Reprocessing accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /reviews/{summary_id}:
+    parameters:
+      - name: summary_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [Reviews]
+      operationId: reviewSummary
+      summary: Approve, reject, or request revision of a versioned AI summary
+      x-required-roles: [reviewer]
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/ReviewRequest"
+      responses:
+        "200":
+          description: Recorded review decision and new review state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewResult"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+components:
+  securitySchemes:
+    corporateOidc:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        A short-lived RS256 web-session assertion. Google OAuth provider tokens remain in
+        Auth.js and are never forwarded to this API.
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor returned by the previous page; clients must not parse it.
+      schema:
+        type: string
+        maxLength: 2048
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    CaseLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    CaseEventLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    RunEventLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+    LetterId:
+      name: letter_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CaseId:
+      name: case_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    StepKey:
+      name: step_key
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z][a-z0-9_]{1,63}$'
+    PlanVersion:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated opaque key retained for safe retries.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 200
+    CaseIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated opaque key scoped by the service to the authenticated subject.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 200
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
+
+  responses:
+    BadRequest:
+      description: Malformed request or cursor
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Unauthorized:
+      description: Missing or invalid corporate identity
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Authenticated principal lacks required permission
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Resource not found or intentionally concealed by authorization
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: Request conflicts with current immutable version or workflow state
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PayloadTooLarge:
+      description: Declared request body exceeds the configured maximum size
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationError:
+      description: Strict request validation failed
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    TooManyRequests:
+      description: Route or user rate limit exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ServiceUnavailable:
+      description: Required dependency is unavailable
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { const: ok }
+    ReadinessStatus:
+      type: object
+      additionalProperties: false
+      required: [status, checks]
+      properties:
+        status: { enum: [ready, degraded] }
+        checks:
+          type: object
+          additionalProperties:
+            enum: [ok, unavailable]
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, request_id]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string, maxLength: 300 }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: [string, "null"], maxLength: 2000 }
+        instance: { type: [string, "null"], format: uri-reference }
+        request_id: { type: string, maxLength: 200 }
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, code]
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }
+
+    ReviewState:
+      enum: [pending, auto_approved, approved, needs_revision, rejected]
+    ScopeStatus:
+      enum: [UNVERIFIED, IN_SCOPE_DRUGS, OUT_OF_SCOPE, AMBIGUOUS, SCOPE_CHANGED]
+    ProcessLens:
+      enum: [preventive, monitoring, retrospective]
+    ChangeEventType:
+      enum: [NEW, UPDATED, RESPONSE_ADDED, CLOSEOUT_ADDED, SOURCE_UNAVAILABLE, RESTORED, PARSE_FAILED, SCOPE_CHANGED, CORPUS_RETIRED]
+    JobStatus:
+      enum: [queued, running, succeeded, failed, dead_letter, cancelled]
+
+    AgentCaseStatus:
+      enum:
+        - DRAFT
+        - PLANNING
+        - AWAITING_PLAN_APPROVAL
+        - READY
+        - RUNNING
+        - WAITING_FOR_INPUT
+        - WAITING_FOR_REVIEW
+        - NEEDS_REVISION
+        - COMPLETED
+        - BLOCKED
+        - FAILED
+        - CANCELLED
+        - STALE
+    CaseSourceRole:
+      enum: [PRIMARY_REGULATORY, SUPPORTING_REGULATORY]
+    ApprovalStatus:
+      enum: [PENDING, APPROVED, REJECTED, CANCELLED, EXPIRED]
+    PlanRiskLevel:
+      enum: [R0, R1, R2, R3]
+
+    CaseCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [title, objective, warning_letter_id, document_version_id]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        objective:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        workflow_key:
+          type: string
+          pattern: '^[a-z][a-z0-9-]{1,159}$'
+          default: regulatory-impact-review
+        warning_letter_id: { type: string, format: uuid }
+        document_version_id: { type: string, format: uuid }
+        source_role:
+          allOf:
+            - $ref: "#/components/schemas/CaseSourceRole"
+          default: PRIMARY_REGULATORY
+
+    CaseSourceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - case_id
+        - warning_letter_id
+        - document_id
+        - document_version_id
+        - document_version_number
+        - source_role
+        - source_sha256
+        - source_url
+        - pinned_by
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        warning_letter_id: { type: string, format: uuid }
+        document_id: { type: string, format: uuid }
+        document_version_id: { type: string, format: uuid }
+        document_version_number: { type: integer }
+        source_role:
+          $ref: "#/components/schemas/CaseSourceRole"
+        source_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        source_url: { type: string }
+        pinned_by: { type: string }
+        created_at: { type: string, format: date-time }
+        immutable:
+          type: boolean
+          const: true
+          default: true
+
+    CaseResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - objective
+        - status
+        - owner_subject
+        - workflow_key
+        - current_state_hash
+        - sources
+        - created_at
+        - updated_at
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        objective: { type: string }
+        status:
+          $ref: "#/components/schemas/AgentCaseStatus"
+        owner_subject: { type: string }
+        workflow_key: { type: string }
+        current_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CaseSourceResponse"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CasePage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CaseResponse"
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    StepLimits:
+      type: object
+      additionalProperties: false
+      properties:
+        max_turns:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 5
+        max_tool_calls:
+          type: integer
+          minimum: 0
+          maximum: 500
+          default: 20
+        max_input_tokens:
+          type: integer
+          minimum: 1
+          maximum: 2000000
+          default: 100000
+        max_output_tokens:
+          type: integer
+          minimum: 1
+          maximum: 200000
+          default: 20000
+        max_runtime_seconds:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          default: 300
+        max_cost_usd:
+          type: number
+          minimum: 0
+          maximum: 10000
+          default: 5.0
+
+    PlanStepCreate:
+      type: object
+      additionalProperties: false
+      required: [step_key, title, instructions, output_schema_ref, risk_level]
+      properties:
+        step_key:
+          type: string
+          pattern: '^[a-z][a-z0-9_]{1,63}$'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        instructions:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        depends_on:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '^[a-z][a-z0-9_]{1,63}$'
+          default: []
+        agent_version_id: { type: [string, "null"], format: uuid, default: null }
+        skill_version_ids:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: { type: string, format: uuid }
+          default: []
+        tool_version_ids:
+          type: array
+          maxItems: 30
+          uniqueItems: true
+          items: { type: string, format: uuid }
+          default: []
+        output_schema_ref:
+          type: string
+          minLength: 1
+          maxLength: 255
+        risk_level:
+          $ref: "#/components/schemas/PlanRiskLevel"
+        requires_approval: { type: boolean, default: false }
+        limits:
+          $ref: "#/components/schemas/StepLimits"
+
+    CasePlanCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [steps]
+      properties:
+        objective:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 4000
+          default: null
+        plan_schema_version:
+          type: string
+          const: 1.0.0
+          default: 1.0.0
+        steps:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/PlanStepCreate"
+        assigned_reviewer_id:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 255
+          default: null
+
+    PlanStepResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - position
+        - step_key
+        - title
+        - instructions
+        - depends_on
+        - agent_version_id
+        - skill_version_ids
+        - tool_version_ids
+        - output_schema_ref
+        - risk_level
+        - requires_approval
+        - limits
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer }
+        step_key: { type: string }
+        title: { type: string }
+        instructions: { type: string }
+        depends_on:
+          type: array
+          items: { type: string }
+        agent_version_id: { type: [string, "null"], format: uuid }
+        skill_version_ids:
+          type: array
+          items: { type: string, format: uuid }
+        tool_version_ids:
+          type: array
+          items: { type: string, format: uuid }
+        output_schema_ref: { type: string }
+        risk_level:
+          $ref: "#/components/schemas/PlanRiskLevel"
+        requires_approval: { type: boolean }
+        limits:
+          $ref: "#/components/schemas/StepLimits"
+        created_at: { type: string, format: date-time }
+
+    ApprovalResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - approval_type
+        - status
+        - requested_by
+        - assigned_reviewer_id
+        - decision_by
+        - decision_reason
+        - decided_at
+        - expires_at
+        - plan_sha256
+        - bound_state_hash
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        approval_type: { const: PLAN_APPROVAL }
+        status:
+          $ref: "#/components/schemas/ApprovalStatus"
+        requested_by: { type: string }
+        assigned_reviewer_id: { type: [string, "null"] }
+        decision_by: { type: [string, "null"] }
+        decision_reason: { type: [string, "null"] }
+        decided_at: { type: [string, "null"], format: date-time }
+        expires_at: { type: string, format: date-time }
+        plan_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        bound_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        created_at: { type: string, format: date-time }
+
+    CasePlanResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - case_id
+        - version
+        - objective
+        - plan_schema_version
+        - plan_sha256
+        - based_on_state_hash
+        - workflow_template_version_id
+        - prohibited_actions
+        - created_by
+        - created_at
+        - steps
+        - approval
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        version: { type: integer }
+        objective: { type: string }
+        plan_schema_version: { type: string }
+        plan_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        based_on_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        workflow_template_version_id:
+          type: [string, "null"]
+          format: uuid
+        prohibited_actions:
+          type: array
+          items: { type: string }
+        created_by: { type: string }
+        created_at: { type: string, format: date-time }
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanStepResponse"
+        approval:
+          $ref: "#/components/schemas/ApprovalResponse"
+
+    PlanDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision, expected_plan_sha256, expected_state_hash, reason]
+      properties:
+        decision: { enum: [approve, reject] }
+        expected_plan_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        expected_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    CaseEventResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - case_id
+        - sequence
+        - event_type
+        - actor_type
+        - actor_id
+        - request_id
+        - payload
+        - previous_event_hash
+        - event_hash
+        - state_hash
+        - occurred_at
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        sequence: { type: integer }
+        event_type: { type: string }
+        actor_type: { type: string }
+        actor_id: { type: string }
+        request_id: { type: string }
+        payload:
+          type: object
+          additionalProperties: true
+        previous_event_hash:
+          type: [string, "null"]
+          pattern: '^[a-f0-9]{64}$'
+        event_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        occurred_at: { type: string, format: date-time }
+
+    CaseEventPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CaseEventResponse"
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    RunStartRequest:
+      type: object
+      additionalProperties: false
+      required: [plan_version, expected_plan_sha256, expected_state_hash]
+      properties:
+        plan_version: { type: integer, minimum: 1 }
+        expected_plan_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        expected_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+
+    RunControlRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 2000 }
+
+    InvocationUsage:
+      type: object
+      additionalProperties: false
+      required: [turns, tool_calls, input_tokens, output_tokens, runtime_seconds, cost_usd]
+      properties:
+        turns: { type: integer, minimum: 0, default: 0 }
+        tool_calls: { type: integer, minimum: 0, default: 0 }
+        input_tokens: { type: integer, minimum: 0, default: 0 }
+        output_tokens: { type: integer, minimum: 0, default: 0 }
+        runtime_seconds: { type: number, minimum: 0, default: 0 }
+        cost_usd: { type: number, minimum: 0, default: 0 }
+
+    StepResultRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_invocation_id, output]
+      properties:
+        expected_invocation_id: { type: string, format: uuid }
+        output:
+          type: object
+          additionalProperties: true
+        usage:
+          $ref: "#/components/schemas/InvocationUsage"
+
+    StepApprovalDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision, expected_approval_id, reason]
+      properties:
+        decision: { enum: [approve, reject] }
+        expected_approval_id: { type: string, format: uuid }
+        reason: { type: string, minLength: 1, maxLength: 2000 }
+
+    WorkflowBindingResponse:
+      type: object
+      additionalProperties: false
+      required: [id, workflow_key, version, manifest_sha256]
+      properties:
+        id: { type: string, format: uuid }
+        workflow_key: { type: string }
+        version: { type: string }
+        manifest_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+
+    RunStepStateResponse:
+      type: object
+      additionalProperties: false
+      required: [status, attempt, invocation_id, approval_id, output_sha256, usage]
+      properties:
+        status:
+          enum: [PENDING, RUNNING, WAITING_FOR_APPROVAL, COMPLETED, BLOCKED, FAILED, CANCELLED]
+        attempt: { type: integer, minimum: 0 }
+        invocation_id: { type: [string, "null"], format: uuid }
+        approval_id: { type: [string, "null"], format: uuid }
+        output_sha256:
+          type: [string, "null"]
+          pattern: '^[a-f0-9]{64}$'
+        usage:
+          $ref: "#/components/schemas/InvocationUsage"
+
+    RunCheckpointResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - checkpoint_version
+        - step_key
+        - workflow_template
+        - steps
+        - budget
+        - pause_requested
+        - cancel_requested
+      properties:
+        schema_version: { const: pharmaagent-run-state@1.0.0 }
+        checkpoint_version: { type: integer, minimum: 1 }
+        step_key: { type: [string, "null"] }
+        workflow_template:
+          $ref: "#/components/schemas/WorkflowBindingResponse"
+        steps:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/RunStepStateResponse"
+        budget:
+          $ref: "#/components/schemas/InvocationUsage"
+        pause_requested: { type: boolean }
+        cancel_requested: { type: boolean }
+
+    AgentInvocationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - run_id
+        - case_id
+        - plan_step_id
+        - step_key
+        - attempt
+        - agent_version_id
+        - status
+        - output_schema_ref
+        - input_sha256
+        - output_sha256
+        - limits
+        - usage
+        - error_code
+        - started_at
+        - completed_at
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        run_id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        plan_step_id: { type: string, format: uuid }
+        step_key: { type: string }
+        attempt: { type: integer, minimum: 1 }
+        agent_version_id: { type: [string, "null"], format: uuid }
+        status:
+          enum: [PENDING, RUNNING, WAITING_FOR_APPROVAL, COMPLETED, BLOCKED, FAILED, CANCELLED]
+        output_schema_ref: { type: string }
+        input_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        output_sha256:
+          type: [string, "null"]
+          pattern: '^[a-f0-9]{64}$'
+        limits:
+          type: object
+          additionalProperties: true
+        usage:
+          $ref: "#/components/schemas/InvocationUsage"
+        error_code: { type: [string, "null"] }
+        started_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    CaseRunResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - case_id
+        - plan_id
+        - plan_version
+        - plan_sha256
+        - bound_state_hash
+        - status
+        - requested_by
+        - checkpoint
+        - active_invocation
+        - error_code
+        - started_at
+        - completed_at
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        plan_id: { type: string, format: uuid }
+        plan_version: { type: integer, minimum: 1 }
+        plan_sha256:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        bound_state_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        status:
+          enum: [PENDING, RUNNING, PAUSED, WAITING_FOR_APPROVAL, COMPLETED, BLOCKED, FAILED, CANCELLED]
+        requested_by: { type: string }
+        checkpoint:
+          $ref: "#/components/schemas/RunCheckpointResponse"
+        active_invocation:
+          anyOf:
+            - $ref: "#/components/schemas/AgentInvocationResponse"
+            - type: "null"
+        error_code: { type: [string, "null"] }
+        started_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    RunEventResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - run_id
+        - case_id
+        - sequence
+        - event_type
+        - actor_type
+        - actor_id
+        - request_id
+        - payload
+        - previous_event_hash
+        - event_hash
+        - occurred_at
+      properties:
+        id: { type: string, format: uuid }
+        run_id: { type: string, format: uuid }
+        case_id: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        event_type: { type: string }
+        actor_type: { type: string }
+        actor_id: { type: string }
+        request_id: { type: string }
+        payload:
+          type: object
+          additionalProperties: true
+        previous_event_hash:
+          type: [string, "null"]
+          pattern: '^[a-f0-9]{64}$'
+        event_hash:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        occurred_at: { type: string, format: date-time }
+
+    RunEventPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunEventResponse"
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    CursorPage:
+      type: object
+      properties:
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    LetterSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - company_name
+        - country
+        - canonical_url
+        - issuing_offices
+        - normalized_product_classes
+        - scope_status
+        - current_in_scope
+        - lifecycle_status
+        - first_seen_at
+        - last_seen_at
+      properties:
+        id: { type: string, format: uuid }
+        company_name: { type: string }
+        country: { type: [string, "null"] }
+        subject: { type: [string, "null"] }
+        canonical_url: { type: string, format: uri }
+        marcs_cms_number: { type: [string, "null"] }
+        issue_date: { type: [string, "null"], format: date }
+        posted_date: { type: [string, "null"], format: date }
+        issuing_offices:
+          type: array
+          items: { type: string }
+        normalized_product_classes:
+          type: array
+          contains: { const: Drugs }
+          items: { type: string }
+        scope_status: { const: IN_SCOPE_DRUGS }
+        current_in_scope: { const: true }
+        lifecycle_status: { enum: [active, unavailable, closed] }
+        drug_subtypes:
+          type: array
+          items: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        review_state: { $ref: "#/components/schemas/ReviewState" }
+        has_response: { type: boolean }
+        has_closeout: { type: boolean }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+
+    LetterPage:
+      allOf:
+        - $ref: "#/components/schemas/CursorPage"
+        - type: object
+          additionalProperties: false
+          required: [items, next_cursor, has_more, enforced_scope]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/LetterSummary" }
+            next_cursor: { type: [string, "null"] }
+            has_more: { type: boolean }
+            enforced_scope: { const: "FDA Product: Drugs" }
+
+    Evidence:
+      type: object
+      additionalProperties: false
+      required: [source_anchor, excerpt]
+      properties:
+        source_anchor: { type: string }
+        excerpt: { type: string }
+        official_url: { type: string, format: uri }
+
+    Finding:
+      type: object
+      additionalProperties: false
+      required: [id, label, finding, categories, process_lenses, regulatory_references, evidence, comparison_points, attention_level, confidence, review_state]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        finding: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        process_lenses:
+          type: array
+          items: { $ref: "#/components/schemas/ProcessLens" }
+        regulatory_references:
+          type: array
+          items: { type: string }
+        evidence:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/Evidence" }
+        fda_requested_actions:
+          type: array
+          items: { type: object }
+        comparison_points:
+          type: array
+          items: { type: string }
+        attention_level: { enum: [low, medium, high, unknown] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        review_state: { $ref: "#/components/schemas/ReviewState" }
+
+    DocumentVersion:
+      type: object
+      additionalProperties: false
+      required: [id, document_id, version_number, retrieved_at, raw_sha256, canonical_body_sha256, parser_version, scope_status, source_url]
+      properties:
+        id: { type: string, format: uuid }
+        document_id: { type: string, format: uuid }
+        version_number: { type: integer, minimum: 1 }
+        document_type: { enum: [warning_letter, response, closeout, attachment] }
+        retrieved_at: { type: string, format: date-time }
+        raw_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        canonical_body_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        parser_version: { type: string }
+        scope_status: { $ref: "#/components/schemas/ScopeStatus" }
+        source_url: { type: string, format: uri }
+        normalized_markdown: { type: [string, "null"] }
+
+    LetterDetail:
+      type: object
+      additionalProperties: false
+      required: [letter, documents, findings, ai_artifacts, lifecycle, enforced_scope]
+      properties:
+        letter: { $ref: "#/components/schemas/LetterSummary" }
+        executive_summary: { type: [string, "null"] }
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentVersion" }
+        findings:
+          type: array
+          items: { $ref: "#/components/schemas/Finding" }
+        ai_artifacts:
+          type: array
+          items: { $ref: "#/components/schemas/LetterAiArtifact" }
+        lifecycle:
+          type: array
+          items: { $ref: "#/components/schemas/ChangeEvent" }
+        enforced_scope: { const: "FDA Product: Drugs" }
+
+    LetterAiArtifact:
+      type: object
+      additionalProperties: false
+      required: [id, document_version_id, artifact_type, language, content, provider, model_id, prompt_version, source_hash, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        document_version_id: { type: string, format: uuid }
+        artifact_type: { enum: [translation, findings, summary] }
+        language: { const: ko }
+        content:
+          type: object
+          additionalProperties: true
+        provider: { type: string }
+        model_id: { type: string }
+        prompt_version: { type: string }
+        source_hash: { type: string, pattern: "^[0-9a-f]{64}$" }
+        created_at: { type: string, format: date-time }
+
+    VersionPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentVersion" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    ChangeEvent:
+      type: object
+      additionalProperties: false
+      required: [id, warning_letter_id, event_type, detected_at, notification_state]
+      properties:
+        id: { type: string, format: uuid }
+        warning_letter_id: { type: string, format: uuid }
+        document_id: { type: [string, "null"], format: uuid }
+        event_type: { $ref: "#/components/schemas/ChangeEventType" }
+        before_version_id: { type: [string, "null"], format: uuid }
+        after_version_id: { type: [string, "null"], format: uuid }
+        detected_at: { type: string, format: date-time }
+        published_at: { type: [string, "null"], format: date-time }
+        notification_state: { enum: [pending, sent, suppressed, failed] }
+
+    ChangePage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ChangeEvent" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    RagFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        letter_id: { type: [string, "null"], format: uuid }
+        letter_ids:
+          type: array
+          maxItems: 100
+          items: { type: string, format: uuid }
+        company: { type: [string, "null"], maxLength: 300 }
+        issuing_office: { type: [string, "null"], maxLength: 200 }
+        category: { type: [string, "null"], maxLength: 300 }
+        regulation: { type: [string, "null"], maxLength: 200 }
+        drug_subtype: { type: [string, "null"], maxLength: 150 }
+        issue_date_from: { type: [string, "null"], format: date }
+        issue_date_to: { type: [string, "null"], format: date }
+        posted_from: { type: string, format: date }
+        posted_to: { type: string, format: date }
+        issuing_offices:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 300 }
+        companies:
+          type: array
+          maxItems: 50
+          items: { type: string, maxLength: 300 }
+        drug_subtypes:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 200 }
+        categories:
+          type: array
+          maxItems: 30
+          items: { type: string, maxLength: 300 }
+        regulatory_references:
+          type: array
+          maxItems: 30
+          items: { type: string, maxLength: 200 }
+        include_responses: { type: boolean, default: true }
+        include_closeouts: { type: boolean, default: true }
+
+    RagConversationMessage:
+      type: object
+      additionalProperties: false
+      required: [role, content]
+      properties:
+        role: { enum: [user, assistant] }
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    RagQueryRequest:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 3
+          maxLength: 2000
+        language: { enum: [auto, en, ko], default: auto }
+        filters: { $ref: "#/components/schemas/RagFilters" }
+        conversation_history:
+          type: array
+          maxItems: 8
+          default: []
+          items: { $ref: "#/components/schemas/RagConversationMessage" }
+        max_sources: { type: integer, minimum: 1, maximum: 10, default: 5 }
+        product_scope: { type: [string, "null"], enum: [Drugs, null], default: null }
+        thread_id: { type: [string, "null"], format: uuid }
+        client_message_id: { type: [string, "null"], minLength: 1, maxLength: 100 }
+        retrieval_mode:
+          enum: [auto, none, metadata, letter, corpus]
+          default: auto
+          description: >-
+            auto lets the planner choose model-only conversation, metadata, a selected
+            letter, or corpus evidence. none permits model conversation without any
+            document retrieval; greetings and service help remain deterministic.
+        model_profile:
+          enum: [auto, fast, balanced, deep]
+          default: auto
+
+    Citation:
+      type: object
+      additionalProperties: false
+      required: [chunk_id, warning_letter_id, company_name, document_type, source_anchor, excerpt, source_url, score]
+      properties:
+        chunk_id: { type: string, format: uuid }
+        warning_letter_id: { type: string, format: uuid }
+        company_name: { type: string }
+        title: { type: [string, "null"] }
+        document_type: { type: string }
+        issue_date: { type: [string, "null"], format: date }
+        posted_date: { type: [string, "null"], format: date }
+        source_anchor: { type: string }
+        excerpt: { type: string }
+        source_url: { type: string, format: uri }
+        score: { type: number }
+        document_version_id: { type: [string, "null"], format: uuid }
+        source_version: { type: [string, "null"], maxLength: 100 }
+        source_hash: { type: [string, "null"], pattern: "^[0-9a-f]{64}$" }
+
+    RagQueryResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - query_id
+        - answer
+        - interpretation_label
+        - scope_label
+        - filters_applied
+        - evidence_sufficiency
+        - citations
+        - notice
+        - retrieval_strategy
+        - route_reason
+        - requested_model_profile
+        - effective_model_profile
+        - attempted_model_id
+        - effective_model_id
+        - generation_used
+        - generated_at
+      properties:
+        query_id: { type: string, format: uuid }
+        answer: { type: string }
+        interpretation_label: { enum: [source_facts, ai_synthesis, internal_comparison] }
+        scope_label: { const: "FDA Product: Drugs" }
+        filters_applied: { type: object, additionalProperties: true }
+        evidence_sufficiency:
+          description: >-
+            Sufficient when at least one selected citation matches two or more meaningful query
+            tokens; partial when citations exist but every selected citation matches only one;
+            insufficient when no citation is retrieved.
+          enum: [sufficient, partial, insufficient]
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+        notice: { type: string }
+        thread_id: { type: [string, "null"], format: uuid }
+        user_message_id: { type: [string, "null"], format: uuid }
+        assistant_message_id: { type: [string, "null"], format: uuid }
+        focused_document_version_id: { type: [string, "null"], format: uuid }
+        retrieval_strategy: { enum: [none, metadata, letter, multi_letter, corpus] }
+        route_reason: { type: string }
+        requested_model_profile: { enum: [auto, fast, balanced, deep] }
+        effective_model_profile: { enum: [fast, balanced, deep] }
+        attempted_model_id:
+          type: [string, "null"]
+          description: Provider model invoked, including an attempt whose output failed validation.
+        effective_model_id:
+          type: [string, "null"]
+          description: Provider model whose output is actually present in this answer.
+        generation_used:
+          type: boolean
+          description: True only when validated AI output is present in the returned answer.
+        generated_at: { type: string, format: date-time }
+
+    RagStreamEvent:
+      description: One UTF-8 JSON object followed by a newline.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, phase]
+          properties:
+            type: { const: phase }
+            phase: { enum: [retrieving, generating, validating] }
+        - type: object
+          additionalProperties: false
+          required: [type, attempt, text]
+          properties:
+            type: { const: draft_delta }
+            attempt: { type: integer, minimum: 1 }
+            text: { type: string, minLength: 1 }
+        - type: object
+          additionalProperties: false
+          required: [type, attempt]
+          properties:
+            type: { const: draft_reset }
+            attempt: { type: integer, minimum: 1 }
+        - type: object
+          additionalProperties: false
+          required: [type, data]
+          properties:
+            type: { const: complete }
+            data: { $ref: "#/components/schemas/RagQueryResponse" }
+        - type: object
+          additionalProperties: false
+          required: [type, code, message]
+          properties:
+            type: { const: error }
+            code: { type: string }
+            message: { type: string }
+
+    ChatThreadCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200, default: "새 대화" }
+        model_preference: { enum: [auto, fast, balanced, deep], default: auto }
+        retrieval_preference: { enum: [auto, none, metadata, letter, corpus], default: auto }
+        active_letter_ids:
+          type: array
+          maxItems: 20
+          default: []
+          items: { type: string, format: uuid }
+
+    ChatThreadPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        model_preference: { enum: [auto, fast, balanced, deep] }
+        retrieval_preference: { enum: [auto, none, metadata, letter, corpus] }
+        active_letter_ids:
+          type: array
+          maxItems: 20
+          items: { type: string, format: uuid }
+        archived: { type: boolean }
+
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - sequence
+        - role
+        - content
+        - status
+        - citations
+        - route_metadata
+        - model_metadata
+        - created_at
+        - updated_at
+      properties:
+        id: { type: string, format: uuid }
+        sequence: { type: integer, minimum: 1 }
+        role: { enum: [user, assistant] }
+        content: { type: string }
+        status: { enum: [pending, completed, failed, cancelled] }
+        client_message_id: { type: [string, "null"] }
+        rag_query_id: { type: [string, "null"], format: uuid }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+        route_metadata: { type: object, additionalProperties: true }
+        model_metadata: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChatDocumentFocusSelect:
+      type: object
+      additionalProperties: false
+      required: [assistant_message_id, chunk_id]
+      properties:
+        assistant_message_id: { type: string, format: uuid }
+        chunk_id: { type: string, format: uuid }
+
+    ChatDocumentFocus:
+      type: object
+      additionalProperties: false
+      required:
+        - warning_letter_id
+        - document_id
+        - document_version_id
+        - source_chunk_id
+        - source_message_id
+        - selected_at
+      properties:
+        warning_letter_id: { type: string, format: uuid }
+        document_id: { type: string, format: uuid }
+        document_version_id: { type: string, format: uuid }
+        source_chunk_id: { type: string, format: uuid }
+        source_message_id: { type: string, format: uuid }
+        selected_at: { type: string, format: date-time }
+
+    ChatThreadSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - model_preference
+        - retrieval_preference
+        - active_letter_ids
+        - focus
+        - created_at
+        - updated_at
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        model_preference: { enum: [auto, fast, balanced, deep] }
+        retrieval_preference: { enum: [auto, none, metadata, letter, corpus] }
+        active_letter_ids:
+          type: array
+          items: { type: string, format: uuid }
+        focus:
+          oneOf:
+            - $ref: "#/components/schemas/ChatDocumentFocus"
+            - type: "null"
+        archived_at: { type: [string, "null"], format: date-time }
+        last_message_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ChatThreadDetail:
+      allOf:
+        - $ref: "#/components/schemas/ChatThreadSummary"
+        - type: object
+          required: [messages]
+          properties:
+            messages:
+              type: array
+              items: { $ref: "#/components/schemas/ChatMessage" }
+
+    ChatThreadPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, limit, total, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ChatThreadSummary" }
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        has_more: { type: boolean }
+
+    TaxonomyItem:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        description: { type: [string, "null"] }
+    Taxonomy:
+      type: object
+      additionalProperties: false
+      required: [taxonomy_version, required_product_class, categories, drug_subtypes, process_lenses]
+      properties:
+        taxonomy_version: { type: string }
+        required_product_class: { const: Drugs }
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/TaxonomyItem" }
+        drug_subtypes:
+          type: array
+          items: { $ref: "#/components/schemas/TaxonomyItem" }
+        process_lenses:
+          type: array
+          items: { $ref: "#/components/schemas/TaxonomyItem" }
+
+    IngestionRun:
+      type: object
+      additionalProperties: false
+      required: [id, run_type, status, requested_by, created_at, counters]
+      properties:
+        id: { type: string, format: uuid }
+        run_type: { enum: [discovery, backfill, lifecycle, reprocess, integrity_sample] }
+        status: { $ref: "#/components/schemas/JobStatus" }
+        requested_by: { type: string }
+        created_at: { type: string, format: date-time }
+        started_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        counters: { type: object, additionalProperties: true }
+        error_code: { type: [string, "null"] }
+
+    IngestionRunPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/IngestionRun" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    RuntimeConfiguration:
+      type: object
+      additionalProperties: false
+      required: [application_version, parser_version, scope_rule_version, taxonomy_version, chunker_version, ai_provider, ai_model_id, ai_prompt_version, ai_configured, corpus_backfill_years, corpus_active_retention_years, smtp_delivery_enabled, smtp_configured]
+      properties:
+        application_version: { type: string }
+        parser_version: { type: string }
+        scope_rule_version: { type: string }
+        taxonomy_version: { type: string }
+        chunker_version: { type: string }
+        ai_provider: { enum: [none, gemini] }
+        ai_model_id: { type: string }
+        ai_prompt_version: { type: string }
+        ai_configured: { type: boolean }
+        corpus_backfill_years: { type: integer, minimum: 1 }
+        corpus_active_retention_years: { type: integer, minimum: 1 }
+        smtp_delivery_enabled: { type: boolean }
+        smtp_configured: { type: boolean }
+
+    NotificationSettings:
+      type: object
+      additionalProperties: false
+      required: [subscription_id, target_email, enabled, event_types, smtp_delivery_enabled, smtp_configured, queued_deliveries, failed_deliveries, last_delivered_at, updated_at]
+      properties:
+        subscription_id: { type: string, format: uuid }
+        target_email: { type: string, format: email }
+        enabled: { type: boolean }
+        event_types:
+          type: array
+          items: { enum: [NEW, UPDATED] }
+        smtp_delivery_enabled: { type: boolean }
+        smtp_configured: { type: boolean }
+        queued_deliveries: { type: integer, minimum: 0 }
+        failed_deliveries: { type: integer, minimum: 0 }
+        last_delivered_at: { type: [string, "null"], format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    NotificationSettingsPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        target_email: { type: string, format: email, maxLength: 320 }
+        enabled: { type: boolean }
+
+    CreateIngestionRun:
+      type: object
+      additionalProperties: false
+      required: [run_type, reason]
+      properties:
+        run_type: { enum: [discovery, backfill, lifecycle, integrity_sample] }
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+        change_ticket: { type: [string, "null"], maxLength: 200 }
+        options:
+          type: object
+          additionalProperties: false
+          properties:
+            date_from: { type: string, format: date }
+            date_to: { type: string, format: date }
+            force_conditional_fetch: { type: boolean, default: false }
+
+    ReprocessRequest:
+      type: object
+      additionalProperties: false
+      required: [stages, reason]
+      properties:
+        stages:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            enum: [scope, parse, summarize, embed, publish, notify]
+        source_version_id: { type: [string, "null"], format: uuid }
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+        change_ticket: { type: [string, "null"], maxLength: 200 }
+
+    JobAccepted:
+      type: object
+      additionalProperties: false
+      required: [job_id, status]
+      properties:
+        job_id: { type: string, format: uuid }
+        status: { const: queued }
+
+    ReviewRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      oneOf:
+        - required: [decision]
+        - required: [state]
+      properties:
+        decision: { enum: [approve, needs_revision, reject] }
+        state:
+          description: Compatibility alias using persisted review-state values.
+          enum: [approved, needs_revision, rejected]
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        expected_summary_version: { type: string, minLength: 1, maxLength: 200 }
+        edited_executive_summary: { type: [string, "null"], minLength: 10, maxLength: 20000 }
+        edited_structured_output:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        edited_output:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+        change_ticket: { type: [string, "null"], maxLength: 200 }
+
+    ReviewResult:
+      type: object
+      additionalProperties: false
+      required: [review_id, source_summary_id, resulting_summary_id, source_document_version_id, resulting_revision, review_state, reviewed_by, reviewed_at, content_changed, request_id]
+      properties:
+        review_id: { type: string, format: uuid }
+        source_summary_id: { type: string, format: uuid }
+        resulting_summary_id: { type: string, format: uuid }
+        source_document_version_id: { type: string, format: uuid }
+        resulting_revision: { type: integer, minimum: 1 }
+        review_state: { $ref: "#/components/schemas/ReviewState" }
+        reviewed_by: { type: string }
+        reviewed_at: { type: string, format: date-time }
+        content_changed: { type: boolean }
+        request_id: { type: string }
+
+    AiSummary:
+      type: object
+      additionalProperties: false
+      required: [id, document_version_id, parent_summary_id, revision, executive_summary, language, review_state, validation_report, taxonomy_version, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        document_version_id: { type: string, format: uuid }
+        parent_summary_id: { type: [string, "null"], format: uuid }
+        revision: { type: integer, minimum: 1 }
+        executive_summary: { type: string }
+        language: { type: string }
+        review_state: { $ref: "#/components/schemas/ReviewState" }
+        validation_report: { type: object, additionalProperties: true }
+        taxonomy_version: { type: string }
+        created_at: { type: string, format: date-time }
+
+    ReviewQueueItem:
+      type: object
+      additionalProperties: false
+      required: [summary, company_name, warning_letter_id, source_url, failed_checks, marcs_cms_number, related_open_items, confidence, high_attention]
+      properties:
+        summary: { $ref: "#/components/schemas/AiSummary" }
+        company_name: { type: string }
+        warning_letter_id: { type: string, format: uuid }
+        source_url: { type: string, format: uri }
+        marcs_cms_number: { type: [string, "null"] }
+        related_open_items: { type: integer, minimum: 1 }
+        confidence: { type: [number, "null"], minimum: 0, maximum: 1 }
+        high_attention: { type: boolean }
+        failed_checks:
+          type: array
+          items: { type: string }
+
+    ReviewQueuePage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, previous_cursor, has_more, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ReviewQueueItem" }
+        next_cursor: { type: [string, "null"] }
+        previous_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+        total: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        page_size: { type: integer, minimum: 1, maximum: 100 }
+
+    SavedViewCriteria:
+      type: object
+      additionalProperties: false
+      properties:
+        query: { type: [string, "null"], maxLength: 300 }
+        drug_subtype: { type: [string, "null"], maxLength: 200 }
+        category: { type: [string, "null"], maxLength: 300 }
+        country: { type: [string, "null"], maxLength: 120 }
+        lifecycle_state:
+          type: [string, "null"]
+          enum: [ACTIVE, NEW, UPDATED, RESPONSE_ADDED, CLOSEOUT_ADDED, RESTORED, null]
+        review_state:
+          type: [string, "null"]
+          enum: [auto_approved, approved, needs_revision, rejected, null]
+        linked_document:
+          type: [string, "null"]
+          enum: [response, closeout, open, null]
+        posted_from: { type: [string, "null"], format: date }
+        posted_to: { type: [string, "null"], format: date }
+
+    SavedViewCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        description: { type: string, maxLength: 1000, default: "" }
+        criteria: { $ref: "#/components/schemas/SavedViewCriteria" }
+        cadence: { enum: [off, immediate, daily, weekly], default: off }
+
+    SavedViewPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        description: { type: string, maxLength: 1000 }
+        criteria: { $ref: "#/components/schemas/SavedViewCriteria" }
+        cadence: { enum: [off, immediate, daily, weekly] }
+
+    SavedView:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - description
+        - criteria
+        - frequency
+        - channel
+        - active
+        - alert_state
+        - result_count
+        - last_matched
+        - owner_id
+        - open_url
+        - created_at
+        - updated_at
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        criteria: { $ref: "#/components/schemas/SavedViewCriteria" }
+        frequency: { enum: [immediate, daily, weekly] }
+        channel: { type: string }
+        active: { type: boolean }
+        alert_state:
+          enum: [off, ready, delivery_unavailable, digest_scheduler_unavailable]
+        result_count: { type: integer, minimum: 0 }
+        last_matched: { type: [string, "null"], format: date }
+        owner_id: { type: string }
+        open_url: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    SavedViewPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SavedView" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+security:
+  - corporateOidc: []

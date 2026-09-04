@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daewoong.example.internal/schemas/pharma-agent-os/workflow-definition/v1.0.0",
+  "title": "PharmaAgent OS WorkflowDefinition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "pharmaagent.io/v1" },
+    "kind": { "const": "Workflow" },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "spec": { "$ref": "#/$defs/spec" }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "owner", "releaseState", "definitionHash"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "version": { "$ref": "#/$defs/semver" },
+        "owner": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "releaseState": { "enum": ["DRAFT", "DEVELOPMENT", "TESTING", "STAGING", "APPROVED", "PRODUCTION", "SUSPENDED", "RETIRED"] },
+        "definitionHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "versionedRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$" },
+        "version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "ref"],
+      "properties": {
+        "type": { "enum": ["AGENT", "DETERMINISTIC_SERVICE", "HUMAN"] },
+        "ref": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" }
+      }
+    },
+    "toolRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$" },
+        "version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "state", "dependsOn", "executor", "inputSchema", "outputSchema", "tools", "riskClass", "permissionMode", "parallelizable", "onSuccess", "onFailure"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+        "state": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+        "dependsOn": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+          "uniqueItems": true,
+          "maxItems": 20
+        },
+        "executor": { "$ref": "#/$defs/executor" },
+        "inputSchema": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]{1,127}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+        "outputSchema": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]{1,127}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+        "tools": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/toolRef" },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "riskClass": { "enum": ["R0", "R1", "R2", "R3"] },
+        "permissionMode": { "enum": ["AUTO_ALLOWED", "COVERED_BY_PLAN_APPROVAL", "EXPLICIT_ACTION_APPROVAL", "HUMAN_DECISION"] },
+        "parallelizable": { "type": "boolean" },
+        "onSuccess": { "enum": ["CONTINUE", "COMPLETE_WORKFLOW"] },
+        "onFailure": { "enum": ["STOP", "PAUSE_FOR_REVIEW", "REQUEST_INPUT", "TARGETED_CORRECTION"] }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximumCorrectionLoops", "maximumParallelAgents", "maximumAgentInvocations", "maximumToolCalls", "maximumRuntimeSeconds", "maximumCostUsd"],
+      "properties": {
+        "maximumCorrectionLoops": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "maximumParallelAgents": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "maximumAgentInvocations": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maximumToolCalls": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "maximumRuntimeSeconds": { "type": "integer", "minimum": 1, "maximum": 604800 },
+        "maximumCostUsd": { "type": "number", "minimum": 0, "maximum": 100000 }
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan", "artifact", "sideEffects", "staleProtection"],
+      "properties": {
+        "plan": { "const": "POLICY_BASED" },
+        "artifact": { "const": "QA_REVIEWER_REQUIRED" },
+        "sideEffects": { "const": "EXPLICIT_ACTION_APPROVAL" },
+        "staleProtection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bindingFields"],
+          "properties": {
+            "bindingFields": {
+              "type": "array",
+              "items": {
+                "enum": ["case_id", "current_state_hash", "plan_id", "plan_version", "plan_hash", "workflow", "agent_versions", "tool_scopes", "data_scope", "budget"]
+              },
+              "uniqueItems": true,
+              "minItems": 10,
+              "maxItems": 10
+            }
+          }
+        }
+      }
+    },
+    "failurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "behavior"],
+      "properties": {
+        "condition": { "enum": ["SOURCE_UPDATED", "INSUFFICIENT_EVIDENCE", "ACCESS_DENIED", "TOOL_FAILURE", "PROMPT_INJECTION", "BUDGET_EXCEEDED"] },
+        "behavior": { "enum": ["MARK_STALE_AND_PAUSE", "RETURN_INCOMPLETE_EVIDENCE", "RETURN_MINIMAL_ACCESS_BLOCKED", "BOUNDED_RETRY_THEN_BLOCK", "ISOLATE_RECORD_AND_REVIEW", "PAUSE_WITH_USAGE"] }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "executionEnabled", "intendedUse", "triggers", "states", "initialState", "terminalStates", "steps", "limits", "approvals", "prohibitedActions", "failurePolicies"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "executionEnabled": { "type": "boolean" },
+        "intendedUse": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "triggers": {
+          "type": "array",
+          "items": { "enum": ["MANUAL", "REGULATORY_SIGNAL_CREATED"] },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "states": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+          "uniqueItems": true,
+          "minItems": 2,
+          "maxItems": 50
+        },
+        "initialState": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+        "terminalStates": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 10
+        },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/step" },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "limits": { "$ref": "#/$defs/limits" },
+        "approvals": { "$ref": "#/$defs/approvals" },
+        "prohibitedActions": {
+          "type": "array",
+          "items": { "enum": ["MODIFY_CONTROLLED_DOCUMENT", "CREATE_CAPA", "APPROVE_CAPA", "UPDATE_QMS_RECORD", "UPDATE_EDMS_RECORD", "UPDATE_MES_RECORD", "UPDATE_LIMS_RECORD", "RELEASE_OR_REJECT_PRODUCT", "SUBMIT_TO_REGULATOR"] },
+          "uniqueItems": true,
+          "minItems": 9,
+          "maxItems": 9
+        },
+        "failurePolicies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/failurePolicy" },
+          "uniqueItems": true,
+          "minItems": 6,
+          "maxItems": 6
+        }
+      }
+    }
+  }
+}

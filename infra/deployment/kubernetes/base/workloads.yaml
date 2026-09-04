@@ -1,0 +1,256 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fda-api
+  labels: &api-labels
+    app.kubernetes.io/name: fda-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: fda-drug-intel
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fda-api
+  template:
+    metadata:
+      labels: *api-labels
+    spec:
+      serviceAccountName: fda-api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: registry.example.invalid/daewoong/fda-api@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: fda-runtime-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: fda-api-runtime
+                  key: database-url
+            - name: OIDC_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fda-api-runtime
+                  key: api-session-public-key
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fda-api-runtime
+                  key: gemini-api-key
+          startupProbe:
+            httpGet: { path: /api/v1/health/live, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /api/v1/health/live, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /api/v1/health/ready, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }
+            limits: { cpu: "1", memory: 1Gi, ephemeral-storage: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fda-web
+  labels: &web-labels
+    app.kubernetes.io/name: fda-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: fda-drug-intel
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fda-web
+  template:
+    metadata:
+      labels: *web-labels
+    spec:
+      serviceAccountName: fda-web
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: registry.example.invalid/daewoong/fda-web@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: fda-runtime-config
+          env:
+            - name: API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: fda-runtime-config
+                  key: API_BASE_URL
+            - name: AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: auth-secret
+            - name: AUTH_GOOGLE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: google-client-id
+            - name: AUTH_GOOGLE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: google-client-secret
+            - name: AUTH_NAVER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: naver-client-id
+            - name: AUTH_NAVER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: naver-client-secret
+            - name: API_SESSION_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fda-web-runtime
+                  key: api-session-private-key
+          startupProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }
+            limits: { cpu: "1", memory: 768Mi, ephemeral-storage: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 256Mi
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fda-worker
+  labels: &worker-labels
+    app.kubernetes.io/name: fda-worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: fda-drug-intel
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fda-worker
+  template:
+    metadata:
+      labels: *worker-labels
+    spec:
+      serviceAccountName: fda-worker
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: registry.example.invalid/daewoong/fda-api@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          command: ["fda-intel", "worker", "--poll-seconds", "2"]
+          envFrom:
+            - configMapRef:
+                name: fda-runtime-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: fda-worker-runtime
+                  key: database-url
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fda-worker-runtime
+                  key: gemini-api-key
+          resources:
+            requests: { cpu: 200m, memory: 512Mi, ephemeral-storage: 256Mi }
+            limits: { cpu: "2", memory: 2Gi, ephemeral-storage: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+      terminationGracePeriodSeconds: 60

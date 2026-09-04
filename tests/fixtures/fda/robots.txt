@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /private-fixture/
+Crawl-delay: 30
+Allow: /warning-letters/
+

@@ -1,0 +1,290 @@
+# PharmaAgent OS implementation handoff
+
+**Handoff date:** 2026-09-05  
+**Authoritative workspace:** `C:\Users\user\Desktop\PharmaAgentOS`  
+**Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
+**Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
+
+**Latest audit:** [Deployment readiness review](docs/assurance/deployment-readiness-20260905.md)
+corrects the earlier completion claim, records real PostgreSQL/Temporal/container
+checks, and identifies remaining execution-adapter and environment work.
+
+All PharmaAgent OS work is contained in this workspace. The earlier FDA project is
+separate and must not be used as a working directory for future changes. Git metadata,
+local secrets, dependency caches, databases, and build output from that project were
+not imported. A dedicated Git repository was initialized during deployment
+preparation. GitHub publication and production release are distinct operations.
+
+## Delivered outcome
+
+The existing FDA Product=Drugs evidence platform now includes a case-first agent
+operating system with:
+
+- immutable source pins, typed plans, hash-chained case/run events, durable checkpoints,
+  human interrupts, and stale-write protection;
+- five versioned agents, ten reusable skills, one approved workflow, and sixteen
+  deny-by-default tools across three private MCP bundles;
+- ACL-before-retrieval synthetic internal knowledge, version history, relationship
+  evidence, impact hypotheses, and deterministic review priority;
+- independent verification, bounded correction, immutable artifact revisions,
+  QA approval, and evidence-bound export;
+- multi-trial evaluation, deterministic/model/human grade records, release blocking,
+  rollback targets, production feedback, and an Agent Control Tower;
+- optional Temporal durability around the bounded LangGraph workflow, exactly-once
+  activity journaling, database-queue fallback, kill switches, quotas, workload
+  identities, secrets-provider abstraction, OpenTelemetry, backups, and runbooks;
+- draft/read-only Email, Slack/Teams, Notion/task, and document-metadata integration,
+  plus answer-only A2A interoperability. No agent connector can send or publish.
+
+The product remains decision support. It cannot autonomously create a CAPA, determine
+compliance, reject a batch, revise an SOP, or write a controlled quality-system record.
+
+## Milestone status
+
+| Milestone | Status | Principal implementation |
+| --- | --- | --- |
+| M0 — baseline and boundaries | Complete | Product spec, intended use, control matrix, architecture/ADR, threat model, synthetic-data labeling, release checklist |
+| M1 — case/control plane | Complete | Case/source/event/plan/approval/registry/artifact models, REST APIs, Case Workspace, canonical hashes, PostgreSQL guards |
+| M2 — Regulatory MCP/agent | Complete | Five R0 tools, two-phase authorization, source-pin validation, sanitation, evidence/citation validator, bounded Regulatory Evidence Agent |
+| M3 — orchestration/Plan Mode | Reference implementation | Approved workflow registry, typed LangGraph state, durable run/checkpoint/event APIs, pause/resume/cancel, step approvals, timeline UI; production specialist execution wiring remains |
+| M4 — internal knowledge/impact | Reference implementation | Fictional revisioned corpus, ACL filtering, hybrid retrieval, relationship graph, Knowledge MCP, deterministic specialists, Impact Studio; live model/data qualification remains |
+| M5 — verification/review | Reference implementation | Separate deterministic verification checks, two-correction ceiling, immutable reports/artifacts/export, QA UI; independent production model qualification remains |
+| M6 — evaluation/control tower | Reference implementation | Fixture outcome grading, release gate demonstrations, feedback, metrics dashboards; independent production execution/grading adapter still required |
+| M7 — commercial hardening | Partially qualified | Temporal outer workflow and activity replay guards, service identities, private MCP gateway, policy templates, secret-provider abstraction, telemetry, quotas, kill switches, backup drill; managed-secret wiring and target infrastructure qualification remain |
+| M8 — controlled integrations | Complete | Immutable no-send outbox, manual review, prohibited-directive guard, ACL metadata adapter, draft-only Workflow MCP, answer-only A2A, Handoffs UI |
+
+## Versioned runtime inventory
+
+### Agents
+
+| Agent | Version | Reviewed definition SHA-256 |
+| --- | --- | --- |
+| Case Orchestrator | 1.0.0 | `4d1df30f66219c09cbce680ef23ed439b763f65a12620f1435b5e8db1c0beb42` |
+| Regulatory Evidence Agent | 1.3.0 | `5b19303a147b12c07533523127a58577ff7fe5d27a19413443d7f32a5d775daa` |
+| Internal Knowledge Agent | 1.1.0 | `f1a6ff4ffed4033dd6928c974b606b1dffff7996a9f2529423fc46c6b9c335c5` |
+| Impact Analysis Agent | 1.0.2 | `df2372f12bb1bac165608c7722e38e3d6954dae962365ef66cbdaebab1d591f5` |
+| Verification Agent | 1.2.1 | `bb4437ef676bbe079046d83a576ef9ff893e42d3e5380be31654ddc538ebd6fa` |
+
+The `regulatory-impact-review@1.0.0` workflow hash is
+`6f535115bbfe1cb2e9fe29ee80b3c8b15c4409157829e1ae836fcb3adc36ce67`.
+
+### MCP bundles
+
+| Bundle | Version | Tools | Reviewed definition SHA-256 |
+| --- | --- | ---: | --- |
+| regulatory-mcp | 1.0.0 | 5 | `478dbf57c2b85c75e77616ce723e2b5fd771250516c91e69d26aabcec19b4952` |
+| knowledge-mcp | 1.0.0 | 6 | `324b65c53afbdcaa6e9af759a467fb86eccef99de97a9703419d34d460d3e2b1` |
+| workflow-mcp | 1.0.0 | 5 | `a0896543a821f9ee474e9ede7219cd689af09e141186908d0cf1ec5f4ea2f67c` |
+
+The ten approved skills are defined in
+`contracts/skills/initial-skills.v1.0.0.yaml`. Registry seeding is idempotent and
+rejects content drift for an existing semantic version.
+
+## Code map
+
+### Product, contracts, and assurance
+
+- `docs/product/PHARMA_AGENT_OS_SPEC.md` — normative product boundary and workflow.
+- `docs/architecture/agent-platform.md` and `docs/adr/0003-agent-platform-modular-monolith-and-mcp-adapters.md` — implemented architecture and extraction decision.
+- `docs/assurance/agent-intended-use.md`, `agent-control-matrix.md`, and
+  `release-evidence-checklist.md` — human authority and release controls.
+- `docs/threat-model/agent-platform-delta.md` — prompt injection, confused deputy,
+  tool abuse, data leakage, memory poisoning, and durability threats.
+- `contracts/agents`, `contracts/skills`, `contracts/tools`, `contracts/workflows`,
+  and `contracts/cases` — strict schemas, reviewed manifests, examples, and hashes.
+- `contracts/validate_contracts.py` — closed-schema, hash, DAG, version-reference,
+  approval-freshness, tool-policy, and OpenAPI validation.
+
+### API and runtime
+
+- `services/api/app/models.py` — control plane, execution, evidence, evaluation,
+  hardening, integration, and A2A persistence models.
+- `services/api/app/cases` — case/plan/approval APIs, source pins, canonical state,
+  idempotency, and append-only case events.
+- `services/api/app/agent_platform/runtime` — LangGraph workflow, durable run
+  transitions, worker queue integration, limits, interrupts, and event history.
+- `services/api/app/agent_platform/temporal` — outer workflow, signals, mTLS client,
+  worker, and idempotent activity journal.
+- `services/api/app/agent_platform/mcp/regulatory`, `knowledge`, and `workflow` —
+  typed gateways, policy enforcement, ACL/source binding, budgets, result validation,
+  provenance, and idempotency.
+- `services/api/app/agent_platform/mcp/server.py` — private service-authenticated MCP
+  process; documentation and OpenAPI endpoints are disabled.
+- `services/api/app/internal_knowledge` — synthetic corpus seed, hybrid retrieval,
+  relationship graph, impact agent, and review APIs.
+- `services/api/app/verification` — independent verification, correction limit,
+  artifact composition/review/export, and immutable evidence membership.
+- `services/api/app/evaluation` — suites, cases, trials, graders, release decisions,
+  feedback, trace inspection, and Control Tower aggregates spanning inventory,
+  queues/retries, model/tool errors, approvals, citation and routing quality,
+  suspensions, cost, percentile latency, and review turnaround.
+- `services/api/app/approvals` — consolidated case-authorized Approval Center read model.
+- `services/api/app/integrations` — no-send drafts, manual review, read-only document
+  metadata, and answer-only A2A.
+- `services/api/app/security/secrets.py` and `app/observability.py` — local/AWS secret
+  provider boundary and metadata-only OTLP tracing.
+
+### Web application
+
+- `apps/web/app/(portal)/cases` and `components/agent-platform/case-workspace.tsx` —
+  Overview, Plan, Execution, Impact, QA Review, Handoffs, Evidence, and History views.
+- `apps/web/app/(portal)/approvals` — consolidated approval queue with case links.
+- `apps/web/app/(portal)/evaluations` — version-bound suite/run/release UI.
+- `apps/web/app/(portal)/control-tower` — health, quality, security, cost/value,
+  immutable inventory, and global/exact-agent suspension UI.
+- `apps/web/lib/case-api-client.ts`, `case-types.ts`, and
+  `governance-api-client.ts` — server-only bearer calls and strict response parsing.
+
+### Infrastructure and operations
+
+- `infra/deployment/kubernetes/base` — API/web/worker plus two-replica Temporal worker,
+  two-replica private MCP gateway, dedicated service accounts, PDBs, NetworkPolicies,
+  OTEL/Temporal settings, and backup CronJob.
+- `infra/local/compose.yaml` — optional local Temporal/UI `agent-platform` profile.
+- `infra/policies/postgres-runtime-roles.sql` — separate API, worker, readonly,
+  orchestrator, and MCP NOLOGIN roles with least-privilege grants.
+- `scripts/verify-pharma-backup-restore.ps1` — explicit isolated-target PostgreSQL
+  dump, SHA-256 evidence, restore, and control-plane row-count verification.
+- `docs/runbooks` — deploy/rollback, backup/restore, security incident, auth,
+  ingestion, and AI/retrieval quality procedures.
+- `.github/workflows/ci.yml` — Python, PostgreSQL trigger/grant, all forward migrations,
+  isolated backup restore with canary, frontend, contract, deployment-render, and
+  secret-scan jobs.
+
+## Database migration order
+
+Run migrations only as the controlled migration owner. Runtime identities must not
+have DDL privileges.
+
+1. `20260904_agent_os_control_plane.sql`
+2. bootstrap the current SQLAlchemy schema with `fda-intel init-db` for a fresh database
+3. `20260904_agent_os_orchestration.sql`
+4. `20260904_internal_knowledge_and_impact.sql`
+5. `20260904_verification_and_artifacts.sql`
+6. `20260904_evaluation_and_control_tower.sql`
+7. `20260904_durable_commercial_hardening.sql`
+8. `20260904_controlled_integrations.sql`
+9. apply `infra/policies/postgres-runtime-roles.sql`
+
+The SQL adds database-enforced immutability, exact case/run/plan/artifact bindings,
+one-way review transitions, append-only evaluation/A2A records, and delete guards.
+CI runs every script with `psql --set ON_ERROR_STOP=1` against PG16 + pgvector.
+
+## Security and integrity invariants
+
+- Identity, case, run, agent, approval, scope, and idempotency context is supplied by
+  the trusted host, not model output.
+- Production human assertions are short-lived and audience-bound. Service assertions
+  use `token_use=service_access`, a `svc:` subject, only the `service` role, and a
+  maximum five-minute lifetime.
+- Retrieval filters access before ranking or model context. Denied resources do not
+  leak titles, metadata, or existence.
+- Every tool is deny-by-default, exact-version allowlisted, schema/size/time bounded,
+  reauthorized around execution, and attributed to user/case/run/agent.
+- A global or exact-agent suspension gates starts, resumes, workers, and MCP calls.
+  Updates use optimistic revisions and attributable reasons.
+- Tool/activity retries replay only an exact committed input hash. Conflicting reuse
+  fails closed and no side effect is duplicated.
+- Approved artifacts are immutable. Review is bound to content and evidence-manifest
+  hashes; stale writes return conflicts.
+- Agent integration records always contain `external_delivery_allowed=false`. The
+  platform has no delivery transition or connector credential in this workflow.
+- A2A returns case status or approved-artifact metadata only. It cannot invoke tools,
+  delegate agents, or perform a controlled write.
+- Traces store observable metadata, versions, hashes, metrics, and decisions—not hidden
+  chain-of-thought, credentials, or unrestricted source bodies.
+
+## Local operation
+
+### API
+
+```powershell
+cd "C:\Users\user\Desktop\PharmaAgentOS\services\api"
+uv sync --all-extras --dev
+.\.venv\Scripts\python.exe -m app.cli init-db
+.\.venv\Scripts\python.exe -m app.cli seed-demo
+.\.venv\Scripts\uvicorn.exe app.main:app --reload --port 8000
+```
+
+### Portal
+
+```powershell
+cd "C:\Users\user\Desktop\PharmaAgentOS\apps\web"
+Copy-Item .env.example .env.local
+npm install
+npm run dev
+```
+
+### Optional Temporal and private MCP processes
+
+```powershell
+cd "C:\Users\user\Desktop\PharmaAgentOS"
+docker compose --env-file infra/local/.env -f infra/local/compose.yaml --profile agent-platform up -d --wait
+
+$env:TEMPORAL_ENABLED = "true"
+$env:TEMPORAL_ADDRESS = "127.0.0.1:7233"
+services\api\.venv\Scripts\pharma-temporal-worker.exe
+
+services\api\.venv\Scripts\uvicorn.exe app.agent_platform.mcp.server:private_mcp_app --app-dir services/api --host 127.0.0.1 --port 8001
+```
+
+Production requires managed PostgreSQL/pgvector, private versioned object storage,
+an approved identity provider, workload identity/AWS Secrets Manager or equivalent,
+Temporal mTLS, a private OTEL collector, and reviewed egress routes.
+
+## Verification evidence from this workspace
+
+Latest qualification on 2026-09-05:
+
+- Native API suite with live PostgreSQL and Temporal enabled: **407 passed** in
+  352.41 seconds. No integration tests were skipped in this run.
+- The subsequent fixture-release guard change passed its focused regression tests.
+- Final packaged-runtime evidence and remaining blockers are recorded in the
+  [deployment readiness audit](docs/assurance/deployment-readiness-20260905.md).
+
+Earlier baseline checks on 2026-09-04/05 (retained as historical evidence):
+
+- Full API test suite: **400 passed, 5 skipped** in 325.96 seconds.
+- The five skips are the explicitly gated live-PostgreSQL tests.
+- Post-finalization Control Tower, Approval Center, private MCP, OpenAPI, case-runtime,
+  and backup/restore regression set: **18 passed**.
+- Regulatory MCP/agent/evaluation focused suite: **71 passed**.
+- Final hardening/integration/OpenAPI/restore focused suite: **4 passed**.
+- Ruff: `ruff check app tests` — **passed**.
+- Web unit tests: **22 passed** across 5 test files.
+- Web ESLint with zero warnings: **passed**.
+- Web TypeScript check: **passed**.
+- Next.js 16 production build: **passed**, including `/approvals`, `/cases`,
+  `/cases/[caseId]`, `/evaluations`, and `/control-tower`.
+- Contract validator: **passed** — OpenAPI, JSON Schemas, examples, taxonomy,
+  12 Agent OS schemas, 6 positive case fixtures, approval freshness, 5 agents,
+  10 skills, and 16 deny-by-default tools.
+- Kubernetes `kubectl kustomize`: **passed**.
+- Docker Compose configuration render: **passed**.
+- Local SQLite backup/restore integrity test: **passed**, including control-plane
+  schema and a restored canary.
+
+The original test run skipped PostgreSQL because Docker was stopped. The later
+deployment audit started Docker, applied all migrations and grants, passed the five
+PostgreSQL tests, restored an isolated dump, and exercised live Temporal worker
+replacement. See the latest audit for scope and evidence; production mTLS/cluster
+disaster recovery remains unqualified.
+
+## Environment-dependent activation still required
+
+The remaining work includes both environment activation and application integration:
+
+1. Review the dedicated Git repository and configure the approved release signing identity.
+2. Run the CI PostgreSQL job and retain migration, trigger, grant, and restore evidence.
+3. Connect approved corporate IdP/JWKS, workload identities, secret manager, OTEL/SIEM,
+   Temporal mTLS, object storage, and egress gateway services.
+4. Replace or supplement the compact fictional corpus with a qualified synthetic or
+   approved internal dataset. No real Daewoong quality-system data is included.
+5. Execute formal security, privacy, QA/CSV, disaster-recovery, and release approvals.
+6. Implement independently executed release-grade probabilistic evaluations and
+   specialist execution adapters, then approve exact versions before production promotion.
+
+Draft-only connectors deliberately require a human to copy or deliver reviewed
+content. Adding automatic Email/Slack/Teams/Notion/task delivery or any controlled
+quality-system write would be a new scope requiring explicit action approvals,
+reconciliation semantics, threat review, and separate validation.

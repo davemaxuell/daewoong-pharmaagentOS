@@ -1,0 +1,6 @@
+{
+  "schema_version": "2.0.0",
+  "taxonomy_version": "drug-taxonomy-v1.0.0",
+  "findings": [],
+  "reasoning": "This hidden reasoning field is not part of the contract."
+}

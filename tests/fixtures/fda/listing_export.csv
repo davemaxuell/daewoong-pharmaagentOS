@@ -1,0 +1,8 @@
+Posted Date,Letter Issue Date,Company Name,Issuing Office,Subject,Letter URL,Response Letter,Close-Out Letter
+08/18/2026,08/06/2026,"Example Finished Rx Pharmaceuticals, Inc.",Center for Drug Evaluation and Research,Finished prescription drug CGMP,"https://www.fda.gov/warning-letters/example-finished-rx-900001",,
+08/19/2026,08/07/2026,"Example OTC Products, LLC",Center for Drug Evaluation and Research,OTC drug CGMP,"https://www.fda.gov/warning-letters/example-otc-900002",,
+08/20/2026,08/08/2026,"Example API Medicines Co., Ltd.",Center for Drug Evaluation and Research,API records and process validation,"https://www.fda.gov/warning-letters/example-api-900003","https://www.fda.gov/warning-letters/example-api-response-900003","https://www.fda.gov/warning-letters/example-api-closeout-900003"
+08/21/2026,08/09/2026,Example Biologic Therapies,Center for Biologics Evaluation and Research,Biologics manufacturing,"https://www.fda.gov/warning-letters/example-biologics-910001",,
+08/22/2026,08/10/2026,Example Device Works,Center for Devices and Radiological Health,Medical device quality system,"https://www.fda.gov/warning-letters/example-device-910002",,
+08/23/2026,08/11/2026,Example Foods Company,Center for Food Safety and Applied Nutrition,Food sanitation,"https://www.fda.gov/warning-letters/example-food-910003",,
+

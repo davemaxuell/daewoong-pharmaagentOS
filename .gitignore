@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.hypothesis/
+*.egg-info/
+.coverage
+htmlcov/
+.venv/
+.venv*/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+.vercel/
+test-results/
+playwright-report/
+
+# Local runtime data
+.data/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and generated artifacts
+*.log
+coverage/
+dist/
+build/
+.playwright-cli/
+output/
+
+.tmp/
+.artifacts/

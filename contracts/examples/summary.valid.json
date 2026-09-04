@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "document_identity": {
+    "company_name": "Example API Medicines Co., Ltd.",
+    "document_type": "warning_letter",
+    "marcs_cms_number": "900001",
+    "issue_date": "2026-08-06",
+    "posted_date": "2026-08-18",
+    "issuing_offices": [
+      "Center for Drug Evaluation and Research"
+    ],
+    "source_url": "https://www.fda.gov/warning-letters/example-api-medicines-900001"
+  },
+  "executive_summary": "FDA described deficiencies concerning API process validation and production records.",
+  "scope": {
+    "product_types": [
+      "Drugs"
+    ],
+    "drug_subtypes": [
+      "API"
+    ],
+    "facility_types": [
+      "API manufacturer"
+    ]
+  },
+  "violations": [
+    {
+      "label": "1",
+      "categories": [
+        "Process Validation / PPQ / Continued Process Verification",
+        "API Manufacturing / ICH Q7-related CGMP"
+      ],
+      "process_lenses": [
+        "preventive",
+        "monitoring"
+      ],
+      "finding": "FDA stated that the firm had not adequately demonstrated a state of control for its commercial API process.",
+      "regulatory_references": [],
+      "evidence": [
+        {
+          "source_anchor": "violation-1",
+          "excerpt": "Your process validation program did not adequately demonstrate a state of control."
+        }
+      ],
+      "fda_requested_actions": [],
+      "comparison_points": [
+        "Are commercial API processes supported by an approved lifecycle validation and continued-verification strategy?"
+      ],
+      "attention_level": "high",
+      "confidence": 0.95
+    }
+  ],
+  "response_deadline": null,
+  "enforcement_consequences": [],
+  "uncertainties": []
+}
+

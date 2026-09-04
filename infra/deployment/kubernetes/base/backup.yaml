@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pharma-backup-staging
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 20Gi }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pharma-postgres-logical-backup
+spec:
+  schedule: "17 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: pharma-backup
+            app.kubernetes.io/part-of: pharma-agent-os
+        spec:
+          restartPolicy: Never
+          serviceAccountName: pharma-backup
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: pg-dump
+              image: postgres:16.10-bookworm
+              command: [/bin/sh, -ec]
+              args:
+                - |
+                  umask 077
+                  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  output="/backup/pharma-agent-os-${stamp}.dump"
+                  pg_dump "$BACKUP_DATABASE_URL" --format=custom --no-owner --no-acl --file="$output"
+                  sha256sum "$output" > "${output}.sha256"
+                  find /backup -maxdepth 1 -type f -name 'pharma-agent-os-*' -mtime +30 -delete
+              env:
+                - name: BACKUP_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef: { name: pharma-backup-runtime, key: database-url }
+              volumeMounts:
+                - { name: backup, mountPath: /backup }
+                - { name: tmp, mountPath: /tmp }
+              resources:
+                requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }
+                limits: { cpu: "1", memory: 1Gi, ephemeral-storage: 512Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+          volumes:
+            - name: backup
+              persistentVolumeClaim: { claimName: pharma-backup-staging }
+            - name: tmp
+              emptyDir: { sizeLimit: 128Mi }

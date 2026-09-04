@@ -1,0 +1,76 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-gateway-private-ingress
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: pharma-mcp-gateway }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/name: pharma-orchestrator }
+        - podSelector:
+            matchLabels: { app.kubernetes.io/name: fda-worker }
+      ports: [{ protocol: TCP, port: 8001 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-platform-dns-egress
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/part-of
+        operator: In
+        values: [pharma-agent-os, fda-drug-intel]
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: kube-system }
+          podSelector:
+            matchLabels: { k8s-app: kube-dns }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orchestrator-private-dependencies
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: pharma-orchestrator }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/name: pharma-mcp-gateway }
+      ports: [{ protocol: TCP, port: 8001 }]
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: temporal }
+      ports: [{ protocol: TCP, port: 7233 }]
+---
+# The corporate egress gateway enforces the reviewed FQDN list (FDA and the
+# selected model/telemetry endpoints). Application pods have no direct internet
+# route; native NetworkPolicy only permits the gateway hop.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: approved-egress-gateway-only
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [fda-worker, pharma-mcp-gateway]
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: networking }
+          podSelector:
+            matchLabels: { app.kubernetes.io/name: approved-egress-gateway }
+      ports: [{ protocol: TCP, port: 8443 }]

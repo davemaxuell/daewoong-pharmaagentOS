@@ -1,0 +1,240 @@
+schema_version: "1.0.0"
+corpus_key: synthetic-pharma-quality-system
+title: Synthetic Pharmaceutical Quality System
+notice: >-
+  PORTFOLIO DEMONSTRATION DATA ONLY. Every record in this corpus is fictional,
+  contains no company confidential information, and must not be used as a real
+  controlled quality record or a compliance determination.
+assets:
+  - asset_key: POL-QMS-001
+    asset_type: Policy
+    title: Quality Management System Policy
+    domain: Quality Governance
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 1
+        status: EFFECTIVE
+        effective_from: "2025-01-01"
+        content: >-
+          The Quality Unit owns oversight of the synthetic quality system. Process
+          owners maintain approved procedures, training links, forms, and validation
+          evidence. Records are reviewed using risk-based schedules.
+        anchors:
+          - id: quality-unit-oversight
+            excerpt: The Quality Unit owns oversight of the synthetic quality system.
+          - id: linked-controls
+            excerpt: Process owners maintain approved procedures, training links, forms, and validation evidence.
+
+  - asset_key: SOP-DI-004
+    asset_type: SOP
+    title: Electronic Data and Audit Trail Review
+    domain: Data Integrity
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 1
+        status: OBSOLETE
+        effective_from: "2023-01-01"
+        effective_to: "2024-09-30"
+        content: >-
+          System owners review selected audit trails monthly. Review completion is
+          recorded in the legacy log. Exceptions are sent to the Quality Unit.
+        anchors:
+          - id: legacy-monthly-review
+            excerpt: System owners review selected audit trails monthly.
+          - id: legacy-review-record
+            excerpt: Review completion is recorded in the legacy log.
+      - revision: 2
+        status: EFFECTIVE
+        effective_from: "2024-10-01"
+        content: >-
+          System owners perform documented, risk-based audit trail review before
+          batch disposition and at the approved periodic frequency. Reviewers use
+          FRM-DI-011, record the system, period, anomalies, disposition, and evidence
+          anchor, and escalate unexplained changes to the Quality Unit. Training on
+          this revision is required before independent review.
+        anchors:
+          - id: risk-based-review
+            excerpt: System owners perform documented, risk-based audit trail review before batch disposition and at the approved periodic frequency.
+          - id: audit-trail-form
+            excerpt: Reviewers use FRM-DI-011, record the system, period, anomalies, disposition, and evidence anchor.
+          - id: escalation
+            excerpt: Reviewers escalate unexplained changes to the Quality Unit.
+
+  - asset_key: FRM-DI-011
+    asset_type: Form
+    title: Audit Trail Review Record
+    domain: Data Integrity
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 3
+        status: EFFECTIVE
+        effective_from: "2024-10-01"
+        content: >-
+          This synthetic form captures system identifier, review period, reviewer,
+          audit trail filters, observed anomalies, linked evidence, disposition, and
+          Quality Unit escalation reference.
+        anchors:
+          - id: required-fields
+            excerpt: This synthetic form captures system identifier, review period, reviewer, audit trail filters, observed anomalies, linked evidence, disposition, and Quality Unit escalation reference.
+
+  - asset_key: SYS-LIMS-007
+    asset_type: System
+    title: Laboratory Information Management System
+    domain: Laboratory Systems
+    classification: CONFIDENTIAL
+    acl_roles: [reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 5
+        status: EFFECTIVE
+        effective_from: "2025-03-01"
+        content: >-
+          The fictional LIMS stores laboratory results and immutable audit events.
+          Privileged configuration is limited to named administrators. Audit trail
+          review follows SOP-DI-004 and validation state is governed by VAL-CS-021.
+        anchors:
+          - id: audit-events
+            excerpt: The fictional LIMS stores laboratory results and immutable audit events.
+          - id: governing-controls
+            excerpt: Audit trail review follows SOP-DI-004 and validation state is governed by VAL-CS-021.
+
+  - asset_key: SOP-ASEP-010
+    asset_type: SOP
+    title: Aseptic Processing and Intervention Control
+    domain: Sterility Assurance
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 4
+        status: EFFECTIVE
+        effective_from: "2025-02-15"
+        content: >-
+          Operators follow qualified aseptic techniques and record interventions.
+          Personnel must complete TRN-ASEP-002 before independent operation. The
+          process owner evaluates intervention trends and links deviations to the
+          applicable media-fill and qualification evidence.
+        anchors:
+          - id: intervention-control
+            excerpt: Operators follow qualified aseptic techniques and record interventions.
+          - id: training-prerequisite
+            excerpt: Personnel must complete TRN-ASEP-002 before independent operation.
+          - id: validation-link
+            excerpt: The process owner evaluates intervention trends and links deviations to the applicable media-fill and qualification evidence.
+
+  - asset_key: PROC-ASEP-001
+    asset_type: Process
+    title: Sterile Filling Process
+    domain: Sterility Assurance
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 2
+        status: EFFECTIVE
+        effective_from: "2025-02-15"
+        content: >-
+          The synthetic sterile filling process includes component preparation,
+          environmental monitoring, aseptic filling, intervention control under
+          SOP-ASEP-010, and review of qualification and media-fill evidence.
+        anchors:
+          - id: process-scope
+            excerpt: The synthetic sterile filling process includes component preparation, environmental monitoring, aseptic filling, intervention control under SOP-ASEP-010, and review of qualification and media-fill evidence.
+
+  - asset_key: TRN-ASEP-002
+    asset_type: Training requirement
+    title: Aseptic Operator Qualification Curriculum
+    domain: Sterility Assurance
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [viewer, analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 2
+        status: EFFECTIVE
+        effective_from: "2025-02-15"
+        content: >-
+          Operators complete gowning, aseptic behavior, intervention simulation,
+          and observed qualification before independent work. Retraining follows
+          the approved periodic cycle or a documented performance trigger.
+        anchors:
+          - id: qualification-components
+            excerpt: Operators complete gowning, aseptic behavior, intervention simulation, and observed qualification before independent work.
+
+  - asset_key: VAL-CS-021
+    asset_type: Validation document
+    title: Computerized System Validation Protocol
+    domain: Computerized Systems
+    classification: INTERNAL_SYNTHETIC
+    acl_roles: [analyst, reviewer, domain_sme, system_owner, auditor]
+    versions:
+      - revision: 2
+        status: EFFECTIVE
+        effective_from: "2025-03-01"
+        content: >-
+          The synthetic protocol verifies access control, audit-event generation,
+          time synchronization, record retention, backup recovery, and review
+          reporting for configured computerized systems.
+        anchors:
+          - id: validation-scope
+            excerpt: The synthetic protocol verifies access control, audit-event generation, time synchronization, record retention, backup recovery, and review reporting for configured computerized systems.
+
+relations:
+  - source: PROC-ASEP-001
+    target: SOP-ASEP-010
+    relation_type: GOVERNED_BY
+    confidence: 1.0
+    rationale: The process revision explicitly names its governing procedure.
+    evidence:
+      - asset: PROC-ASEP-001
+        revision: 2
+        anchor: process-scope
+      - asset: SOP-ASEP-010
+        revision: 4
+        anchor: intervention-control
+  - source: SOP-ASEP-010
+    target: TRN-ASEP-002
+    relation_type: REQUIRES_TRAINING
+    confidence: 1.0
+    rationale: The procedure explicitly requires the qualification curriculum.
+    evidence:
+      - asset: SOP-ASEP-010
+        revision: 4
+        anchor: training-prerequisite
+      - asset: TRN-ASEP-002
+        revision: 2
+        anchor: qualification-components
+  - source: SOP-DI-004
+    target: FRM-DI-011
+    relation_type: RECORDED_ON
+    confidence: 1.0
+    rationale: The effective procedure explicitly names the review record.
+    evidence:
+      - asset: SOP-DI-004
+        revision: 2
+        anchor: audit-trail-form
+      - asset: FRM-DI-011
+        revision: 3
+        anchor: required-fields
+  - source: SYS-LIMS-007
+    target: SOP-DI-004
+    relation_type: CONTROLLED_BY
+    confidence: 1.0
+    rationale: The system record explicitly identifies the audit-trail SOP.
+    evidence:
+      - asset: SYS-LIMS-007
+        revision: 5
+        anchor: governing-controls
+      - asset: SOP-DI-004
+        revision: 2
+        anchor: risk-based-review
+  - source: SYS-LIMS-007
+    target: VAL-CS-021
+    relation_type: VALIDATED_BY
+    confidence: 1.0
+    rationale: The system record explicitly identifies the validation protocol.
+    evidence:
+      - asset: SYS-LIMS-007
+        revision: 5
+        anchor: governing-controls
+      - asset: VAL-CS-021
+        revision: 2
+        anchor: validation-scope
