@@ -104,7 +104,7 @@ jobs:
         env:
           PGDATABASE: fda_intel_restore
         run: test "$(psql --tuples-only --no-align --command "SELECT count(*) FROM platform_controls WHERE control_key = 'global' AND reason = 'CI backup restore canary'")" = "1"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: postgres-restore-evidence
           path: |
@@ -134,7 +134,7 @@ jobs:
           done
           exit 1
       - run: pytest tests/test_runtime_hardening.py --junitxml=temporal-recovery.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: temporal-recovery-evidence
@@ -172,7 +172,7 @@ jobs:
           mkdir -p .artifacts
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.artifacts:/reports" aquasec/trivy:0.74.0 image --format cyclonedx --output "/reports/$COMPONENT.cdx.json" "pharma-$COMPONENT:ci"
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.artifacts:/reports" aquasec/trivy:0.74.0 image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output "/reports/$COMPONENT.vulnerabilities.json" "pharma-$COMPONENT:ci"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: container-evidence-${{ matrix.component }}
