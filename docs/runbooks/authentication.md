@@ -13,6 +13,10 @@ portal mode.
 - Every unassigned Google or Naver identity receives `viewer`.
 - Privileged roles are assigned only by immutable provider subject in a private,
   server-side role directory. Email configuration never grants authority.
+- In production, service tokens must resolve to exactly the `service` role after
+  both signed roles and group-to-role mappings are processed. A human role introduced
+  by group mapping rejects the service token; human tokens also cannot receive the
+  `service` role. Do not map service-account groups to human approval/admin roles.
 - Google and Naver subjects are separate accounts. Never merge them based only on a
   matching email.
 - Provider access, refresh, and ID tokens must not be forwarded to FastAPI or stored in

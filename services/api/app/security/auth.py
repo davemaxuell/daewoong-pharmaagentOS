@@ -157,6 +157,15 @@ async def current_principal(request: Request) -> Principal:
         if not roles:
             raise HTTPException(status_code=403, detail="No recognized application role")
         actor_type = "service" if claims.get("token_use") == "service_access" else "user"
+        # Group mappings are another source of authority. Check the final role
+        # set, not just the signed roles claim inspected by _decode_bearer.
+        if settings.app_env == "production":
+            if actor_type == "service" and roles != {"service"}:
+                raise _unauthorized(
+                    "Bearer token service identity has incompatible effective roles"
+                )
+            if actor_type == "user" and "service" in roles:
+                raise _unauthorized("Human identities cannot receive the service role")
         return Principal(subject, frozenset(roles), actor_type=actor_type, claims=claims)
 
     dev_user = request.headers.get("x-dev-user", "").strip()

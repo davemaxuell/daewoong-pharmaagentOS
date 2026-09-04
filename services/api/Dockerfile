@@ -26,6 +26,7 @@ COPY evals /srv/pharma/evals
 COPY fixtures/synthetic-quality /srv/pharma/fixtures/synthetic-quality
 COPY infra/migrations /srv/pharma/infra/migrations
 COPY infra/policies /srv/pharma/infra/policies
+COPY infra/deployment/kubernetes/base /srv/pharma/infra/deployment/kubernetes/base
 ENV APP_ENV=test OBJECT_STORE_PATH=/tmp/objects
 ENTRYPOINT []
 CMD ["python", "-m", "pytest", "--tb=short"]

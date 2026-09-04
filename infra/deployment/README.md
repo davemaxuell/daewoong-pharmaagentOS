@@ -13,6 +13,37 @@ docker build --tag fda-web:local apps/web
 
 Release builds must use immutable tags/digests, generate an SBOM, pass SAST/SCA/secret/container/IaC scans, and be signed/attested where supported. The checked-in Kubernetes image names are deliberately non-routable placeholders; replace them in an environment overlay with approved immutable digests.
 
+## Workload-specific runtime wiring
+
+All Python processes retain the same strict production settings validation.
+Provision these references through the approved secret-management channel before
+starting the workloads; the repository contains no secret values:
+
+- `fda-worker-runtime` and `pharma-orchestrator-runtime` each need
+  `api-session-public-key` in addition to their existing keys. This is the public
+  verification key, never the portal's private signing key.
+- `fda-api-runtime` and `fda-worker-runtime` each need `object-store-endpoint`
+  (HTTPS), `object-store-bucket`, `object-store-region`, `object-store-access-key-id`
+  and `object-store-secret-access-key`. Use the same governed evidence bucket with
+  separately scoped credentials. The base explicitly selects S3 storage so these
+  read-only containers cannot silently fall back to local container storage.
+- The API and orchestrator mount `pharma-temporal-mtls` with `ca.crt`, `tls.crt`
+  and `tls.key`. Approved environment overlays should provide workload-specific
+  client identities/certificates as required by the Temporal authorization policy.
+- The MCP gateway and orchestrator disable model generation and embeddings because
+  their current process implementations do not call those providers. The ingestion
+  worker retains its model/embedding settings. Only the API and orchestrator enable
+  Temporal; the ingestion worker and MCP gateway do not dispatch Temporal work.
+
+API health probes connect directly to the Pod but send `Host: fda-api`. Retain that
+internal name in `ALLOWED_HOSTS`; do not weaken Host validation with `*`.
+Regression tests validate these settings with synthetic secret values and exercise
+all three API probes through the real middleware. They do not prove that secrets,
+network routes, storage or certificates exist in the target cluster.
+
+These references do not complete the separate managed-secret-provider integration
+or replace the environment overlay, least-privilege grants and connectivity checks.
+
 ## Managed PostgreSQL and embedding bootstrap
 
 Provision an empty PostgreSQL 16 database with pgvector available. Do not apply

@@ -29,6 +29,10 @@ spec:
           env:
             - name: DATABASE_URL
               valueFrom: { secretKeyRef: { name: pharma-orchestrator-runtime, key: database-url } }
+            - name: OIDC_PUBLIC_KEY
+              valueFrom: { secretKeyRef: { name: pharma-orchestrator-runtime, key: api-session-public-key } }
+            - { name: LLM_PROVIDER, value: none }
+            - { name: EMBEDDING_ENABLED, value: "false" }
           volumeMounts:
             - { name: temporal-mtls, mountPath: /var/run/secrets/temporal, readOnly: true }
             - { name: tmp, mountPath: /tmp }
@@ -90,6 +94,9 @@ spec:
               valueFrom: { secretKeyRef: { name: pharma-mcp-runtime, key: database-url } }
             - name: OIDC_PUBLIC_KEY
               valueFrom: { secretKeyRef: { name: pharma-mcp-runtime, key: service-token-public-key } }
+            - { name: LLM_PROVIDER, value: none }
+            - { name: EMBEDDING_ENABLED, value: "false" }
+            - { name: TEMPORAL_ENABLED, value: "false" }
           startupProbe:
             httpGet: { path: /health/live, port: http }
             periodSeconds: 5

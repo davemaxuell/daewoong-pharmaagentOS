@@ -9,6 +9,14 @@
 corrects the earlier completion claim, records real PostgreSQL/Temporal/container
 checks, and identifies remaining execution-adapter and environment work.
 
+**Production-check remediation:** Service/human role separation is now enforced
+after group mapping. The Kubernetes base includes missing public-key references,
+process-specific model/Temporal settings, API certificate mounts, remote-storage
+references and health-probe Host headers. These are local code/template fixes, not
+target-cluster qualification; see the latest audit for their verification scope.
+Follow-up verification: 39 focused tests passed; the full offline container suite
+passed 427 tests with 6 explicitly gated live-integration skips.
+
 All PharmaAgent OS work is contained in this workspace. The earlier FDA project is
 separate and must not be used as a working directory for future changes. Git metadata,
 local secrets, dependency caches, databases, and build output from that project were

@@ -26,6 +26,10 @@
 !infra/migrations/**
 !infra/policies/
 !infra/policies/**
+!infra/deployment/
+!infra/deployment/kubernetes/
+!infra/deployment/kubernetes/base/
+!infra/deployment/kubernetes/base/**
 **/__pycache__/
 **/*.pyc
 **/.env*

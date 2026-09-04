@@ -62,6 +62,38 @@ No production deployment or GitHub push was performed. The user's push condition
 
 ## Remaining production blockers
 
+### Follow-up production-check remediation
+
+The subsequent production-check pass reproduced a service-role escalation through
+group mapping and startup defects in the base workloads. The remediation:
+
+- Revalidates the final effective production role set after group mapping. Service
+  identities cannot acquire human privileges, and human identities cannot acquire
+  the service role. Ordinary human-to-human and service-only mappings still work.
+- Supplies missing public verification-key references for the worker/orchestrator;
+  disables model/embedding settings in the non-model MCP/orchestrator processes and
+  disables unused Temporal clients in the ingestion worker/MCP gateway.
+- Mounts the API's Temporal certificates, explicitly configures remote S3 evidence
+  storage for API/worker, and sets the allowed Host header on all three API probes.
+- Adds regression tests for each workload's production configuration, certificate
+  mount paths, storage references, and real API probe responses. Synthetic secrets
+  and isolated local storage/database are used; external services are not qualified.
+
+Remediation verification: **39 focused tests passed** on native Python 3.12;
+the complete Python 3.14 container suite passed **427 tests**, with **6 skipped**
+(five live PostgreSQL checks and one live Temporal check) in 273.20 seconds.
+The container suite ran with networking disabled. Ruff, contract validation,
+Kubernetes rendering, changed-source secret scans and runtime smoke checks passed.
+The rebuilt `pharma-api:production-fixes` image has zero HIGH/CRITICAL Trivy findings.
+These are new results; the earlier fully connected 407-test run above is historical.
+
+The broad viewer-admission policy and the additional configuration-validation gaps
+(HTTP endpoints, wildcard Host configuration and optional production topology)
+were not changed by this scoped remediation. They remain review items in addition
+to the blockers below. No push or deployment accompanies these fixes.
+
+### Still outstanding
+
 1. A hosting target, domain, database/storage endpoints, identity provider,
    Temporal mTLS, telemetry destination, workload identities and managed secrets
    have not been supplied. Kubernetes base files are templates; they need an
