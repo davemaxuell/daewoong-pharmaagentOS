@@ -4,6 +4,14 @@ Prepared: **2026-09-07**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
 
+**Latest interface update:** At the user's request, the service now leads with an
+agent workspace: a browser review brief, nine-step workflow inspector, five-agent
+team explorer, case activity and human review. Research chat moved to `/ask` with
+legacy query links preserved. The new design, route contract and test evidence
+are documented at the top of `PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md`.
+Do not restore the former chat-first home or introduce account login. Browser
+drafts are local only; production agent execution and live data remain pending.
+
 Publication update: checkpoint `8ade4a1` is on GitHub `main`. The dedicated Vercel
 project `pharmaagent-os` serves https://pharmaagent-os.vercel.app. Supabase
 setup remains needed; backend health returns 500 for missing database configuration.

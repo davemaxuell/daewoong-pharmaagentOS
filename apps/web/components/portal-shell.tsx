@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Archive,
+  GitBranch,
+  Network,
   Bell,
   Bookmark,
   BriefcaseBusiness,
@@ -44,15 +46,17 @@ const navItems: Array<{
   icon: typeof MessageSquareText;
   requiredRole?: AppRole;
 }> = [
-  { en: "FDA Update", ko: "FDA 업데이트", href: "/dashboard", icon: MessageSquareText },
-  { en: "Drug Letters", ko: "의약품 경고서한", href: "/drug-letters", icon: FileText },
-  { en: "Saved", ko: "저장됨", href: "/saved-views", icon: Bookmark },
-  { en: "Cases", ko: "규제 검토 케이스", href: "/cases", icon: BriefcaseBusiness },
-  { en: "Approvals", ko: "승인 센터", href: "/approvals", icon: ClipboardCheck },
-  { en: "Evaluation", ko: "평가 센터", href: "/evaluations", icon: ClipboardCheck },
-  { en: "Control Tower", ko: "에이전트 관제", href: "/control-tower", icon: ShieldCheck },
-  { en: "Trends", ko: "동향", href: "/trends", icon: ChartNoAxesColumnIncreasing },
-  { en: "Review", ko: "검토", href: "/review", icon: ClipboardCheck, requiredRole: "reviewer" },
+  { en: "Agent workspace", ko: "에이전트 워크스페이스", href: "/dashboard", icon: GitBranch },
+  { en: "Agent team", ko: "에이전트 팀", href: "/agents", icon: Network },
+  { en: "Cases & runs", ko: "케이스 · 실행", href: "/cases", icon: BriefcaseBusiness },
+  { en: "Human review", ko: "사람의 검토", href: "/approvals", icon: ClipboardCheck },
+  { en: "Evaluations", ko: "에이전트 평가", href: "/evaluations", icon: ShieldCheck },
+  { en: "Operations", ko: "운영 현황", href: "/control-tower", icon: ChartNoAxesColumnIncreasing },
+  { en: "Research chat", ko: "리서치 대화", href: "/ask", icon: MessageSquareText },
+  { en: "FDA evidence", ko: "FDA 근거 자료", href: "/drug-letters", icon: FileText },
+  { en: "Saved research", ko: "저장한 조사", href: "/saved-views", icon: Bookmark },
+  { en: "Trends", ko: "규제 동향", href: "/trends", icon: ChartNoAxesColumnIncreasing },
+  { en: "Source review", ko: "원문 검토", href: "/review", icon: ClipboardCheck, requiredRole: "reviewer" },
   { en: "Admin", ko: "관리", href: "/admin", icon: ShieldCheck, requiredRole: "admin" },
 ];
 
@@ -78,7 +82,7 @@ export function PortalShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showNewLetterNotification, setShowNewLetterNotification] = useState(false);
   const [menuSectionOpen, setMenuSectionOpen] = useState(true);
-  const [historySectionOpen, setHistorySectionOpen] = useState(true);
+  const [historySectionOpen, setHistorySectionOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyResults, setHistoryResults] = useState<ReturnType<typeof useChatHistory>["threads"]>();
   const [historyActionError, setHistoryActionError] = useState<"search" | "archive">();
@@ -165,7 +169,7 @@ export function PortalShell({
         setHistoryResults((current) => current?.filter((thread) => thread.id !== threadId));
         if (threadId === activeThreadId || pathname === `/chat/${threadId}`) {
           setActiveThreadId(undefined);
-          router.push("/dashboard");
+          router.push("/ask");
         }
       } catch {
         setHistoryActionError("archive");
@@ -294,22 +298,15 @@ export function PortalShell({
         <Link
           className="wordmark wordmark--mobile portal-brand portal-brand--mobile"
           href="/dashboard"
-          aria-label={text("Daewoong Bio FDA Warning Letter Update", "대웅바이오 FDA 경고서한 업데이트")}
+          aria-label={text("PharmaAgent OS workspace", "PharmaAgent OS 워크스페이스")}
           onClick={() => closeMenu()}
         >
-          <Image
-            className="portal-brand__logo"
-            src="/brand/daewoong-bio-logo.jpg"
-            alt=""
-            width={800}
-            height={191}
-            unoptimized
-            priority
-          />
+          <span className="os-brand-mark"><GitBranch size={22} aria-hidden="true" /></span>
+          <span className="os-brand-name">PharmaAgent<span>OS</span></span>
         </Link>
 
         <div className="portal-header__product" aria-label={text("Current service", "현재 서비스")}>
-          <span>{text("FDA Warning Letter Update", "FDA 경고서한 업데이트")}</span>
+          <span className="os-header-context">{text("Workspace", "워크스페이스")}<span>/</span><strong>{(() => { const item = visibleNav.find((entry) => isActive(pathname, entry.href)); return item ? text(item.en, item.ko) : text("Research", "리서치"); })()}</strong></span>
         </div>
 
         <div className="portal-header__actions">
@@ -358,18 +355,11 @@ export function PortalShell({
             <Link
               className="wordmark portal-brand portal-brand--sidebar"
               href="/dashboard"
-              aria-label={text("Daewoong Bio FDA Warning Letter Update", "대웅바이오 FDA 경고서한 업데이트")}
+              aria-label={text("PharmaAgent OS workspace", "PharmaAgent OS 워크스페이스")}
               onClick={() => closeMenu()}
             >
-              <Image
-                className="portal-brand__logo"
-                src="/brand/daewoong-bio-logo.jpg"
-                alt=""
-                width={800}
-                height={191}
-                unoptimized
-                priority
-              />
+              <span className="os-brand-mark"><GitBranch size={22} aria-hidden="true" /></span>
+          <span className="os-brand-name">PharmaAgent<span>OS</span></span>
             </Link>
             <button
               ref={sidebarCollapseButtonRef}
@@ -397,10 +387,10 @@ export function PortalShell({
               <ChevronDown className="portal-service-guide__chevron" size={15} aria-hidden="true" />
             </summary>
             <div className="portal-service-guide__panel">
-              <strong>{text("FDA Warning Letter Update", "FDA 경고서한 업데이트")}</strong>
+              <strong>PharmaAgent OS</strong>
               <p>{text(
-                "This service collects FDA Drug warning letters and helps you search updates through conversational AI with traceable citations to the official source.",
-                "FDA 의약품 경고서한을 수집하고, 대화형 AI 검색과 추적 가능한 공식 원문 인용으로 변경 사항을 빠르게 확인하는 서비스입니다.",
+                "Prepare regulatory objectives, inspect specialist agent workflows, and review evidence-linked outputs with human oversight.",
+                "규제 검토 목표를 준비하고, 전문가별 에이전트 워크플로를 살펴보며, 근거에 연결된 결과를 사람의 감독 아래 검토합니다.",
               )}</p>
             </div>
           </details>
@@ -417,7 +407,7 @@ export function PortalShell({
               aria-controls="portal-menu-section"
               onClick={() => setMenuSectionOpen((open) => !open)}
             >
-              <span>{text("Menu", "메뉴")}</span>
+              <span>{text("Workspace", "워크스페이스")}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </button>
             <div
@@ -434,6 +424,7 @@ export function PortalShell({
                       const active = isActive(pathname, item.href);
                       return (
                         <li className="portal-nav__item" key={item.href}>
+                          {item.href === "/ask" ? <span className="os-nav-group">{text("Research library", "조사 자료실")}</span> : null}
                           <Link
                             className={`nav-link portal-nav__link${active ? " nav-link--active portal-nav__link--active" : ""}`}
                             href={item.href}
@@ -481,7 +472,7 @@ export function PortalShell({
                   onClick={() => {
                     setActiveThreadId(undefined);
                     closeMenu();
-                    router.push(`/dashboard?new=${window.crypto.randomUUID()}`);
+                    router.push(`/ask?new=${window.crypto.randomUUID()}`);
                   }}
                 >
                   <Plus size={15} aria-hidden="true" />
@@ -583,7 +574,7 @@ export function PortalShell({
                 </nav>
                 <p className="portal-history-security">
                   <LockKeyhole size={12} aria-hidden="true" />
-                  {text("Private to your signed-in account", "로그인 계정별 비공개 저장")}
+                  {text("Private to this browser session", "이 브라우저 세션에 비공개 저장")}
                 </p>
               </div>
             </div>
@@ -591,6 +582,7 @@ export function PortalShell({
         </div>
 
         <footer className="sidebar__footer portal-sidebar__footer">
+          <Image className="os-organization" src="/brand/daewoong-bio-logo.jpg" alt="Daewoong Bio" width={140} height={34} unoptimized />
           <div
             className="portal-sidebar__scope"
             title={text(
@@ -600,7 +592,7 @@ export function PortalShell({
           >
             <LockKeyhole className="portal-sidebar__scope-icon" size={16} aria-hidden="true" />
             <div className="portal-sidebar__scope-copy">
-              <span>{text("Verified corpus", "검증된 코퍼스")}</span>
+              <span>{text("Evidence scope", "근거 범위")}</span>
               <strong>{text("FDA Product: Drugs", "FDA 제품: 의약품")}</strong>
             </div>
           </div>

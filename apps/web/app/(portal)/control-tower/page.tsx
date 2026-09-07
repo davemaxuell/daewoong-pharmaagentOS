@@ -1,3 +1,4 @@
+import { ServiceState } from "@/components/agent-platform/service-state";
 import type { Metadata } from "next";
 import { RuntimeControlForm } from "@/components/agent-platform/runtime-control-form";
 import styles from "@/components/agent-platform/governance.module.css";
@@ -40,7 +41,7 @@ export default async function ControlTowerPage() {
     canReadControls ? listRuntimeControls() : Promise.resolve([]),
   ]).catch(() => null);
   if (!loaded) {
-    return <main className={styles.page}><header><span>Agent Control Tower</span><h1>Governance telemetry is unavailable.</h1><p>The API may be offline or this identity may not have platform visibility.</p></header></main>;
+    return <ServiceState surface="operations" />;
   }
   const [tower, inventory, controls] = loaded;
     const agents = inventory.filter((item) => item.kind === "AGENT_VERSION");
@@ -50,7 +51,7 @@ export default async function ControlTowerPage() {
     const availableAgents = agents.filter((agent) => !controlledAgentIds.has(agent.id));
     const globalControl = controls.find((control) => control.scope === "GLOBAL");
   return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <header>
           <span>Agent Control Tower / governed operations</span>
           <h1>One ledger for health, quality, security, cost, and value.</h1>
@@ -83,6 +84,6 @@ export default async function ControlTowerPage() {
           <div className={styles.sectionHeading}><div><span>Immutable inventory</span><h2>{inventory.length} released or releasable versions</h2></div></div>
           <div className={styles.inventoryTable}>{inventory.map((item) => <article key={item.id}><span>{item.kind.replaceAll("_", " ")}</span><strong>{item.key}@{item.version}</strong><code title={item.sha256}>{item.sha256.slice(0, 9)}…{item.sha256.slice(-9)}</code><em>{item.releaseStatus}</em></article>)}</div>
         </section>
-      </main>
+      </div>
   );
 }

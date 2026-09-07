@@ -115,6 +115,7 @@ export async function createChatConversation(values: {
     activeLetterIds,
   });
   revalidatePath("/dashboard");
+  revalidatePath("/ask");
   return thread;
 }
 
@@ -123,6 +124,7 @@ export async function archiveChatConversation(threadId: string) {
   const id = normalizedId(threadId, "thread ID");
   await archiveChatThread(id);
   revalidatePath("/dashboard");
+  revalidatePath("/ask");
   revalidatePath(`/chat/${id}`);
 }
 

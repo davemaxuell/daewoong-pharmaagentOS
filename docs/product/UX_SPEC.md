@@ -1,8 +1,34 @@
-# FDA Warning Letter Update — UX source of truth
+# PharmaAgent OS — UX source of truth
 
 - Status: active
 - Owner: product team
-- Last updated: 2026-08-31
+- Last updated: 2026-09-07
+
+## Agent workspace redesign — current contract
+
+At the service owner's request, the whole interface now emphasizes the agentic
+review workflow. This section supersedes the former chat-first home and global
+shell rules below; detailed FDA research behavior remains applicable.
+
+- `/dashboard` leads with a review objective, local browser draft, and selectable
+  nine-step regulatory-impact-review definition. Five specialist agent definitions,
+  two human checkpoints, and deterministic validation/composition are distinct.
+- Selecting a step explains its responsibility, inputs, output, and workflow tools.
+  The displayed definition is explicitly not executing.
+- `/agents` offers a searchable team roster and a detail inspector. Versioned
+  definitions do not assert live readiness or completed qualification.
+- Navigation prioritizes agent work, cases/runs, human review, evaluation, and
+  operations. Research chat, FDA evidence, saved research, and trends follow.
+- `/ask` retains research chat. Legacy `/dashboard?letter=…`, company and new-chat
+  links preserve their context through redirects to `/ask`.
+- Local drafts save, restore, delete, and export on the browser only. A local
+  confirmation is never described as server persistence or agent execution.
+- Live outages and permission denials have explicit recovery paths; no fabricated
+  case counts or run progress are substituted. Public viewers retain their guards.
+- No account login; Korean default with English switch; keyboard navigation,
+  responsive sidebar, visible focus, reduced motion, and single main landmark.
+- `DESIGN.md` records the navy navigation, light work surface, cobalt controls,
+  and retained Daewoong organizational attribution. CSS zoom is removed.
 
 This document consolidates the product and UX decisions supplied during development. It is the acceptance contract for the current service. It supersedes older presentation and navigation guidance in the industrial handover; the handover's security, provenance, regulatory, and architecture controls remain authoritative.
 

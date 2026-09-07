@@ -840,7 +840,7 @@ export function ChatWorkspace({
     if (primaryLetterId) params.set("letter", primaryLetterId);
     if (primaryCompany) params.set("company", primaryCompany);
     params.set("new", seed);
-    return `/dashboard?${params.toString()}`;
+    return `/ask?${params.toString()}`;
   };
 
   const clearConversation = () => {
@@ -1327,7 +1327,7 @@ export function ChatWorkspace({
       <div className="chat-page__surface">
         <PageGuide
           className="chat-page__guide"
-          title={{ ko: "FDA 경고서한 업데이트", en: "FDA Warning Letter Update" }}
+          title={{ ko: "FDA 근거 리서치", en: "FDA evidence research" }}
           context={{ ko: "FDA 의약품 인텔리전스", en: "FDA Drug Intelligence" }}
           description={{
             ko: "질문 유형에 따라 대화 문맥, 특정 경고서한 원문 또는 전체 FDA 의약품 코퍼스를 자동으로 선택하고, 근거가 필요한 답변은 공식 FDA 인용으로 확인할 수 있습니다.",

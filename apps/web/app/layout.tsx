@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import { BilingualText, I18nProvider, type Locale } from "@/lib/i18n";
 import "./globals.css";
-import "./typography-scale.css";
+import "./agent-theme.css";
 
 const pretendard = localFont({
   src: "./fonts/PretendardVariable.woff2",
@@ -16,12 +16,12 @@ const pretendard = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "FDA Warning Letter Update · FDA 경고서한 업데이트",
-    template: "%s · Daewoong",
+    default: "PharmaAgent OS · 에이전트 워크스페이스",
+    template: "%s · PharmaAgent OS",
   },
   description:
-    "Search and analyze FDA drug warning letters with grounded bilingual answers. 근거 기반의 한영 답변으로 FDA 의약품 경고서한을 검색하고 분석합니다.",
-  applicationName: "FDA Warning Letter Update · FDA 경고서한 업데이트",
+    "Plan regulatory reviews with specialist agents, traceable evidence, and human oversight. 전문 에이전트와 근거 기반 규제 검토를 설계합니다.",
+  applicationName: "PharmaAgent OS",
 };
 
 export const viewport: Viewport = {

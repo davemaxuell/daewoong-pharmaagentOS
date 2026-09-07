@@ -445,7 +445,7 @@ export function LetterDetail({ letter, initiallySaved }: { letter: Letter; initi
   };
 
   const openLetterChat = () => {
-    router.push(`/dashboard?letter=${encodeURIComponent(letter.id)}&company=${encodeURIComponent(letter.company)}`);
+    router.push(`/ask?letter=${encodeURIComponent(letter.id)}&company=${encodeURIComponent(letter.company)}`);
   };
 
   const activateTab = (nextTab: ContentTab, moveFocus = false) => {

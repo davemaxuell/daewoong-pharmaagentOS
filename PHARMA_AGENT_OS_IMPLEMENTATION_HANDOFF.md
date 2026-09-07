@@ -10,6 +10,35 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-07 agent-focused interface redesign:** The service owner requested a
+complete interface change emphasizing agentic work. `/dashboard` now presents a
+review brief, the actual nine-step workflow definition, selectable specialist
+responsibilities and human checkpoints, and accessible case activity. `/agents`
+adds searchable descriptions of the five versioned agent definitions. No running
+agents, case records, or completion counts are fabricated when the API is absent.
+Browser drafts can be saved, restored, deleted and exported as explicitly
+unexecuted JSON. These drafts do not create governed cases or submit execution.
+
+The shared navy/light/cobalt theme, PharmaAgent OS identity and grouped navigation
+apply across the portal. Cases, approvals, evaluation and operations have shared
+bilingual unavailable states with useful routes back to brief preparation.
+`/ask` now owns research chat; legacy dashboard query links retain their source
+and conversation context. Chat creation/archive invalidate the new route as well.
+Account-free viewer authorization and all backend execution/review guards remain.
+Korean defaults, English switching, mobile navigation and keyboard focus remain.
+Global CSS zoom is removed. Product truth, design rules and UX supersession are
+recorded in `PRODUCT.md`, `DESIGN.md`, and `docs/product/UX_SPEC.md`.
+
+Verification: 22 frontend tests passed; lint and production build/TypeScript passed.
+Headless Edge checked draft persistence/isolation/export/deletion, workflow and
+agent selection, agent search, nine supporting routes, preserved legacy links,
+single-main landmarks, desktop/mobile overflow, mobile navigation/Escape focus,
+both languages, no login, and denied admin access. No browser JavaScript errors.
+Screenshots and JSON evidence are under ignored
+`.artifacts/agent-redesign-20260907/`. The UI detector returned no findings.
+Live data, specialist execution and independent evaluation qualification remain
+pending; this interface work does not resolve the Supabase/backend blockers.
+
 **2026-09-07 live FDA data incident:** The deployed frontend health returned 200,
 but API health returned 500. Vercel web logs also reported missing
 `API_SESSION_ISSUER`. Added API session issuer/audience/key ID, matching OIDC

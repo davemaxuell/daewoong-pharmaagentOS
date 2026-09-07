@@ -1,3 +1,4 @@
+import { ServiceState } from "@/components/agent-platform/service-state";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listApprovals, type ApprovalCenterItem } from "@/lib/governance-api-client";
@@ -22,10 +23,10 @@ export default async function ApprovalCenterPage({
     : undefined;
   const approvals = await listApprovals(status).catch(() => null);
   if (!approvals) {
-    return <main className={styles.page}><header><span>Approval Center</span><h1>Approval records are unavailable.</h1><p>Confirm the API connection and your case-review permission.</p></header></main>;
+    return <ServiceState surface="approvals" />;
   }
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <header>
         <span>Approval Center / attributable decisions</span>
         <h1>Every human interrupt, in one bound queue.</h1>
@@ -48,6 +49,6 @@ export default async function ApprovalCenterPage({
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

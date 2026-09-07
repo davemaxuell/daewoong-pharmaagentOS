@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ServiceState } from "./service-state";
 import { ArrowRight, BriefcaseBusiness, LockKeyhole } from "lucide-react";
 import { CreateCaseForm } from "@/components/agent-platform/case-forms";
 import {
@@ -29,34 +30,8 @@ export function CaseAccessState({
   kind: "forbidden" | "unavailable" | "not-found";
   requestId?: string;
 }) {
-  const content = {
-    forbidden: {
-      eyebrow: "Role-controlled workspace",
-      title: "Case access is not assigned to this account.",
-      detail: "Regulatory Analysts create cases. QA Reviewers, Domain SMEs, Auditors, and System Owners receive controlled access through the platform role directory.",
-    },
-    unavailable: {
-      eyebrow: "Service boundary",
-      title: "The governed case service is unavailable.",
-      detail: "No preview records are substituted for regulated case data. Verify the API connection and try again.",
-    },
-    "not-found": {
-      eyebrow: "Case record",
-      title: "This case is not available.",
-      detail: "The identifier may be invalid, or the record may be outside your authorized case scope.",
-    },
-  }[kind];
-
-  return (
-    <section className={styles.accessState}>
-      <span className={styles.accessIcon} aria-hidden="true"><LockKeyhole size={22} /></span>
-      <p className={styles.eyebrow}>{content.eyebrow}</p>
-      <h1>{content.title}</h1>
-      <p>{content.detail}</p>
-      {requestId ? <small>Request ID · {requestId}</small> : null}
-      <Link href="/dashboard">Return to FDA Update</Link>
-    </section>
-  );
+  if (kind !== "not-found") return <ServiceState surface="cases" restricted={kind === "forbidden"} requestId={requestId} />;
+  return <section className={styles.accessState}><h1>Case not found</h1><p>This case is not available in the current scope.</p><Link href="/dashboard">Return to agent workspace</Link></section>;
 }
 
 const FILTERS: Array<{ label: string; status?: CaseStatus }> = [

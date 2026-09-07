@@ -1,10 +1,10 @@
 .indexPage,
 .workspacePage {
-  --case-orange: var(--brand-orange, #f18a00);
-  --case-orange-soft: #fff4e5;
-  --case-ink: #201d1d;
-  --case-muted: #6e6a67;
-  --case-rule: #dedbd6;
+  --case-orange: var(--os-primary, #3159c9);
+  --case-orange-soft: #eef2fd;
+  --case-ink: #192438;
+  --case-muted: #596779;
+  --case-rule: #dce2ec;
   --case-paper: #ffffff;
   width: min(1480px, 100%);
   margin: 0 auto;
@@ -19,10 +19,10 @@
 .eyebrow,
 .sectionIndex {
   margin: 0 0 10px;
-  color: #a45411;
-  font-size: 10px;
-  font-weight: 760;
-  letter-spacing: 0.14em;
+  color: #4f6486;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -32,7 +32,7 @@
   align-items: end;
   gap: 44px;
   padding: 10px 0 30px;
-  border-bottom: 1px solid #aaa6a0;
+  border-bottom: 1px solid #c8d2e0;
 }
 
 .indexHeader > div:first-child {
@@ -43,10 +43,10 @@
 .workspaceHeader h1,
 .accessState h1 {
   margin: 0;
-  font-size: clamp(38px, 5vw, 68px);
+  font-size: clamp(28px, 3vw, 38px);
   font-weight: 680;
-  line-height: 0.98;
-  letter-spacing: -0.055em;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
 }
 
 .lede {
@@ -696,15 +696,15 @@
   align-items: end;
   gap: 40px;
   padding-bottom: 28px;
-  border-bottom: 1px solid #aaa6a0;
+  border-bottom: 1px solid #c8d2e0;
 }
 
 .caseIdentity > span {
   display: block;
   margin-bottom: 13px;
-  color: #a45411;
-  font-size: 10px;
-  font-weight: 760;
+  color: #4f6486;
+  font-size: 12px;
+  font-weight: 650;
   letter-spacing: 0.15em;
 }
 
@@ -730,8 +730,8 @@
 
 .caseState > span {
   color: #57524e;
-  font-size: 10px;
-  font-weight: 760;
+  font-size: 12px;
+  font-weight: 650;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }

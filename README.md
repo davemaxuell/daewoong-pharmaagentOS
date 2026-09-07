@@ -1,4 +1,10 @@
-# FDA Drug Warning Letter Intelligence Platform
+# PharmaAgent OS
+
+An agent workspace for regulatory review: prepare an objective, inspect specialist
+responsibilities and evidence, and follow governed case work through human review.
+The interface now leads with agents and workflows; FDA search and research chat
+remain supporting tools. Public browsing requires no account. Live data and
+specialist execution still depend on the pending backend setup and qualification.
 
 An evidence-first internal service for monitoring U.S. FDA warning letters whose
 canonical FDA metadata contains the exact product class `Drugs`. The platform
