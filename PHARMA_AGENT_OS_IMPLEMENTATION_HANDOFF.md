@@ -10,6 +10,20 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-07 live FDA data incident:** The deployed frontend health returned 200,
+but API health returned 500. Vercel web logs also reported missing
+`API_SESSION_ISSUER`. Added API session issuer/audience/key ID, matching OIDC
+issuer/audience/RS256 configuration, and `SECRET_PROVIDER=vercel` to Production
+and Preview. Generated separate 3072-bit RSA keypairs for each environment;
+private keys were sent directly to Vercel Secrets, never written to source or logs.
+The next deployment applies these settings. Supabase project access, runtime
+database URLs, private Storage and remaining production runtime configuration
+are still absent. No FDA ingestion or successful live query has been established.
+The service owner was asked for the dedicated Supabase project URL; credentials
+must be configured through the provider or local ignored environment, not chat.
+Login removal remains intact. The full application CI run for `f1767f7` completed
+successfully (quality-and-security run `34078404837`).
+
 **2026-09-07 account-free portal:** At the user's request, Google/Naver login,
 Auth.js callbacks, and the account/sign-out interface were removed. All visitors
 open the dashboard directly; old sign-in links redirect there. An automatic,

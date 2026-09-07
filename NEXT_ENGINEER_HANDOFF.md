@@ -28,6 +28,11 @@ Vercel login settings were removed. OAuth/admission setup in historical notes is
 superseded. See
 [public-access evidence](docs/assurance/public-access-20260907.md).
 
+**Live-data follow-up (2026-09-07):** API server signing settings are now provisioned
+in Vercel Production/Preview with separate RSA keys. Supabase connection, Storage,
+production runtime settings and ingestion remain pending. See the implementation
+record for the current incident diagnosis; the login-removal CI finished successfully.
+
 ## Start here
 
 Work only inside `C:\Users\user\Desktop\PharmaAgentOS`. The directory
