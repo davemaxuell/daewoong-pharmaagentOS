@@ -13,7 +13,7 @@ from app.models import ProcessingJob
 from app.serverless_worker import create_worker_app, run_slice
 from app.worker import _claim_next_job
 
-SECRET = "isolated-trigger-fixture-32-characters"
+SECRET = "isolated-trigger-fixture-32-characters"  # gitleaks:allow -- test-only bearer value
 
 
 @pytest.mark.parametrize(

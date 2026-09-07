@@ -2,7 +2,14 @@
 
 Prepared: **2026-09-07**  
 Requested outcome: **launch-ready production on Vercel and Supabase**  
-Current status: **local launch preparation verified; not deployed or production-qualified**
+Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
+
+Publication update: checkpoint `8ade4a1` is on GitHub `main`. The dedicated Vercel
+project `pharmaagent-os` serves https://pharmaagent-os.vercel.app. Supabase and OAuth
+setup remain needed; backend health returns 500 for missing database configuration.
+See [hosting evidence](docs/assurance/github-vercel-hosting-20260907.md).
+The working-tree and no-deployment notes below describe the earlier transfer state;
+the GitHub commit now preserves that work.
 
 Continuation on 2026-09-07 hardened the shared step-completion boundary before
 specialist wiring. See [the evidence record](docs/assurance/completion-boundary-20260907.md).

@@ -10,6 +10,15 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-07 GitHub/Vercel publication:** The user authorized publication and
+hosting. Checkpoint `8ade4a1` is on GitHub `main`; the dedicated `pharmaagent-os`
+Vercel project is connected and its frontend is hosted at
+https://pharmaagent-os.vercel.app. The sign-in page and frontend health return 200;
+the backend returns 500 because its required production PostgreSQL URL is missing.
+Supabase/OAuth setup, specialist execution, and release qualification remain
+outstanding. See [hosting evidence](docs/assurance/github-vercel-hosting-20260907.md).
+This supersedes earlier statements that no source push or cloud deployment occurred.
+
 **2026-09-07 continuation — completion boundary:** Before connecting specialist
 execution, inspection found that `complete_step` did not validate its declared
 output schema or recheck completion-time bindings. The shared service now locks

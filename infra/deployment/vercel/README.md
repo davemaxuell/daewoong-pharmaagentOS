@@ -3,8 +3,9 @@
 The service owner selected this production platform on 2026-09-07. The repository
 now prepares three Vercel Services: the Next.js portal, private FastAPI API, and
 an authenticated, bounded database-queue worker. Supabase supplies PostgreSQL,
-private evidence Storage, Vault, and Cron. This configuration is not yet deployed
-or qualified on a dedicated target.
+private evidence Storage, Vault, and Cron. The first dedicated build is deployed
+at https://pharmaagent-os.vercel.app; its frontend responds, while backend and OAuth
+setup remain incomplete. See [hosting evidence](../../../docs/assurance/github-vercel-hosting-20260907.md).
 
 The web receives `API_BASE_URL` through a private service binding. Public routing
 exposes health checks and exactly two worker trigger paths; ordinary browser API
