@@ -2,15 +2,10 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { importPKCS8, SignJWT } from "jose";
-import { notFound, redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
 import { cache } from "react";
-import {
-  auth,
-  isAllowedEmail,
-  providerForSubject,
-  isTrustedAuthSubject,
-  rolesForSubject,
-} from "@/auth";
+import { isVisitorSubject, readVisitorSession, visitorCookieName } from "@/lib/visitor-session";
 import type { AppRole, PortalIdentity } from "@/lib/auth-types";
 
 let cachedPrivateKeyPem: string | undefined;
@@ -22,7 +17,7 @@ function normalizePem(value: string) {
 
 function requiredEnvironment(name: string) {
   const value = process.env[name]?.trim();
-  if (!value) throw new Error(`${name} is required when authentication is enabled.`);
+  if (!value) throw new Error(`${name} is required for the backend connection.`);
   return value;
 }
 
@@ -39,36 +34,11 @@ function signingKey() {
   return cachedPrivateKey;
 }
 
-export const getAuthenticatedPortalIdentity = cache(async (): Promise<PortalIdentity | null> => {
-  const session = await auth();
-  const provider = providerForSubject(session?.user?.subject);
-  if (
-    session?.user &&
-    provider &&
-    isTrustedAuthSubject(session.user.subject) &&
-    isAllowedEmail(session.user.email)
-  ) {
-    const roles = rolesForSubject(session.user.subject);
-    if (roles.length === 0) return null;
-    return {
-      subject: session.user.subject,
-      name: session.user.name ?? null,
-      email: session.user.email ?? null,
-      image: session.user.image ?? null,
-      provider,
-      roles,
-      authenticated: true,
-    };
-  }
-
-  return null;
-});
-
 export const getPortalIdentity = cache(async (): Promise<PortalIdentity> => {
-  const identity = await getAuthenticatedPortalIdentity();
-  if (identity) return identity;
-
-  redirect("/sign-in?callbackUrl=%2Fdashboard");
+  const cookieStore = await cookies();
+  const subject = await readVisitorSession(cookieStore.get(visitorCookieName())?.value);
+  if (!subject) throw new Error("Browser session unavailable. Refresh the page and try again.");
+  return { subject, roles: ["viewer"] };
 });
 
 /**
@@ -89,12 +59,13 @@ export async function requirePortalRole(
 
 /**
  * Creates a server-to-server assertion for the FastAPI origin.
- * Provider OAuth tokens never leave Auth.js and this function must never be imported by a Client Component.
+ * Anonymous browser sessions receive only viewer authority. The assertion and
+ * signing key never leave the web server.
  */
 export async function getBackendBearerAssertion(): Promise<string> {
   const identity = await getPortalIdentity();
-  if (!isTrustedAuthSubject(identity.subject)) {
-    throw new Error("The authenticated session does not contain a trusted provider subject.");
+  if (!isVisitorSubject(identity.subject)) {
+    throw new Error("The browser session is invalid.");
   }
 
   const issuer = requiredEnvironment("API_SESSION_ISSUER");
@@ -103,7 +74,7 @@ export async function getBackendBearerAssertion(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const roles = identity.roles;
 
-  return new SignJWT({ roles, token_use: "api_session" })
+  return new SignJWT({ roles, token_use: "public_session" })
     .setProtectedHeader({ alg: "RS256", typ: "JWT", ...(keyId ? { kid: keyId } : {}) })
     .setSubject(identity.subject)
     .setIssuer(issuer)

@@ -1,66 +1,28 @@
-import type { NextAuthRequest } from "next-auth";
+import { NextResponse, type NextRequest } from "next/server";
 import {
-  NextResponse,
-  type NextFetchEvent,
-  type NextRequest,
-} from "next/server";
-import {
-  auth,
-  isAllowedEmail,
-  isAuthConfigured,
-  isTrustedAuthSubject,
-  rolesForSubject,
-} from "@/auth";
+  createVisitorSession, readVisitorSession, visitorCookieName, VISITOR_SESSION_SECONDS,
+} from "@/lib/visitor-session";
 
-function redirectToSignIn(request: NextRequest) {
-  const signInUrl = new URL("/sign-in", request.url);
-  signInUrl.searchParams.set(
-    "callbackUrl",
-    `${request.nextUrl.pathname}${request.nextUrl.search}`,
-  );
-  return NextResponse.redirect(signInUrl);
-}
-
-function apiAccessResponse(status: 401 | 503) {
-  return NextResponse.json(
-    {
-      error: status === 401
-        ? "Authentication with Google or Naver is required."
-        : "Google or Naver authentication is not configured.",
-    },
-    {
-      status,
-      headers: { "Cache-Control": "no-store" },
-    },
-  );
-}
-
-function denyAccess(request: NextRequest, status: 401 | 503) {
-  return request.nextUrl.pathname.startsWith("/api/")
-    ? apiAccessResponse(status)
-    : redirectToSignIn(request);
-}
-
-const authenticatedProxy = auth((request: NextAuthRequest, _event: NextFetchEvent) => {
-  void _event;
-  if (
-    !request.auth?.user ||
-    !isTrustedAuthSubject(request.auth.user.subject) ||
-    !isAllowedEmail(request.auth.user.email) ||
-    rolesForSubject(request.auth.user.subject).length === 0
-  ) {
-    return denyAccess(request, 401);
+export async function proxy(request: NextRequest) {
+  const name = visitorCookieName();
+  const existing = request.cookies.get(name)?.value;
+  const subject = await readVisitorSession(existing);
+  const token = subject ? existing! : await createVisitorSession();
+  // Forward the first cookie to Server Components before storing it in the browser.
+  request.cookies.set(name, token);
+  const response = NextResponse.next({ request: { headers: request.headers } });
+  response.headers.set("Cache-Control", "private, no-store");
+  if (!subject) {
+    response.cookies.set(name, token, {
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax",
+      path: "/", maxAge: VISITOR_SESSION_SECONDS,
+    });
   }
-  return NextResponse.next();
-});
-
-export function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (!isAuthConfigured()) return denyAccess(request, 503);
-  return authenticatedProxy(request, event);
+  return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!api/auth(?:/|$)|api/health(?:/|$)|sign-in(?:/|$)|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2|ttf)$).*)",
+    "/((?!api/health(?:/|$)|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2|ttf)$).*)",
   ],
 };

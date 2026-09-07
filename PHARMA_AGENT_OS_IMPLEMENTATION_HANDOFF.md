@@ -3,19 +3,29 @@
 **Handoff date:** 2026-09-07
 
 **Next engineer:** Start with [the transfer brief](NEXT_ENGINEER_HANDOFF.md) for
-the uncommitted working-tree state, production blockers, verification and ordered
+the publication state, production blockers, verification and ordered
 next steps. This file remains the authoritative implementation record.
 
 **Authoritative workspace:** `C:\Users\user\Desktop\PharmaAgentOS`  
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-07 account-free portal:** At the user's request, Google/Naver login,
+Auth.js callbacks, and the account/sign-out interface were removed. All visitors
+open the dashboard directly; old sign-in links redirect there. An automatic,
+signed HttpOnly browser cookie preserves separate chat/saved-view ownership.
+Public API assertions carry anonymous UUID subjects and viewer authority; the API
+rejects elevated public-session roles, including group-derived permissions.
+`PORTAL_SESSION_SECRET` replaces the OAuth settings for the web frontend.
+Previous private-account admission requirements below are historical and superseded.
+See [public-access evidence](docs/assurance/public-access-20260907.md).
+
 **2026-09-07 GitHub/Vercel publication:** The user authorized publication and
 hosting. Checkpoint `8ade4a1` is on GitHub `main`; the dedicated `pharmaagent-os`
 Vercel project is connected and its frontend is hosted at
 https://pharmaagent-os.vercel.app. The sign-in page and frontend health return 200;
 the backend returns 500 because its required production PostgreSQL URL is missing.
-Supabase/OAuth setup, specialist execution, and release qualification remain
+Supabase setup, specialist execution, and release qualification remain
 outstanding. See [hosting evidence](docs/assurance/github-vercel-hosting-20260907.md).
 This supersedes earlier statements that no source push or cloud deployment occurred.
 

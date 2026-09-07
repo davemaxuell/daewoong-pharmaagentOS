@@ -45,10 +45,9 @@ Passing local tests does not constitute production release approval.
   chat with those saved artifacts available as non-authoritative context. The
   entire application chrome and workflow UI can be switched between English and
   Korean; official FDA source text remains authoritative.
-- Mandatory Google and Naver sign-in through Auth.js with public viewer access,
-  privileged roles assigned by immutable provider subject, owner-scoped persistent
-  chat history, and no locally stored username, password, provider access token,
-  refresh token, or ID token.
+- Account-free public browsing with isolated anonymous browser sessions and
+  owner-scoped persistent chat history. Public visitors have viewer permissions;
+  privileged review and administration remain protected.
 - Agentic retrieval routing that skips document search for greetings/help, uses
   structured metadata for dates/links/counts, locks dossier questions and
   follow-ups to selected-letter chunks, and reserves corpus search for broad
@@ -151,23 +150,11 @@ a canned answer when grounded retrieval is unavailable.
 Use the `EN` / `한국어` control in the portal header to change the interface
 language. The preference is retained in the browser.
 
-Authentication is mandatory locally and in production. Configure `AUTH_SECRET`,
-both Google and Naver client credentials, and the API-session RSA settings shown in
-`apps/web/.env.example`. Register the exact callback for each provider:
-
-```text
-http://localhost:3000/api/auth/callback/google
-http://localhost:3000/api/auth/callback/naver
-```
-
-In `AUTH_ADMISSION_MODE=public` (the compatibility default), verified Google and
-valid Naver identities with a consented email default to viewer. Private deployments
-use `AUTH_ADMISSION_MODE=restricted`, which admits only explicitly assigned subjects.
-Roles are assigned only through the server-side
-`AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON` directory keyed by the provider's immutable
-`google:<sub>` or `naver:<id>` subject—not by email. The web server retains the
-provider session and sends FastAPI only a 90-second, audience-bound RS256 assertion.
-See `docs/runbooks/authentication.md` for the complete setup and test flow.
+The portal opens directly without login or provider accounts. Configure
+`PORTAL_SESSION_SECRET` for anonymous browser isolation and the API-session RSA
+settings in `apps/web/.env.example` for the private backend connection. Public
+visitors receive viewer authority; approval and administration remain controlled.
+See `docs/runbooks/authentication.md` for setup and verification.
 
 After installing the API and portal dependencies, Windows users can start both
 services as persistent hidden local processes from the repository root:
@@ -218,7 +205,7 @@ the safe fallback when Temporal is disabled.
 ## Production handoff
 
 The included deployment material is a baseline, not approval to bypass Daewoong
-controls. Before production, configure the implemented Google/Naver OAuth boundary and
+controls. Before backend production activation, configure the server assertion boundary and
 replace local storage and example endpoints with approved private managed services, KMS/secrets,
 SIEM, enterprise AI gateway, backup/restore, and notification integrations. All
 release-blocking controls in `SECURITY_CONTROL_MATRIX.md` still require recorded

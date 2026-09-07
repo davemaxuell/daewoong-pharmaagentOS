@@ -11,23 +11,15 @@ Set `API_BASE_URL` to connect the server-rendered portal to the FastAPI service.
 When the variable is absent or the service is unavailable, the UI uses the
 isolated preview dataset in `lib/seed-data.ts`; the page visibly labels that mode.
 
-All portal access requires Google or Naver through Auth.js. Configure at least one
-provider together with `AUTH_SECRET` and register its exact callback:
+The portal opens directly without login, Google/Naver accounts, or OAuth callbacks.
+A signed HttpOnly browser cookie isolates each visitor's saved views and chat history;
+clearing or expiring it starts a new visitor session. No account/profile data is collected.
+Configure `PORTAL_SESSION_SECRET` (at least 32 random characters) for hosted deployments.
+Local development uses a local-only key when that variable is absent.
 
-```text
-https://YOUR_DOMAIN/api/auth/callback/google
-https://YOUR_DOMAIN/api/auth/callback/naver
-```
-
-Public admission mode gives verified Google and valid Naver identities viewer access.
-For private deployments, set `AUTH_ADMISSION_MODE=restricted` and explicitly assign
-each admitted subject in `AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON`, including viewers.
-An empty restricted directory denies everyone. Email configuration cannot grant access or roles.
-Provider tokens are not forwarded to FastAPI. The web server uses the separate
-short-lived RS256 application assertion described in `.env.example`.
-
-See `../../docs/runbooks/authentication.md` for provider-console, key, staging, and
-verification steps.
+The web signs 90-second RS256 `public_session` assertions for the private API.
+Visitors receive only `viewer`; review, administration, and release actions retain
+backend authorization. See `../../docs/runbooks/authentication.md` for setup.
 
 Quality checks:
 

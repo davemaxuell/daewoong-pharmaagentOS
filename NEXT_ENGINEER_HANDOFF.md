@@ -5,8 +5,8 @@ Requested outcome: **launch-ready production on Vercel and Supabase**
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
 
 Publication update: checkpoint `8ade4a1` is on GitHub `main`. The dedicated Vercel
-project `pharmaagent-os` serves https://pharmaagent-os.vercel.app. Supabase and OAuth
-setup remain needed; backend health returns 500 for missing database configuration.
+project `pharmaagent-os` serves https://pharmaagent-os.vercel.app. Supabase
+setup remains needed; backend health returns 500 for missing database configuration.
 See [hosting evidence](docs/assurance/github-vercel-hosting-20260907.md).
 The working-tree and no-deployment notes below describe the earlier transfer state;
 the GitHub commit now preserves that work.
@@ -18,6 +18,13 @@ The worker adapter and observed evaluation remain unfinished. Preserve the new
 modified runtime service/schemas, case tests, and implementation record.
 Final continuation verification: **508 API tests passed, 7 gated integration
 tests skipped**; Ruff, contract validation and diff whitespace checks passed.
+
+**2026-09-07 public-access update:** The user removed all account-login requirements.
+Google/Naver providers, the account menu, and Auth.js were removed. `/sign-in` now
+redirects to the dashboard. `PORTAL_SESSION_SECRET` signs an automatic browser
+cookie; backend assertions use anonymous subjects with viewer permission only.
+OAuth/admission setup in historical notes is superseded. See
+[public-access evidence](docs/assurance/public-access-20260907.md).
 
 ## Start here
 
@@ -67,7 +74,7 @@ working production specialist-agent pipeline.
 
 | Area | Current change and code location |
 | --- | --- |
-| Account admission | Restricted immutable-subject admission and revoked-session rejection in `apps/web/lib/auth-policy.ts`, `backend-auth.ts` and `proxy.ts`; authentication regression tests added |
+| Public access | Account login removed at user request; signed anonymous browser sessions in `visitor-session.ts`, `backend-auth.ts`, and `proxy.ts` give viewer access and isolate browser ownership |
 | Production startup | `services/api/app/config.py` rejects unsafe database, Host, CORS, signing, telemetry, debug and SMTP settings; supports explicit Vercel-managed secret injection |
 | Secrets | `services/api/app/security/secrets.py` adds a Vercel provider; metadata guards are not proof of dashboard secret visibility |
 | Vercel services | Root `vercel.json` declares Next.js web, private FastAPI API and bounded FastAPI worker; web gets its API URL through a service binding |
@@ -113,7 +120,7 @@ admits no users until the immutable-subject directory is populated.
 | --- | --- | --- |
 | 1 | Connect dispatched case steps to actual specialist execution | An approved case executes its bound agents/tools and persists schema-validated results without manually injecting successful completion payloads |
 | 2 | Replace fixture-based release evaluation with observed execution/grading | Trials execute their bound targets and record actual outputs, tool results, citations, budgets and independent grades; fixture success cannot authorize production |
-| 3 | Configure dedicated Vercel/Supabase projects and domain | Correct project links, isolated Preview resources, credentials, exact Hosts, private binding, least-privilege database connections and real OAuth work on the deployed revision |
+| 3 | Configure dedicated Vercel/Supabase projects and domain | Correct project links, isolated Preview resources, credentials, exact Hosts, private binding, least-privilege database connections and isolated anonymous sessions work on the deployed revision |
 | 4 | Qualify worker scheduling and recovery | Authorized Cron delivery, lane isolation, duplicate/overlapping delivery, cooperative timeout, hard termination, stale lease/dead-letter handling and six-hour source-job creation are demonstrated |
 | 5 | Qualify one complete review flow and operations | Separate analyst/reviewer complete a real evidence-bound review/export; denied and insufficient evidence fail safely; telemetry, alarms, backup/restore and rollback are demonstrated |
 | 6 | Record release decisions and admit users | Tested revision, case/run/artifact IDs, intended data/use, service owner, support route and required release decisions are recorded |
@@ -222,8 +229,8 @@ local fixtures, not production services. Do not assume they exist on another mac
 ## Deployment and stop conditions
 
 Build and qualify an isolated Preview before production activation. Resolve the
-exact binding/probe Host values without wildcard admission. Keep OAuth assertions
-RS256, preserve revoked-subject checks, human/service role separation, immutable
+exact binding/probe Host values without wildcard admission. Keep server assertions
+RS256, preserve viewer-only public sessions, human/service role separation, immutable
 source bindings, evidence ACLs, audit history and independent reviewer authority.
 
 Monitor both Cron history and `net._http_response`, plus pending age, repeated time

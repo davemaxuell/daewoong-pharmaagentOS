@@ -33,6 +33,9 @@ ROLE_ALIASES = {
 
 TRUSTED_ACCOUNT_SUBJECT = re.compile(r"^(?:google|naver):[^:]{1,255}$")
 TRUSTED_SERVICE_SUBJECT = re.compile(r"^svc:[a-z0-9][a-z0-9._-]{1,120}$")
+PUBLIC_SESSION_SUBJECT = re.compile(
+    r"^anonymous:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+)
 
 
 @dataclass(frozen=True)
@@ -109,6 +112,12 @@ async def _decode_bearer(token: str, settings: Settings) -> dict[str, Any]:
         )
     except InvalidTokenError as exc:
         raise _unauthorized("Bearer token is invalid or expired") from exc
+    if claims.get("token_use") == "public_session":
+        if (
+            not PUBLIC_SESSION_SUBJECT.fullmatch(str(claims.get("sub", "")))
+            or claims.get(settings.oidc_role_claim) != ["viewer"]
+        ):
+            raise _unauthorized("Public browser identity must have only viewer authority")
     if settings.app_env == "production":
         token_use = claims.get("token_use")
         subject = str(claims.get("sub", ""))
@@ -116,6 +125,8 @@ async def _decode_bearer(token: str, settings: Settings) -> dict[str, Any]:
         if token_use == "api_session":
             if not TRUSTED_ACCOUNT_SUBJECT.fullmatch(subject):
                 raise _unauthorized("Bearer token subject is not a trusted account identity")
+            maximum_lifetime = 120
+        elif token_use == "public_session":
             maximum_lifetime = 120
         elif token_use == "service_access":
             if not TRUSTED_SERVICE_SUBJECT.fullmatch(subject) or roles != {"service"}:
@@ -156,6 +167,8 @@ async def current_principal(request: Request) -> Principal:
             )
         if not roles:
             raise HTTPException(status_code=403, detail="No recognized application role")
+        if claims.get("token_use") == "public_session" and roles != {"viewer"}:
+            raise _unauthorized("Public browser identity has incompatible effective roles")
         actor_type = "service" if claims.get("token_use") == "service_access" else "user"
         # Group mappings are another source of authority. Check the final role
         # set, not just the signed roles claim inspected by _decode_bearer.

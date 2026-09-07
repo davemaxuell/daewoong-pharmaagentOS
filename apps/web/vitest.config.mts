@@ -14,9 +14,6 @@ export default defineConfig({
       },
     ],
   },
-  ssr: {
-    noExternal: ["next-auth"],
-  },
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],

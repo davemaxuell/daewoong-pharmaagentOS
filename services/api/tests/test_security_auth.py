@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
+from uuid import uuid4
 
 import jwt
 import pytest
@@ -94,6 +95,46 @@ def _request(token: str, settings: Settings) -> Request:
             "app": SimpleNamespace(state=SimpleNamespace(settings=settings)),
         }
     )
+
+
+async def test_public_browser_assertion_has_only_viewer_authority(signing_material) -> None:
+    private_key, public_key = signing_material
+    principal = await current_principal(_request(
+        _token(private_key, sub=f"anonymous:{uuid4()}", token_use="public_session"),
+        _production_settings(public_key),
+    ))
+    assert principal.subject.startswith("anonymous:")
+    assert principal.roles == frozenset({"viewer"})
+    for role in ["admin", "reviewer", "service", "analyst", "system_owner"]:
+        with pytest.raises(HTTPException) as error:
+            await require_roles(role)(principal)
+        assert error.value.status_code == 403
+
+
+@pytest.mark.parametrize("roles", [["admin"], ["viewer", "reviewer"], ["service"], []])
+async def test_public_browser_cannot_claim_privileged_roles(signing_material, roles) -> None:
+    private_key, public_key = signing_material
+    with pytest.raises(HTTPException) as error:
+        await _decode_bearer(
+            _token(
+                private_key, sub=f"anonymous:{uuid4()}", token_use="public_session", roles=roles
+            ),
+            _production_settings(public_key),
+        )
+    assert error.value.status_code == 401
+
+
+async def test_public_browser_cannot_gain_roles_from_groups(signing_material) -> None:
+    private_key, public_key = signing_material
+    settings = _production_settings(public_key).model_copy(
+        update={"oidc_group_role_map": {"operators": "admin"}}
+    )
+    with pytest.raises(HTTPException) as error:
+        await current_principal(_request(
+            _token(private_key, sub=f"anonymous:{uuid4()}", token_use="public_session",
+                   groups=["operators"]), settings,
+        ))
+    assert error.value.status_code == 401
 
 
 @pytest.mark.parametrize("mapped_role", ["admin", "system_owner", "reviewer", "viewer"])

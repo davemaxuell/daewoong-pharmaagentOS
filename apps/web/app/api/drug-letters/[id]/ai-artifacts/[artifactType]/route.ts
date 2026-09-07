@@ -1,5 +1,5 @@
 import { ApiRequestError, generateLetterAiArtifact } from "@/lib/api-client";
-import { getAuthenticatedPortalIdentity } from "@/lib/backend-auth";
+import { getPortalIdentity } from "@/lib/backend-auth";
 import type { LetterAiArtifactLanguage, LetterAiArtifactType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -45,13 +45,8 @@ type RouteParameters = {
 };
 
 export async function POST(request: Request, { params }: RouteParameters) {
-  const identity = await getAuthenticatedPortalIdentity();
-  if (!identity) {
-    return Response.json(
-      { error: "Authentication with Google or Naver is required." },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  await getPortalIdentity();
+
   if (!hasSameRequestOrigin(request)) {
     return Response.json({ error: "Cross-origin generation requests are not allowed." }, { status: 403 });
   }

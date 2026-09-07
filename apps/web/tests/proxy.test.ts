@@ -1,78 +1,52 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { NextRequest, type NextFetchEvent } from "next/server";
-import { encode } from "next-auth/jwt";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+import { proxy } from "@/proxy";
+import { readVisitorSession, visitorCookieName } from "@/lib/visitor-session";
 
-let portalProxy: typeof import("@/proxy").proxy;
+afterEach(() => vi.unstubAllEnvs());
 
-beforeAll(async () => {
-  vi.stubEnv("AUTH_SECRET", "test-only-auth-secret-with-more-than-32-characters");
-  vi.stubEnv("AUTH_URL", "http://localhost:3000");
-  vi.stubEnv("AUTH_GOOGLE_ID", "test-google-id");
-  vi.stubEnv("AUTH_GOOGLE_SECRET", "test-google-secret");
-  vi.stubEnv("AUTH_NAVER_ID", "test-naver-id");
-  vi.stubEnv("AUTH_NAVER_SECRET", "test-naver-secret");
-  ({ proxy: portalProxy } = await import("@/proxy"));
-});
-
-afterAll(() => {
-  vi.unstubAllEnvs();
-});
-
-function fetchEvent() {
-  return {
-    waitUntil: vi.fn(),
-    passThroughOnException: vi.fn(),
-  } as unknown as NextFetchEvent;
-}
-
-describe("signed-out route boundary", () => {
-  it("rejects a still-valid session cookie when restricted admission is revoked", async () => {
-    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
-    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", '{"google:removed-user":["viewer"]}');
-    try {
-      const cookieName = "authjs.session-token";
-      const token = await encode({
-        secret: process.env.AUTH_SECRET!,
-        salt: cookieName,
-        token: { sub: "google:removed-user", email: "viewer@example.com", roles: ["viewer"] },
-      });
-      const admitted = await portalProxy(new NextRequest("http://localhost:3000/api/chat/query", {
-        method: "POST", headers: { cookie: `${cookieName}=${token}` },
-      }), fetchEvent());
-      expect(admitted?.status).toBe(200);
-      vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", "{}");
-      const response = await portalProxy(new NextRequest("http://localhost:3000/api/chat/query", {
-        method: "POST", headers: { cookie: `${cookieName}=${token}` },
-      }), fetchEvent());
-      expect(response?.status).toBe(401);
-    } finally {
-      vi.stubEnv("AUTH_ADMISSION_MODE", "public");
-    }
-  });
-  it("redirects a protected page and preserves its relative destination", async () => {
-    const request = new NextRequest(
-      "http://localhost:3000/drug-letters?category=Laboratory",
-    );
-    const response = await portalProxy(request, fetchEvent());
-    if (!response) throw new Error("The proxy did not return a redirect response.");
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/sign-in?callbackUrl=%2Fdrug-letters%3Fcategory%3DLaboratory",
-    );
+describe("account-free browsing", () => {
+  it("opens the dashboard and forwards a browser session on the first request", async () => {
+    const response = await proxy(new NextRequest("http://localhost:3000/dashboard"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    const cookie = response.cookies.get(visitorCookieName());
+    expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.sameSite).toBe("lax");
+    expect(await readVisitorSession(cookie?.value)).toMatch(/^anonymous:/);
+    expect(response.headers.get("x-middleware-request-cookie")).toContain(cookie!.value);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 
-  it("returns JSON 401 for a protected application API", async () => {
-    const request = new NextRequest("http://localhost:3000/api/chat/query", {
-      method: "POST",
-    });
-    const response = await portalProxy(request, fetchEvent());
-    if (!response) throw new Error("The proxy did not return an API response.");
+  it("gives separate visitors distinct identities and retains a returning visitor", async () => {
+    const first = await proxy(new NextRequest("http://localhost:3000/dashboard"));
+    const second = await proxy(new NextRequest("http://localhost:3000/dashboard"));
+    const name = visitorCookieName();
+    expect(first.cookies.get(name)?.value).not.toBe(second.cookies.get(name)?.value);
+    const token = first.cookies.get(name)!.value;
+    const returning = await proxy(new NextRequest("http://localhost:3000/api/chat/query", {
+      method: "POST", headers: { cookie: `${name}=${token}` },
+    }));
+    expect(returning.status).toBe(200);
+    expect(returning.headers.get("set-cookie")).toBeNull();
+    expect(returning.headers.get("x-middleware-request-cookie")).toContain(token);
+  });
 
-    expect(response.status).toBe(401);
-    expect(response.headers.get("cache-control")).toBe("no-store");
-    await expect(response.json()).resolves.toEqual({
-      error: "Authentication with Google or Naver is required.",
-    });
+  it("replaces a forged cookie instead of accepting its identity", async () => {
+    const response = await proxy(new NextRequest("http://localhost:3000/dashboard", {
+      headers: { cookie: `${visitorCookieName()}=forged-admin-cookie` },
+    }));
+    expect(await readVisitorSession(response.cookies.get(visitorCookieName())?.value))
+      .toMatch(/^anonymous:/);
+  });
+
+  it("uses a secure host-only cookie on a hosted deployment", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PORTAL_SESSION_SECRET", "x".repeat(48));
+    const response = await proxy(new NextRequest("https://pharma.example/dashboard"));
+    const cookie = response.cookies.get("__Host-pharma-visitor");
+    expect(cookie?.secure).toBe(true);
+    expect(cookie?.path).toBe("/");
+    expect(cookie?.domain).toBeUndefined();
   });
 });

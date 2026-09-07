@@ -4,8 +4,7 @@ The service owner selected this production platform on 2026-09-07. The repositor
 now prepares three Vercel Services: the Next.js portal, private FastAPI API, and
 an authenticated, bounded database-queue worker. Supabase supplies PostgreSQL,
 private evidence Storage, Vault, and Cron. The first dedicated build is deployed
-at https://pharmaagent-os.vercel.app; its frontend responds, while backend and OAuth
-setup remain incomplete. See [hosting evidence](../../../docs/assurance/github-vercel-hosting-20260907.md).
+at https://pharmaagent-os.vercel.app; its frontend responds, while backend setup remains incomplete. See [hosting evidence](../../../docs/assurance/github-vercel-hosting-20260907.md).
 
 The web receives `API_BASE_URL` through a private service binding. Public routing
 exposes health checks and exactly two worker trigger paths; ordinary browser API
@@ -70,7 +69,7 @@ code but use different entrypoints and database URLs. Build both with the suppli
 resource-copy command; missing reviewed contracts must fail the build.
 
 Populate the template for Production. Set credentials as Vercel **Secret** values:
-Auth.js secret, enabled OAuth provider credentials, API session private key, both
+Anonymous browser session secret (`PORTAL_SESSION_SECRET`), API session private key, both
 runtime database URLs, Supabase secret key, worker trigger secret, model credentials
 when qualified, and collector authentication where required. Configure the matching
 OIDC public key and issuer/audience. Use separate Preview resources and secrets.
@@ -84,12 +83,11 @@ DATABASE_URL selection is not isolation from every secret held by another servic
 in this same project. If separate secret visibility is mandatory, qualify distinct
 projects with authenticated connectivity before admitting data.
 
-Register the enabled provider callbacks at the final HTTPS domain:
-`/api/auth/callback/google` and/or `/api/auth/callback/naver`. Keep
-`AUTH_ADMISSION_MODE=restricted`, populate immutable provider-subject role assignments,
-and prove allowed, denied, revoked, analyst and reviewer behavior. An empty subject
-directory deliberately admits nobody. Models and workers stay disabled in the
-checked-in template until qualified.
+The portal has no account login or provider callbacks. Set `PORTAL_SESSION_SECRET`
+to a generated secret of at least 32 characters in each hosted environment.
+Anonymous browser identities receive only viewer authority through short-lived
+RS256 `public_session` assertions. Do not grant reviewer/admin roles to public
+visitors. Models and workers remain disabled until qualified.
 
 Set `ALLOWED_HOSTS` to exact public, internal API and worker/probe hosts observed
 in the target deployment. Binding reachability does not replace OIDC checks.
@@ -128,7 +126,7 @@ queue/checkpoint evidence while investigating; do not reset counters to hide fai
 ## Release gate
 
 Use a preview with isolated data to verify the deployed build, private service binding,
-exact Host admission, both database identities, Storage permissions, real OAuth,
+exact Host admission, both database identities, Storage permissions, anonymous session isolation,
 worker interruption/recovery, telemetry, restore and rollback. Capture deployment,
 case/run/artifact IDs and version hashes. Promote only the tested revision after
 [release evidence](../../../docs/assurance/release-evidence-checklist.md) is complete.

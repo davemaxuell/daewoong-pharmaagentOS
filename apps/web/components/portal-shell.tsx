@@ -15,7 +15,6 @@ import {
   FileText,
   History,
   LockKeyhole,
-  LogOut,
   LoaderCircle,
   Menu,
   MessageSquareText,
@@ -24,11 +23,9 @@ import {
   Plus,
   Search,
   ShieldCheck,
-  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   archiveChatConversation,
@@ -37,7 +34,7 @@ import {
 import { useChatHistory } from "@/components/chat-history-context";
 import { LanguageToggle } from "@/components/language-toggle";
 import { formatDate } from "@/components/ui";
-import type { AppRole, PortalAccount } from "@/lib/auth-types";
+import type { AppRole } from "@/lib/auth-types";
 import { useI18n } from "@/lib/i18n";
 
 const navItems: Array<{
@@ -63,32 +60,13 @@ function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 }
 
-const roleLabels: Record<AppRole, { en: string; ko: string }> = {
-  viewer: { en: "Viewer", ko: "열람자" },
-  analyst: { en: "Regulatory Analyst", ko: "규제 분석가" },
-  reviewer: { en: "Reviewer", ko: "검토자" },
-  domain_sme: { en: "Domain SME", ko: "도메인 전문가" },
-  agent_developer: { en: "Agent Developer", ko: "에이전트 개발자" },
-  platform_admin: { en: "Platform Administrator", ko: "플랫폼 관리자" },
-  system_owner: { en: "System Owner", ko: "시스템 책임자" },
-  admin: { en: "Admin", ko: "관리자" },
-  auditor: { en: "Auditor", ko: "감사자" },
-};
-
-const providerLabels = {
-  google: { en: "Google account", ko: "Google 계정" },
-  naver: { en: "Naver account", ko: "Naver 계정" },
-} as const;
-
 export function PortalShell({
   children,
   roles,
-  account,
   newLetterNotification,
 }: {
   children: React.ReactNode;
   roles: AppRole[];
-  account: PortalAccount;
   newLetterNotification: {
     latestEventId?: string;
     occurredAt?: string;
@@ -98,7 +76,6 @@ export function PortalShell({
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
   const [showNewLetterNotification, setShowNewLetterNotification] = useState(false);
   const [menuSectionOpen, setMenuSectionOpen] = useState(true);
   const [historySectionOpen, setHistorySectionOpen] = useState(true);
@@ -119,9 +96,7 @@ export function PortalShell({
     setActiveThreadId,
     removeThread,
   } = useChatHistory();
-  const accountName = account.name?.trim() || text("Signed-in account", "로그인 계정");
-  const accountInitial = accountName.slice(0, 1).toLocaleUpperCase();
-  const notificationStorageKey = `daewoong-fda:new-letter-seen:${account.email ?? accountName}`;
+  const notificationStorageKey = "pharmaagent-os:new-letter-seen";
 
   const visibleNav = navItems.filter((item) => !item.requiredRole || roles.includes(item.requiredRole));
   const normalizedHistoryQuery = historyQuery.trim().toLocaleLowerCase();
@@ -366,50 +341,7 @@ export function PortalShell({
             ) : null}
           </Link>
           <LanguageToggle />
-          <details className="portal-account">
-            <summary
-              className="portal-account__summary"
-              aria-label={text("Open account menu", "계정 메뉴 열기")}
-            >
-              <span className="portal-account__avatar" aria-hidden="true">
-                {accountInitial || <UserRound size={16} />}
-              </span>
-              <span className="portal-account__summary-name">{accountName}</span>
-              <ChevronDown className="portal-account__chevron" size={14} aria-hidden="true" />
-            </summary>
-            <div className="portal-account__panel">
-              <div className="portal-account__identity">
-                <span className="portal-account__avatar portal-account__avatar--large" aria-hidden="true">
-                  {accountInitial || <UserRound size={18} />}
-                </span>
-                <div>
-                  <strong>{accountName}</strong>
-                  <span>{account.email ?? text("Email unavailable", "이메일 정보 없음")}</span>
-                </div>
-              </div>
-              <div className="portal-account__roles" aria-label={text("Account roles", "계정 권한")}>
-                <span>{text(
-                  providerLabels[account.provider].en,
-                  providerLabels[account.provider].ko,
-                )}</span>
-                {roles.map((role) => (
-                  <span key={role}>{text(roleLabels[role].en, roleLabels[role].ko)}</span>
-                ))}
-              </div>
-              <button
-                className="portal-account__sign-out"
-                type="button"
-                disabled={signingOut}
-                onClick={async () => {
-                  setSigningOut(true);
-                  await signOut({ redirectTo: "/sign-in" });
-                }}
-              >
-                <LogOut size={15} aria-hidden="true" />
-                <span>{signingOut ? text("Signing out…", "로그아웃 중…") : text("Sign out", "로그아웃")}</span>
-              </button>
-            </div>
-          </details>
+
         </div>
       </header>
 

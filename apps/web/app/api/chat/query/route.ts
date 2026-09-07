@@ -1,5 +1,5 @@
 import { queryRag, queryRagStream } from "@/lib/api-client";
-import { getAuthenticatedPortalIdentity } from "@/lib/backend-auth";
+import { getPortalIdentity } from "@/lib/backend-auth";
 import type {
   ChatModelProfile,
   ChatRetrievalMode,
@@ -95,13 +95,8 @@ function hasSameRequestOrigin(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const identity = await getAuthenticatedPortalIdentity();
-  if (!identity) {
-    return Response.json(
-      { error: "Authentication with Google or Naver is required." },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  await getPortalIdentity();
+
   if (!hasSameRequestOrigin(request)) {
     return Response.json({ error: "Cross-origin chat requests are not allowed." }, { status: 403 });
   }

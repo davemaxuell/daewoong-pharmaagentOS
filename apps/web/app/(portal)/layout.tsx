@@ -32,13 +32,6 @@ export default async function PortalLayout({ children }: Readonly<{ children: Re
           latestEventId: newLetterResult?.data[0]?.id,
           occurredAt: newLetterResult?.data[0]?.occurredAt,
         }}
-        account={{
-          name: identity.name,
-          email: identity.email,
-          image: identity.image,
-          provider: identity.provider,
-          authenticated: identity.authenticated,
-        }}
       >
         {children}
       </PortalShell>

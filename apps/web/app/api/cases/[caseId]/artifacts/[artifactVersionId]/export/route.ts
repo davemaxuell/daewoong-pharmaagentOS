@@ -1,4 +1,4 @@
-import { getAuthenticatedPortalIdentity, getBackendBearerAssertion } from "@/lib/backend-auth";
+import { getPortalIdentity, getBackendBearerAssertion } from "@/lib/backend-auth";
 
 export const runtime = "nodejs";
 
@@ -8,8 +8,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ caseId: string; artifactVersionId: string }> },
 ) {
-  const identity = await getAuthenticatedPortalIdentity();
-  if (!identity) return Response.json({ error: "Authentication is required." }, { status: 401 });
+  await getPortalIdentity();
   const { caseId, artifactVersionId } = await params;
   if (!UUID_PATTERN.test(caseId) || !UUID_PATTERN.test(artifactVersionId)) {
     return Response.json({ error: "Artifact reference is invalid." }, { status: 422 });
