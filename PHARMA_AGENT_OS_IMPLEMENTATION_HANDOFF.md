@@ -10,6 +10,22 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-07 larger interface:** Increased the shared typography scale by roughly
+18%, using rem units and a 13px floor for small metadata. Primary body text is
+17–19px and workspace headings are 33–40px. Enlarged navigation to 280px, the
+header to 76px, primary actions to 46–50px and workflow rows to at least 60px.
+The brief editor, navigation icons and template controls also have more room.
+Narrow headers, evidence cards and Trends controls reflow at mobile sizes.
+Corrected the shared sidebar offset to match the wider navigation.
+
+Verification: production build/TypeScript, lint and all 22 frontend tests passed.
+Headless Edge passed the existing complete interaction check (draft lifecycle,
+agent search/selection, nine routes, both languages, mobile navigation/focus,
+no login and admin denial) without JavaScript errors. Six routes were checked at
+320, 390, 768, 1024 and 1440px with no page-level horizontal overflow. Screenshots
+and size measurements are in ignored `.artifacts/interface-size-20260907/`;
+the typography detector returned no findings. Backend setup remains pending.
+
 **2026-09-07 agent-focused interface redesign:** The service owner requested a
 complete interface change emphasizing agentic work. `/dashboard` now presents a
 review brief, the actual nine-step workflow definition, selectable specialist

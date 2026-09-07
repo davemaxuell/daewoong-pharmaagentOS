@@ -4,6 +4,12 @@ Prepared: **2026-09-07**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
 
+**Latest sizing update:** Text is approximately 18% larger across the portal,
+with larger controls, a 280px sidebar, a 76px header and taller workflow steps.
+The production build, lint, 22 tests, full browser interaction checks and six-route
+responsive checks at five widths passed. See `DESIGN.md` for the sizing contract
+and the implementation handoff for evidence. Backend configuration is still pending.
+
 **Latest interface update:** At the user's request, the service now leads with an
 agent workspace: a browser review brief, nine-step workflow inspector, five-agent
 team explorer, case activity and human review. Research chat moved to `/ask` with

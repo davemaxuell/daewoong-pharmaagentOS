@@ -35,12 +35,14 @@ attribution. Semantic amber means a dependency is unavailable, never active work
 ## Typography
 
 Use the existing locally hosted Pretendard variable font for Korean and English.
-Body 14–16px, labels 12–13px, page titles 30–36px. No global CSS zoom.
+Primary body text 17–19px, supporting text 14–15px, small metadata at least 13px,
+and workspace page titles 33–40px. Use rem sizes to respect browser font settings.
+No global CSS zoom. Main controls are 44–50px tall; workflow rows start at 60px.
 Use monospace only for hashes, identifiers, and machine-readable values.
 
 ## Layout
 
-A 244px navigation rail, 68px contextual header, and a bounded content canvas.
+A 280px navigation rail, 76px contextual header, and a bounded content canvas.
 The home places a task brief beside a specialist workflow and inspector. Lower
 sections expose real case status and supporting research. On narrow screens the
 rail becomes an accessible drawer, the task precedes the plan, and details stack.

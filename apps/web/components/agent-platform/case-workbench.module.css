@@ -20,7 +20,7 @@
 .sectionIndex {
   margin: 0 0 10px;
   color: #4f6486;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -43,7 +43,7 @@
 .workspaceHeader h1,
 .accessState h1 {
   margin: 0;
-  font-size: clamp(28px, 3vw, 38px);
+  font-size: clamp(2.0625rem, 3vw, 2.8125rem);
   font-weight: 680;
   line-height: 1.2;
   letter-spacing: -0.03em;
@@ -53,7 +53,7 @@
   max-width: 720px;
   margin: 18px 0 0;
   color: #5e5955;
-  font-size: 17px;
+  font-size: 1.25rem;
   line-height: 1.6;
 }
 
@@ -79,13 +79,13 @@
 
 .headerControl span {
   color: var(--case-muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .headerControl strong {
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 690;
 }
 
@@ -99,7 +99,7 @@
 
 .boundaryStrip span {
   color: #9b3c2a;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 780;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -108,7 +108,7 @@
 .boundaryStrip p {
   margin: 0;
   color: #6e625d;
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 
@@ -143,7 +143,7 @@
   display: block;
   margin-bottom: 6px;
   color: #8a8580;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 740;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -158,7 +158,7 @@
 .evidenceIntro h2,
 .historyIntro h2 {
   margin: 0;
-  font-size: clamp(22px, 2.35vw, 34px);
+  font-size: clamp(1.625rem, 2.35vw, 2.5rem);
   font-weight: 650;
   line-height: 1.12;
   letter-spacing: -0.03em;
@@ -183,7 +183,7 @@
   padding: 8px 10px;
   color: #6f6a66;
   border-bottom: 2px solid transparent;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-weight: 650;
 }
 
@@ -237,7 +237,7 @@
   align-self: start;
   padding-top: 2px;
   color: #a7a19b;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -256,7 +256,7 @@
 
 .caseKicker > span {
   color: #77716d;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 720;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -294,7 +294,7 @@
 
 .caseSummary > strong {
   overflow: hidden;
-  font-size: 18px;
+  font-size: 1.3125rem;
   font-weight: 660;
   letter-spacing: -0.018em;
   text-overflow: ellipsis;
@@ -305,7 +305,7 @@
   display: -webkit-box;
   overflow: hidden;
   color: #6c6763;
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.48;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -316,19 +316,19 @@
   justify-items: end;
   gap: 5px;
   color: #7e7974;
-  font-size: 10px;
+  font-size: 0.8125rem;
   text-align: right;
 }
 
 .caseMeta code {
   color: #504b47;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .caseMeta small {
   color: #9a5718;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 680;
 }
 
@@ -346,28 +346,28 @@
 .emptyRegister > span {
   margin-bottom: 16px;
   color: #d7d1ca;
-  font-size: 56px;
+  font-size: 4.125rem;
   font-weight: 300;
   letter-spacing: -0.08em;
 }
 
 .emptyRegister h3 {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.5rem;
 }
 
 .emptyRegister p {
   max-width: 440px;
   margin: 0;
   color: var(--case-muted);
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
 .paginationNote {
   margin: 14px 0 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
 }
 
 .intakeRail {
@@ -390,7 +390,7 @@
 .formHeading h2,
 .decisionHeading h3 {
   margin: 0 0 9px;
-  font-size: 22px;
+  font-size: 1.625rem;
   font-weight: 680;
   letter-spacing: -0.025em;
 }
@@ -400,7 +400,7 @@
 .roleNote p {
   margin: 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.6;
 }
 
@@ -423,7 +423,7 @@
 .workflowLock > span {
   margin-bottom: 7px;
   color: #5e5854;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 710;
   letter-spacing: 0.035em;
 }
@@ -439,7 +439,7 @@
   border-radius: 0;
   background: #fbfaf8;
   font: inherit;
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.5;
   transition: border-color 140ms ease, background-color 140ms ease;
 }
@@ -465,7 +465,7 @@
 .field > small {
   margin-top: 6px;
   color: #89837e;
-  font-size: 10px;
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 
@@ -476,7 +476,7 @@
 
 .fieldPair input {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 
 .workflowLock {
@@ -493,12 +493,12 @@
 
 .workflowLock strong {
   margin-bottom: 3px;
-  font-size: 11px;
+  font-size: 0.8125rem;
 }
 
 .workflowLock small {
   color: #7c6d60;
-  font-size: 9px;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -513,7 +513,7 @@
   border: 1px solid transparent;
   border-radius: 0;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-weight: 740;
   letter-spacing: 0.02em;
 }
@@ -553,7 +553,7 @@
   gap: 3px;
   margin-top: 15px;
   padding: 11px 12px;
-  font-size: 10px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -596,7 +596,7 @@
   display: block;
   margin-bottom: 7px;
   color: #8a8580;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 740;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -604,14 +604,14 @@
 
 .readOnlyIntake h2 {
   margin: 0 0 10px;
-  font-size: 20px;
+  font-size: 1.5rem;
   letter-spacing: -0.025em;
 }
 
 .readOnlyIntake p {
   margin: 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.6;
 }
 
@@ -650,14 +650,14 @@
 
 .accessState h1 {
   max-width: 720px;
-  font-size: clamp(36px, 5vw, 60px);
+  font-size: clamp(2.625rem, 5vw, 4.4375rem);
 }
 
 .accessState > p:not(.eyebrow) {
   max-width: 630px;
   margin: 22px 0 0;
   color: var(--case-muted);
-  font-size: 15px;
+  font-size: 1.125rem;
   line-height: 1.7;
 }
 
@@ -665,14 +665,14 @@
   margin-top: 12px;
   color: #89837e;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 
 .accessState > a {
   margin-top: 28px;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--case-ink);
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -682,7 +682,7 @@
   gap: 7px;
   margin-bottom: 26px;
   color: #625c57;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-weight: 670;
 }
 
@@ -703,21 +703,21 @@
   display: block;
   margin-bottom: 13px;
   color: #4f6486;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: 0.15em;
 }
 
 .workspaceHeader h1 {
   max-width: 1000px;
-  font-size: clamp(34px, 4.4vw, 60px);
+  font-size: clamp(2.5rem, 4.4vw, 4.4375rem);
 }
 
 .caseIdentity > p {
   max-width: 840px;
   margin: 17px 0 0;
   color: #625d59;
-  font-size: 14px;
+  font-size: 1.0625rem;
   line-height: 1.65;
 }
 
@@ -730,7 +730,7 @@
 
 .caseState > span {
   color: #57524e;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -738,7 +738,7 @@
 
 .caseState > small {
   color: #89837e;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .workspaceTabs {
@@ -776,13 +776,13 @@
 .workspaceTabs a > span {
   grid-row: 1 / 3;
   color: #aaa39d;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
 .workspaceTabs strong {
   overflow: hidden;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 720;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -790,7 +790,7 @@
 
 .workspaceTabs small {
   color: #99938d;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .workspaceGrid {
@@ -825,7 +825,7 @@
 .objectiveCopy {
   max-width: 900px;
   margin: 18px 0 25px;
-  font-size: clamp(17px, 2vw, 23px);
+  font-size: clamp(1.25rem, 2vw, 1.6875rem);
   font-weight: 440;
   line-height: 1.58;
   letter-spacing: -0.016em;
@@ -861,7 +861,7 @@
 .ledgerMeta dt {
   margin-bottom: 4px;
   color: #928c86;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -876,7 +876,7 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: #4d4844;
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 
@@ -884,7 +884,7 @@
   max-width: 720px;
   margin: 16px 0 20px;
   color: var(--case-muted);
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -918,7 +918,7 @@
   place-items: center;
   color: #fff;
   background: #303431;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 780;
 }
 
@@ -929,18 +929,18 @@
 }
 
 .sourceSummaryList strong {
-  font-size: 12px;
+  font-size: 0.875rem;
 }
 
 .sourceSummaryList small {
   color: var(--case-muted);
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .sourceSummaryList code {
   color: #615b56;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .readinessLine {
@@ -960,20 +960,20 @@
 }
 
 .readinessLine strong {
-  font-size: 13px;
+  font-size: 0.9375rem;
 }
 
 .readinessLine p {
   margin: 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.55;
 }
 
 .readinessLine > a {
   padding-bottom: 3px;
   border-bottom: 1px solid var(--case-ink);
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 720;
 }
 
@@ -1005,7 +1005,7 @@
 
 .ledgerHeading strong {
   display: block;
-  font-size: 11px;
+  font-size: 0.8125rem;
 }
 
 .hashField {
@@ -1023,7 +1023,7 @@
 .hashField > span {
   margin-bottom: 6px;
   color: #8f8984;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 720;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -1032,7 +1032,7 @@
 .hashField > code {
   color: #4c4743;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 8px;
+  font-size: 0.8125rem;
   line-height: 1.52;
   overflow-wrap: anywhere;
 }
@@ -1056,7 +1056,7 @@
   padding-top: 14px;
   color: #766b62;
   border-top: 1px solid var(--case-rule);
-  font-size: 9px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -1076,7 +1076,7 @@
 
 .planHeader h2 {
   max-width: 800px;
-  font-size: clamp(21px, 2.4vw, 33px);
+  font-size: clamp(1.5625rem, 2.4vw, 2.4375rem);
   line-height: 1.3;
 }
 
@@ -1091,13 +1091,13 @@
 .approvalStamp > span,
 .approvalStamp > small {
   color: #837d78;
-  font-size: 8px;
+  font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .approvalStamp > strong {
-  font-size: 11px;
+  font-size: 0.8125rem;
   text-transform: uppercase;
 }
 
@@ -1139,12 +1139,12 @@
 
 .bindingPanel > div:first-child strong {
   margin-bottom: 3px;
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 
 .bindingPanel > div:first-child small {
   color: var(--case-muted);
-  font-size: 8px;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -1159,7 +1159,7 @@
   color: #6c625a;
   border: 1px solid var(--case-rule);
   background: #fff;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 680;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1180,7 +1180,7 @@
 
 .stepNumber {
   color: #a19a94;
-  font-size: 13px;
+  font-size: 0.9375rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1203,7 +1203,7 @@
   display: block;
   margin-bottom: 5px;
   color: #965516;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 730;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1212,7 +1212,7 @@
 .stepHeading h3,
 .evidenceHeading h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 1.125rem;
   font-weight: 680;
 }
 
@@ -1222,7 +1222,7 @@
   padding: 4px 5px;
   color: #5c5752;
   border: 1px solid #cbc6c0;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 800;
   text-align: center;
 }
@@ -1238,7 +1238,7 @@
   max-width: 830px;
   margin: 12px 0 17px;
   color: #635e59;
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.62;
 }
 
@@ -1256,7 +1256,7 @@
 
 .prohibitedActions summary {
   color: #713b34;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 720;
   cursor: pointer;
 }
@@ -1268,7 +1268,7 @@
   padding: 14px 0 0 18px;
   margin: 0;
   color: #7a625d;
-  font-size: 9px;
+  font-size: 0.8125rem;
   text-transform: lowercase;
 }
 
@@ -1287,7 +1287,7 @@
   display: block;
   margin-top: 8px;
   color: #8a5a2c;
-  font-size: 9px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -1309,12 +1309,12 @@
 }
 
 .decisionRecord strong {
-  font-size: 13px;
+  font-size: 0.9375rem;
 }
 
 .decisionRecord small {
   color: var(--case-muted);
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .decisionRecord blockquote {
@@ -1322,7 +1322,7 @@
   padding: 12px 0 0;
   color: #5e5955;
   border-top: 1px solid var(--case-rule);
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.55;
 }
 
@@ -1341,14 +1341,14 @@
 
 .planComposer > summary > span {
   color: #995614;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 760;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .planComposer > summary > strong {
-  font-size: 13px;
+  font-size: 0.9375rem;
 }
 
 .planComposer > form {
@@ -1366,7 +1366,7 @@
   display: block;
   margin-bottom: 8px;
   color: #8f5118;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 740;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1378,14 +1378,14 @@
   padding-left: 18px;
   margin: 0;
   color: #665d56;
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 
 .noPlan > p:not(.sectionIndex) {
   max-width: 680px;
   margin: 14px 0 0;
   color: var(--case-muted);
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.65;
 }
 
@@ -1406,12 +1406,12 @@
 .panelError strong {
   display: block;
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 0.875rem;
 }
 
 .panelError p {
   margin: 0;
-  font-size: 10px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -1433,13 +1433,13 @@
 .readOnlyNotice strong {
   display: block;
   margin-bottom: 4px;
-  font-size: 11px;
+  font-size: 0.8125rem;
 }
 
 .readOnlyNotice p {
   margin: 0;
   color: var(--case-muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -1473,14 +1473,14 @@
 .runCheckpoint span,
 .runBudget span {
   color: #8d8781;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 740;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
-.runStartForm strong { font-size: 14px; }
-.runStartForm small { color: var(--case-muted); font-size: 9px; }
+.runStartForm strong { font-size: 1.0625rem; }
+.runStartForm small { color: var(--case-muted); font-size: 0.8125rem; }
 .runStartForm > :last-child { grid-column: 1 / -1; }
 
 .runHeader {
@@ -1493,13 +1493,13 @@
 
 .runHeader h2 {
   margin-top: 4px;
-  font-size: clamp(24px, 3vw, 38px);
+  font-size: clamp(1.75rem, 3vw, 2.8125rem);
 }
 
 .runHeader p {
   margin: 8px 0 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
 }
 
 .runCheckpoint {
@@ -1511,8 +1511,8 @@
   background: #fff;
 }
 
-.runCheckpoint strong { font-size: 18px; }
-.runCheckpoint small { color: var(--case-muted); font-size: 8px; }
+.runCheckpoint strong { font-size: 1.3125rem; }
+.runCheckpoint small { color: var(--case-muted); font-size: 0.8125rem; }
 
 .runControlForms {
   display: grid;
@@ -1556,7 +1556,7 @@
 .runSteps li > span,
 .runTimeline li > span {
   color: #99918a;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1567,14 +1567,14 @@
 }
 
 .runSteps li strong,
-.runTimeline li strong { font-size: 11px; }
+.runTimeline li strong { font-size: 0.8125rem; }
 .runSteps li small,
-.runTimeline li small { color: var(--case-muted); font-size: 8px; }
+.runTimeline li small { color: var(--case-muted); font-size: 0.8125rem; }
 .runSteps li code,
 .runTimeline li code {
   color: #746d67;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 8px;
+  font-size: 0.8125rem;
 }
 
 .runSteps li[data-status="running"] { border-left: 3px solid #567564; padding-left: 10px; }
@@ -1596,11 +1596,11 @@
 }
 
 .runBudget > div + div { border-left: 1px solid var(--case-rule); }
-.runBudget strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+.runBudget strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
 
 .runTimeline > .sectionHeading > small {
   color: var(--case-muted);
-  font-size: 8px;
+  font-size: 0.8125rem;
   text-transform: uppercase;
 }
 
@@ -1614,14 +1614,14 @@
 
 .impactHeader h2 {
   margin-top: 5px;
-  font-size: clamp(23px, 3vw, 36px);
+  font-size: clamp(1.6875rem, 3vw, 2.625rem);
 }
 
 .impactHeader p {
   max-width: 760px;
   margin: 9px 0 0;
   color: var(--case-muted);
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.65;
 }
 
@@ -1649,14 +1649,14 @@
 .evidenceBridge span,
 .impactReasoning span {
   color: #8c857f;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 760;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
-.impactGenerateForm > div:first-of-type strong { font-size: 13px; }
-.impactGenerateForm > div:first-of-type small { color: var(--case-muted); font-size: 8px; }
+.impactGenerateForm > div:first-of-type strong { font-size: 0.9375rem; }
+.impactGenerateForm > div:first-of-type small { color: var(--case-muted); font-size: 0.8125rem; }
 .impactGenerateForm .field { margin: 0; }
 .impactGenerateForm > :last-child { grid-column: 1 / -1; }
 
@@ -1686,17 +1686,17 @@
   gap: 18px;
 }
 
-.impactCardHeader h3 { margin: 4px 0; font-size: 18px; }
-.impactCardHeader small { color: var(--case-muted); font-size: 9px; }
+.impactCardHeader h3 { margin: 4px 0; font-size: 1.3125rem; }
+.impactCardHeader small { color: var(--case-muted); font-size: 0.8125rem; }
 .impactCardHeader > strong {
   color: #5b6e61;
-  font-size: 20px;
+  font-size: 1.5rem;
   font-variant-numeric: tabular-nums;
 }
 
 .impactStatement {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.9375rem;
   line-height: 1.65;
 }
 
@@ -1716,8 +1716,8 @@
 }
 
 .evidenceBridge > svg { color: var(--case-orange); transform: rotate(-90deg); }
-.evidenceBridge strong { display: block; margin-top: 6px; font-size: 10px; }
-.evidenceBridge p { margin: 8px 0 0; color: var(--case-muted); font-size: 9px; line-height: 1.55; }
+.evidenceBridge strong { display: block; margin-top: 6px; font-size: 0.8125rem; }
+.evidenceBridge p { margin: 8px 0 0; color: var(--case-muted); font-size: 0.8125rem; line-height: 1.55; }
 
 .impactReasoning {
   display: grid;
@@ -1727,7 +1727,7 @@
 }
 
 .impactReasoning > div { padding: 13px; border-right: 1px solid var(--case-rule); border-bottom: 1px solid var(--case-rule); }
-.impactReasoning p { margin: 5px 0 0; color: #5e5852; font-size: 9px; line-height: 1.55; }
+.impactReasoning p { margin: 5px 0 0; color: #5e5852; font-size: 0.8125rem; line-height: 1.55; }
 
 .impactDecisionForm {
   display: grid;
@@ -1751,12 +1751,12 @@
 }
 
 .trustLegend strong {
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 
 .trustLegend small {
   color: var(--case-muted);
-  font-size: 8px;
+  font-size: 0.8125rem;
 }
 
 .evidenceList {
@@ -1773,7 +1773,7 @@
 
 .evidenceIndex {
   color: #827b75;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1784,7 +1784,7 @@
   gap: 5px;
   padding-bottom: 3px;
   border-bottom: 1px solid var(--case-ink);
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 710;
 }
 
@@ -1798,7 +1798,7 @@
 .evidenceMeta code,
 .eventMeta code {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .evidenceList .hashField {
@@ -1812,7 +1812,7 @@
   gap: 6px;
   margin: 12px 0 0;
   color: #6e655e;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .eventList {
@@ -1830,7 +1830,7 @@
 
 .eventSequence {
   color: #827b75;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1840,14 +1840,14 @@
 
 .eventHeading strong {
   display: block;
-  font-size: 12px;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
 .eventHeading time {
   flex: 0 0 auto;
   color: #8c8580;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 .eventMeta {
@@ -1873,7 +1873,7 @@
 .integrationForm .formHeading > strong {
   display: block;
   margin-bottom: 6px;
-  font-size: 15px;
+  font-size: 1.125rem;
 }
 
 .integrationFields {
@@ -1911,19 +1911,19 @@
 
 .integrationHeading span {
   color: #8c857f;
-  font-size: 8px;
+  font-size: 0.8125rem;
   font-weight: 760;
   letter-spacing: 0.09em;
 }
 
-.integrationHeading h3 { margin: 5px 0; font-size: 18px; }
-.integrationHeading small { color: var(--case-muted); font-size: 9px; }
-.integrationHeading > strong { color: #8f3f35; font-size: 10px; letter-spacing: 0.08em; }
+.integrationHeading h3 { margin: 5px 0; font-size: 1.3125rem; }
+.integrationHeading small { color: var(--case-muted); font-size: 0.8125rem; }
+.integrationHeading > strong { color: #8f3f35; font-size: 0.8125rem; letter-spacing: 0.08em; }
 
 .integrationBody {
   margin: 0;
   color: #5e5852;
-  font-size: 11px;
+  font-size: 0.8125rem;
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1935,7 +1935,7 @@
   color: #5b665f;
   border-left: 2px solid #557461;
   background: #f5f8f6;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 
 @media (max-width: 1160px) {
@@ -2023,7 +2023,7 @@
   .indexHeader h1,
   .workspaceHeader h1,
   .accessState h1 {
-    font-size: 38px;
+    font-size: 2.8125rem;
   }
 
   .boundaryStrip {
@@ -2042,7 +2042,7 @@
   }
 
   .caseSummary > strong {
-    font-size: 15px;
+    font-size: 1.125rem;
   }
 
   .workspaceTabs {
