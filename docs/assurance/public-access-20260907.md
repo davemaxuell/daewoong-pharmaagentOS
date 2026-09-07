@@ -33,10 +33,27 @@ access to that browser's prior private history. No cross-device account exists.
 
 ## Deployment and remaining work
 
-Publication targets the existing GitHub `main` branch and dedicated Vercel project
-`pharmaagent-os`, at https://pharmaagent-os.vercel.app. The current implementation
-record supersedes historical OAuth/admission setup requirements.
+Application commit `f1767f7` was pushed to GitHub `main` and deployed successfully
+as Vercel deployment `dpl_6iBCzj3odCd1pUeHiMTXBpeYeecr`. The public alias
+https://pharmaagent-os.vercel.app points to this account-free build.
+
+The same headless desktop/mobile checks passed against the public alias: direct
+dashboard 200, no account controls, legacy sign-in redirect, provider endpoint 404,
+distinct/continuous browser cookies, protected admin/review rendering, no overflow
+or browser JavaScript errors. Frontend health returned 200; backend health still
+returned 500 because production database setup is outstanding.
+
+Obsolete `AUTH_SECRET`, `AUTH_ADMISSION_MODE`, `AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON`
+and `AUTH_TRUST_HOST` variables were removed from Vercel Preview and Production.
+The current implementation record supersedes historical OAuth/admission setup
+requirements.
 
 Supabase/database and server API signing configuration remain outstanding. Browser
 identity checks do not establish live database persistence or successful AI queries.
 The existing specialist execution and production qualification blockers remain.
+
+GitHub checks for `f1767f7`: frontend, contracts, PostgreSQL schema/restore,
+Temporal recovery, both container checks, deployment rendering and secret scanning
+passed. Both CodeQL language jobs passed. The full backend regression job was
+still running when this evidence was recorded; the focused authentication suite
+above passed locally. CI run: https://github.com/davemaxuell/daewoong-pharmaagentOS/actions/runs/34078404837.

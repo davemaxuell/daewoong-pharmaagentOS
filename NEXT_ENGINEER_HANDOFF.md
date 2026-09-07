@@ -23,7 +23,9 @@ tests skipped**; Ruff, contract validation and diff whitespace checks passed.
 Google/Naver providers, the account menu, and Auth.js were removed. `/sign-in` now
 redirects to the dashboard. `PORTAL_SESSION_SECRET` signs an automatic browser
 cookie; backend assertions use anonymous subjects with viewer permission only.
-OAuth/admission setup in historical notes is superseded. See
+Application commit `f1767f7` is deployed and live browser checks passed. Obsolete
+Vercel login settings were removed. OAuth/admission setup in historical notes is
+superseded. See
 [public-access evidence](docs/assurance/public-access-20260907.md).
 
 ## Start here

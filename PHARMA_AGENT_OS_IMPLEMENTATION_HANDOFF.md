@@ -18,6 +18,8 @@ Public API assertions carry anonymous UUID subjects and viewer authority; the AP
 rejects elevated public-session roles, including group-derived permissions.
 `PORTAL_SESSION_SECRET` replaces the OAuth settings for the web frontend.
 Previous private-account admission requirements below are historical and superseded.
+Application commit `f1767f7` is deployed; live desktop/mobile checks confirm direct
+dashboard access without login. Obsolete Vercel login settings were removed.
 See [public-access evidence](docs/assurance/public-access-20260907.md).
 
 **2026-09-07 GitHub/Vercel publication:** The user authorized publication and
