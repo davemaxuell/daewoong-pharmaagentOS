@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
+        hide_input_in_errors=True,
     )
 
     app_name: str = "FDA Drug Warning Letter Intelligence API"
@@ -63,9 +64,7 @@ class Settings(BaseSettings):
     oidc_jwks_url: str | None = None
     oidc_public_key: str | None = None
     oidc_hs256_secret: SecretStr | None = None
-    oidc_algorithms: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["RS256"]
-    )
+    oidc_algorithms: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["RS256"])
     oidc_role_claim: str = "roles"
     oidc_group_role_map: dict[str, str] = Field(default_factory=dict)
 
@@ -193,9 +192,16 @@ class Settings(BaseSettings):
 
     # Environment secrets support local development only; Kubernetes/production
     # should use workload identity plus the configured external provider.
-    secret_provider: Literal["environment", "aws"] = "environment"
+    secret_provider: Literal["environment", "aws", "vercel"] = "environment"
     secrets_aws_region: str | None = None
     secrets_aws_prefix: str = "pharma-agent-os/"
+    vercel: str | None = None
+    vercel_env: str | None = None
+    vercel_project_id: str | None = None
+    serverless_worker_enabled: bool = False
+    worker_database_url: SecretStr | None = None
+    worker_trigger_secret: SecretStr | None = None
+    worker_slice_seconds: int = Field(default=210, ge=10, le=240)
 
     @field_validator(
         "allowed_origins",
@@ -325,7 +331,32 @@ class Settings(BaseSettings):
             raise ValueError("SMTP_STARTTLS and SMTP_USE_SSL cannot both be true")
         if self.secret_provider == "aws" and not self.secrets_aws_region:
             raise ValueError("SECRETS_AWS_REGION is required when SECRET_PROVIDER=aws")
+        if self.secret_provider == "vercel" and not (
+            self.vercel == "1"
+            and self.vercel_env in {"production", "preview"}
+            and self.vercel_project_id
+        ):
+            raise ValueError("SECRET_PROVIDER=vercel requires Vercel deployment metadata")
+        if self.serverless_worker_enabled:
+            if (
+                not self.worker_trigger_secret
+                or len(self.worker_trigger_secret.get_secret_value()) < 32
+            ):
+                raise ValueError(
+                    "Serverless worker requires WORKER_TRIGGER_SECRET of at least 32 characters"
+                )
+            if self.temporal_enabled or self.embedded_worker_enabled:
+                raise ValueError(
+                    "Serverless worker uses the database queue; disable embedded/Temporal workers"
+                )
         if self.app_env == "production":
+            if self.debug:
+                raise ValueError("DEBUG must be false in production")
+            database = urlsplit(self.database_url)
+            if database.scheme not in {"postgres", "postgresql", "postgresql+asyncpg"} or not (
+                database.hostname and database.path.strip("/")
+            ):
+                raise ValueError("Production DATABASE_URL requires PostgreSQL with a database name")
             if self.dev_auth_enabled:
                 raise ValueError("DEV_AUTH_ENABLED must be false in production")
             if not (self.oidc_issuer and self.oidc_audience):
@@ -336,10 +367,49 @@ class Settings(BaseSettings):
                 raise ValueError("AUTO_CREATE_SCHEMA must be false in production")
             if "*" in self.allowed_origins:
                 raise ValueError("Wildcard CORS origins are forbidden in production")
+            if not self.allowed_hosts or any(
+                not host.strip() or "*" in host or "://" in host or "/" in host
+                for host in self.allowed_hosts
+            ):
+                raise ValueError("Production ALLOWED_HOSTS requires explicit host names")
+            for name, endpoint_value in (
+                ("ALLOWED_ORIGINS", origin) for origin in self.allowed_origins
+            ):
+                endpoint = urlsplit(endpoint_value)
+                if (
+                    endpoint.scheme != "https"
+                    or not endpoint.hostname
+                    or endpoint.username is not None
+                    or endpoint.password is not None
+                    or endpoint.path
+                    or endpoint.query
+                    or endpoint.fragment
+                    or "*" in endpoint_value
+                ):
+                    raise ValueError(f"Production {name} requires exact HTTPS origins")
+            if self.oidc_algorithms != ["RS256"]:
+                raise ValueError("Production OIDC_ALGORITHMS must be RS256")
             if not self.otel_exporter_otlp_endpoint:
                 raise ValueError("OTEL_EXPORTER_OTLP_ENDPOINT is required in production")
+            for name, endpoint_value in (
+                ("OIDC_JWKS_URL", self.oidc_jwks_url),
+                ("OTEL_EXPORTER_OTLP_ENDPOINT", self.otel_exporter_otlp_endpoint),
+            ):
+                if endpoint_value is None:
+                    continue
+                endpoint = urlsplit(endpoint_value)
+                if (
+                    endpoint.scheme != "https"
+                    or not endpoint.hostname
+                    or endpoint.username is not None
+                    or endpoint.password is not None
+                    or endpoint.fragment
+                ):
+                    raise ValueError(f"Production {name} requires an HTTPS endpoint")
+            if self.smtp_enabled and not (self.smtp_starttls or self.smtp_use_ssl):
+                raise ValueError("Production SMTP requires TLS")
             if self.secret_provider == "environment":
-                raise ValueError("A workload-identity secret provider is required in production")
+                raise ValueError("A managed secret provider is required in production")
             if self.temporal_enabled and not (
                 self.temporal_tls_enabled
                 and self.temporal_tls_ca_path

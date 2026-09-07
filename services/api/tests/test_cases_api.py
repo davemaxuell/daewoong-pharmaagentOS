@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -166,6 +167,26 @@ def _run_one_worker_job(client: TestClient):
     return asyncio.run(
         process_next_job(client.app.state.database, client.app.state.settings)
     )
+
+
+def _regulatory_output() -> dict:
+    # Contract fixture only: this is not independently executed release evidence.
+    path = Path(__file__).resolve().parents[3] / "contracts/agents/examples"
+    return json.loads((path / "regulatory-finding-list.valid.json").read_text(encoding="utf-8"))
+
+
+def _verification_output(case: dict, plan: dict, run: dict) -> dict:
+    # Exercise the completion state machine with an explicit contract fixture.
+    return {
+        "id": str(uuid4()), "case_id": case["id"], "run_id": run["id"],
+        "plan_id": plan["id"], "plan_version": plan["version"],
+        "plan_sha256": plan["plan_sha256"], "bound_state_hash": plan["based_on_state_hash"],
+        "input_sha256": "a" * 64, "correction_iteration": 0, "status": "PASS",
+        "checks": [], "issues": [], "verified_hypothesis_ids": [], "report_sha256": "b" * 64,
+        "verifier_name": "verification-agent", "verifier_version": "1.2.1",
+        "created_by": "test-fixture", "created_at": "2026-09-07T00:00:00Z",
+        "independent_context": True,
+    }
 
 
 def test_case_creation_requires_case_role_and_exact_in_scope_version(
@@ -534,7 +555,7 @@ def test_run_pause_resume_step_approval_and_completion(client: TestClient) -> No
         headers={**SYSTEM_OWNER, "Idempotency-Key": _idempotency("first-result")},
         json={
             "expected_invocation_id": active["active_invocation"]["id"],
-            "output": {"findings": [], "incomplete_evidence": True},
+            "output": _regulatory_output(),
             "usage": {
                 "turns": 1,
                 "tool_calls": 2,
@@ -580,7 +601,7 @@ def test_run_pause_resume_step_approval_and_completion(client: TestClient) -> No
         headers={**SYSTEM_OWNER, "Idempotency-Key": _idempotency("second-result")},
         json={
             "expected_invocation_id": second_invocation["id"],
-            "output": {"valid": True, "issues": []},
+            "output": _verification_output(case, plan, run),
             "usage": {
                 "turns": 1,
                 "tool_calls": 1,
@@ -616,7 +637,7 @@ def test_runtime_rejects_over_limit_result_and_blocks_further_work(
         headers={**SYSTEM_OWNER, "Idempotency-Key": _idempotency("over-limit")},
         json={
             "expected_invocation_id": active["active_invocation"]["id"],
-            "output": {"findings": []},
+            "output": _regulatory_output(),
             "usage": {
                 "turns": 5,
                 "tool_calls": 0,

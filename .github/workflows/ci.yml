@@ -30,8 +30,10 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev]"
-      - run: ruff check app tests
+      - run: pip install uv==0.11.26
+      - run: uv sync --frozen --extra dev
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: ruff check app tests ../../scripts/deployment-preflight.py ../../scripts/prepare-vercel-resources.py
       - run: pytest --cov=app --cov-report=term-missing
 
   postgres-schema:
@@ -69,7 +71,9 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev]"
+      - run: pip install uv==0.11.26
+      - run: uv sync --frozen --extra dev
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: sudo apt-get update
       - run: sudo apt-get install -y postgresql-client
       - name: Create migration prerequisites only
@@ -89,9 +93,11 @@ jobs:
         run: |
           psql --set ON_ERROR_STOP=1 --file ../../infra/policies/postgres-runtime-roles.sql
       - run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_agent_platform_postgres.py
+      - name: Verify Supabase browser denial and runtime RLS visibility
+        run: AGENT_OS_SUPABASE_TEST=1 pytest tests/test_supabase_boundary.py
       - name: Seed restore canary and create isolated target
         run: |
-          psql --set ON_ERROR_STOP=1 --command "INSERT INTO platform_controls (id, control_key, scope, suspended, reason, revision, updated_by) VALUES ('00000000-0000-4000-8000-000000000001', 'global', 'GLOBAL', false, 'CI backup restore canary', 1, 'ci') ON CONFLICT (control_key) DO NOTHING"
+          psql --set ON_ERROR_STOP=1 --command "INSERT INTO platform_controls (id, control_key, scope, suspended, reason, revision, updated_by, updated_at) VALUES ('00000000-0000-4000-8000-000000000001', 'global', 'GLOBAL', false, 'CI backup restore canary', 1, 'ci', now()) ON CONFLICT (control_key) DO NOTHING"
           psql --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE DATABASE fda_intel_restore"
           mkdir -p ../../.tmp/restore-evidence
       - name: Demonstrate backup restoration
@@ -124,7 +130,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev]"
+      - run: pip install uv==0.11.26
+      - run: uv sync --frozen --extra dev
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Start isolated Temporal server
         run: |
           docker run -d --name temporal-qualification -p 127.0.0.1:7233:7233 temporalio/temporal:1.4.1 server start-dev --ip 0.0.0.0 --namespace pharma-agent-os

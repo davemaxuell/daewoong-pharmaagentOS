@@ -10,6 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent_platform.controls import active_suspension
 from app.agent_platform.runtime.graph import RunGraphState, evaluate_run_state
+from app.agent_platform.runtime.validation import (
+    validate_completion_binding,
+    validate_completion_payload,
+)
 from app.cases.hashing import canonical_sha256
 from app.models import (
     AgentCaseStatus,
@@ -638,7 +642,23 @@ async def complete_step(
     event_key: str,
     request_fingerprint: str,
 ) -> list[str]:
-    case = await session.scalar(select(Case).where(Case.id == run.case_id).with_for_update())
+    # Serialize all completion callers, including internal workers. Refresh ORM
+    # state so a long-lived executor cannot commit using a cached RUNNING state.
+    current_run = await session.scalar(
+        select(CaseRun).where(CaseRun.id == run.id).with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    current_invocation = await session.scalar(
+        select(AgentInvocation).where(AgentInvocation.id == invocation.id).with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if not current_run or not current_invocation:
+        raise HTTPException(status_code=409, detail="Step completion binding is unavailable")
+    run, invocation = current_run, current_invocation
+    case = await session.scalar(
+        select(Case).where(Case.id == run.case_id).with_for_update()
+        .execution_options(populate_existing=True)
+    )
     if not case:
         raise RuntimeError("Case run has no case")
     checkpoint = _checkpoint(run)
@@ -648,6 +668,9 @@ async def complete_step(
         raise HTTPException(status_code=409, detail="Invocation is not the active plan step")
     if invocation.status != AgentInvocationStatus.RUNNING.value:
         raise HTTPException(status_code=409, detail="Invocation is not running")
+
+    await validate_completion_binding(session, run=run, case=case, invocation=invocation)
+    usage = validate_completion_payload(invocation.output_schema_ref, output, usage)
 
     exceeded = _usage_limits_exceeded(usage, invocation.limits or {})
     workflow = await session.get(

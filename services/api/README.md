@@ -29,6 +29,14 @@ actions. Development-header authentication is refused when `APP_ENV=production`.
 Production uses a Bearer JWT configured with `OIDC_ISSUER`, `OIDC_AUDIENCE`, and
 either `OIDC_JWKS_URL` or `OIDC_PUBLIC_KEY`.
 
+Production startup requires a PostgreSQL `DATABASE_URL`, `DEBUG=false`, explicit
+`ALLOWED_HOSTS`, exact HTTPS CORS origins, and `OIDC_ALGORITHMS=RS256`. JWKS and
+telemetry endpoints must use HTTPS without embedded credentials. Enabled SMTP
+requires TLS. These checks complement the existing schema/authentication,
+managed-secret-provider, and Temporal mTLS checks; they do not verify target
+connectivity or qualify the live agents. See the
+[launch readiness record](../../docs/assurance/launch-readiness-20260906.md).
+
 Useful commands:
 
 ```powershell

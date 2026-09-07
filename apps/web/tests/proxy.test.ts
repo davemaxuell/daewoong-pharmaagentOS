@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { NextRequest, type NextFetchEvent } from "next/server";
+import { encode } from "next-auth/jwt";
 
 let portalProxy: typeof import("@/proxy").proxy;
 
@@ -25,6 +26,29 @@ function fetchEvent() {
 }
 
 describe("signed-out route boundary", () => {
+  it("rejects a still-valid session cookie when restricted admission is revoked", async () => {
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
+    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", '{"google:removed-user":["viewer"]}');
+    try {
+      const cookieName = "authjs.session-token";
+      const token = await encode({
+        secret: process.env.AUTH_SECRET!,
+        salt: cookieName,
+        token: { sub: "google:removed-user", email: "viewer@example.com", roles: ["viewer"] },
+      });
+      const admitted = await portalProxy(new NextRequest("http://localhost:3000/api/chat/query", {
+        method: "POST", headers: { cookie: `${cookieName}=${token}` },
+      }), fetchEvent());
+      expect(admitted?.status).toBe(200);
+      vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", "{}");
+      const response = await portalProxy(new NextRequest("http://localhost:3000/api/chat/query", {
+        method: "POST", headers: { cookie: `${cookieName}=${token}` },
+      }), fetchEvent());
+      expect(response?.status).toBe(401);
+    } finally {
+      vi.stubEnv("AUTH_ADMISSION_MODE", "public");
+    }
+  });
   it("redirects a protected page and preserves its relative destination", async () => {
     const request = new NextRequest(
       "http://localhost:3000/drug-letters?category=Laboratory",

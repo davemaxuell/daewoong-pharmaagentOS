@@ -47,7 +47,19 @@ class AwsSecretsManagerProvider:
         return str(value)
 
 
+class VercelSecretProvider(EnvironmentSecretProvider):
+    """Vercel injects deployment-scoped Secret values into the process environment.
+
+    Configure these as Secret values in Vercel, separately for Preview/Production.
+    Metadata checks prevent accidental local selection; they are not a remote
+    attestation or proof of the dashboard's variable visibility setting.
+    Consumers already receive the same injected values through Settings.
+    """
+
+
 def build_secret_provider(settings: Settings) -> SecretProvider:
+    if settings.secret_provider == "vercel":
+        return VercelSecretProvider()
     if settings.secret_provider == "aws":
         assert settings.secrets_aws_region is not None
         return AwsSecretsManagerProvider(

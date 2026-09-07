@@ -40,6 +40,7 @@ def test_system_owner_is_a_distinct_agent_platform_role() -> None:
 def _production_settings(public_key: str) -> Settings:
     return Settings(
         app_env="production",
+        database_url="postgresql+asyncpg://fixture:fixture@db.internal/fixture",
         auto_create_schema=False,
         dev_auth_enabled=False,
         allowed_origins=["https://fda.example"],

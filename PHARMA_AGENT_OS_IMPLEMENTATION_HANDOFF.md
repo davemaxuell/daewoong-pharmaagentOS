@@ -1,13 +1,67 @@
 # PharmaAgent OS implementation handoff
 
-**Handoff date:** 2026-09-05  
+**Handoff date:** 2026-09-07
+
+**Next engineer:** Start with [the transfer brief](NEXT_ENGINEER_HANDOFF.md) for
+the uncommitted working-tree state, production blockers, verification and ordered
+next steps. This file remains the authoritative implementation record.
+
 **Authoritative workspace:** `C:\Users\user\Desktop\PharmaAgentOS`  
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
-**Latest audit:** [Deployment readiness review](docs/assurance/deployment-readiness-20260905.md)
-corrects the earlier completion claim, records real PostgreSQL/Temporal/container
-checks, and identifies remaining execution-adapter and environment work.
+**2026-09-07 continuation — completion boundary:** Before connecting specialist
+execution, inspection found that `complete_step` did not validate its declared
+output schema or recheck completion-time bindings. The shared service now locks
+and refreshes run/invocation/case records, checks active invocation identity and
+attempt, plan/state/schema/budget bindings, current approvals, release availability,
+and suspension controls. Usage rejects non-finite, negative, coerced, and unknown
+values. Exact output contracts currently supported are `RegulatoryFindingList@2.0.0`
+and `VerificationReport@1.0.0` (using the existing verification response model).
+Other output references fail closed until their adapters and contracts are implemented.
+This is structural validation, not proof of retained evidence, independent
+verification, or actual specialist execution. The HTTP result path remains a
+trusted-caller submission path; fixture outputs cannot qualify production.
+See [completion boundary evidence](docs/assurance/completion-boundary-20260907.md).
+Final verification: **508 API tests passed, 7 gated integration tests skipped**
+in 288.68 seconds. Ruff, contract validation and diff whitespace checks passed.
+
+**Latest audit:** [Launch readiness review](docs/assurance/launch-readiness-20260906.md)
+records private-account admission, stricter production startup checks, deployment
+preflight/CI repairs, and fresh PostgreSQL/Temporal/restore/container evidence.
+Production launch remains blocked by target integration, independently executed
+agent/evaluation qualification, and designated release approvals.
+
+**2026-09-06 remediation:** Private deployment templates now use
+`AUTH_ADMISSION_MODE=restricted`; populate the immutable-subject role directory
+before admitting users. Production rejects SQLite fallback, wildcard Hosts,
+unsafe CORS/JWKS/telemetry settings, debug mode, non-RS256 authentication and
+plaintext SMTP. CI uses the frozen Python lock and supplies the restore canary's
+required timestamp. The latest audit records the full verification scope.
+Final verification: **465 packaged API tests passed** with 6 explicitly gated
+live-integration skips; the separate PostgreSQL/Temporal set passed all 8 tests.
+The web passed 28 tests, lint, TypeScript and production build. Isolated restore,
+read-only runtime smoke, contracts and source-secret scans passed; both refreshed
+runtime image scans reported zero HIGH/CRITICAL findings. These results establish
+local engineering evidence, not target-environment qualification.
+
+**2026-09-07 launch preparation:** The
+[launch preparation runbook](docs/runbooks/launch-preparation.md) specifies a
+proposed private-pilot sequence, the remaining execution/evaluation adapter work,
+hosted acceptance checks, and the owner inputs needed to select the deployment.
+The user subsequently selected production on Vercel/Supabase. The
+[production runbook](infra/deployment/vercel/README.md) and
+[architecture decision](docs/adr/0004-vercel-supabase-production.md) record the
+prepared three-service topology, platform secret provider, bounded queue worker,
+Supabase Cron/Vault triggers, RLS boundary, and runtime resource packaging.
+Dedicated projects/domain and hosted qualification remain outstanding. This does
+not complete specialist execution or independent evaluation, and no production
+approval or cloud mutation is implied.
+Verification: **489 API tests passed, 7 gated integration tests skipped**; the
+separate live PostgreSQL boundary/resource set passed all 4 tests. Ruff, contracts,
+CI YAML parsing and configuration instance validation passed. See the
+[Vercel/Supabase preparation evidence](docs/assurance/vercel-supabase-preparation-20260907.md)
+for exact scope and target qualification limits.
 
 **Production-check remediation:** Service/human role separation is now enforced
 after group mapping. The Kubernetes base includes missing public-key references,

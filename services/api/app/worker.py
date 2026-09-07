@@ -154,8 +154,7 @@ def _load_live_discovery_checkpoint(
     if metrics["failed"] != len(failed):
         raise DiscoveryCheckpointCorrupt("Live discovery checkpoint failure count is inconsistent")
     if metrics["fetched"] != len(completed) or (
-        metrics["in_scope"] + metrics["out_of_scope"] + metrics["ambiguous"]
-        != metrics["fetched"]
+        metrics["in_scope"] + metrics["out_of_scope"] + metrics["ambiguous"] != metrics["fetched"]
     ):
         raise DiscoveryCheckpointCorrupt("Live discovery checkpoint result counts are inconsistent")
     return cutoff, completed, failed, metrics, True
@@ -174,9 +173,7 @@ def _save_live_discovery_checkpoint(
         raise DiscoveryCheckpointTooLarge("Live discovery checkpoint has too many URL hashes")
     metrics["failed"] = len(failed)
     if metrics.get("fetched") != len(completed) or (
-        metrics.get("in_scope", 0)
-        + metrics.get("out_of_scope", 0)
-        + metrics.get("ambiguous", 0)
+        metrics.get("in_scope", 0) + metrics.get("out_of_scope", 0) + metrics.get("ambiguous", 0)
         != metrics.get("fetched")
     ):
         raise DiscoveryCheckpointCorrupt("Live discovery checkpoint result counts are inconsistent")
@@ -191,8 +188,7 @@ def _save_live_discovery_checkpoint(
         "completed_url_hashes": sorted(completed),
         "failed_url_hashes": sorted(failed),
         "metrics": {
-            key: _nonnegative_counter(metrics.get(key))
-            for key in _DISCOVERY_PROGRESS_KEYS
+            key: _nonnegative_counter(metrics.get(key)) for key in _DISCOVERY_PROGRESS_KEYS
         },
     }
     if len(json.dumps(checkpoint, separators=(",", ":")).encode("utf-8")) > _MAX_CHECKPOINT_BYTES:
@@ -278,7 +274,9 @@ async def recover_interrupted_local_jobs(session: AsyncSession) -> int:
     return len(jobs)
 
 
-def _claim_job_statement(*, claimed_at: datetime, dialect_name: str):
+def _claim_job_statement(
+    *, claimed_at: datetime, dialect_name: str, job_types: tuple[str, ...] | None = None
+):
     """Build one atomic queue claim, using SKIP LOCKED on PostgreSQL."""
 
     candidate = (
@@ -290,6 +288,8 @@ def _claim_job_statement(*, claimed_at: datetime, dialect_name: str):
         .order_by(ProcessingJob.created_at, ProcessingJob.id)
         .limit(1)
     )
+    if job_types is not None:
+        candidate = candidate.where(ProcessingJob.job_type.in_(job_types))
     if dialect_name == "postgresql":
         candidate = candidate.with_for_update(skip_locked=True)
     candidate_id = candidate.scalar_subquery()
@@ -316,7 +316,9 @@ def _claim_job_statement(*, claimed_at: datetime, dialect_name: str):
     )
 
 
-async def _claim_next_job(database: Database) -> _JobClaim | None:
+async def _claim_next_job(
+    database: Database, *, job_types: tuple[str, ...] | None = None
+) -> _JobClaim | None:
     """Atomically move the oldest available job from PENDING to RUNNING."""
 
     claimed_at = utcnow()
@@ -324,7 +326,9 @@ async def _claim_next_job(database: Database) -> _JobClaim | None:
         dialect_name = session.get_bind().dialect.name
         row = (
             await session.execute(
-                _claim_job_statement(claimed_at=claimed_at, dialect_name=dialect_name)
+                _claim_job_statement(
+                    claimed_at=claimed_at, dialect_name=dialect_name, job_types=job_types
+                )
             )
         ).one_or_none()
         if row is None:
@@ -377,9 +381,7 @@ async def recover_stale_worker_jobs(
         rows = (await session.execute(statement)).all()
         for job_id, ingestion_run_id, attempt_count, max_attempts in rows:
             exhausted = int(attempt_count) >= int(max_attempts)
-            target_status = (
-                JobStatus.DEAD_LETTER.value if exhausted else JobStatus.PENDING.value
-            )
+            target_status = JobStatus.DEAD_LETTER.value if exhausted else JobStatus.PENDING.value
             transition = await session.execute(
                 update(ProcessingJob)
                 .where(
@@ -390,9 +392,7 @@ async def recover_stale_worker_jobs(
                 )
                 .values(
                     status=target_status,
-                    last_error_code=(
-                        "StaleLeaseExhausted" if exhausted else "StaleLeaseExpired"
-                    ),
+                    last_error_code=("StaleLeaseExhausted" if exhausted else "StaleLeaseExpired"),
                     available_at=now,
                     started_at=None if not exhausted else ProcessingJob.started_at,
                     completed_at=now if exhausted else None,
@@ -409,9 +409,7 @@ async def recover_stale_worker_jobs(
                         IngestionRun.status == RunStatus.RUNNING.value,
                     )
                     .values(
-                        status=(
-                            RunStatus.FAILED.value if exhausted else RunStatus.PENDING.value
-                        ),
+                        status=(RunStatus.FAILED.value if exhausted else RunStatus.PENDING.value),
                         error_code="StaleLeaseExhausted" if exhausted else None,
                         completed_at=now if exhausted else None,
                     )
@@ -430,9 +428,7 @@ async def _renew_job_lease(database: Database, claim: _JobClaim) -> bool:
                 ProcessingJob.status == JobStatus.RUNNING.value,
                 ProcessingJob.attempt_count == claim.attempt_count,
             )
-            .values(
-                available_at=renewed_at + timedelta(seconds=_JOB_LEASE_SECONDS)
-            )
+            .values(available_at=renewed_at + timedelta(seconds=_JOB_LEASE_SECONDS))
         )
         await session.commit()
         return result.rowcount == 1
@@ -942,9 +938,7 @@ async def _reprocess(
             "body_non_empty": bool(parsed.normalized_text),
         }
         pinned_case_source_id = await session.scalar(
-            select(CaseSource.id)
-            .where(CaseSource.document_version_id == version.id)
-            .limit(1)
+            select(CaseSource.id).where(CaseSource.document_version_id == version.id).limit(1)
         )
         pinned_payload_changed = pinned_case_source_id is not None and any(
             (
@@ -1051,9 +1045,11 @@ async def process_next_job(
     settings: Settings,
     *,
     reference_date: date | None = None,
+    job_types: tuple[str, ...] | None = None,
+    continuation_on_cancel: bool = False,
 ) -> WorkerResult | None:
     effective_reference_date = reference_date or utcnow().date()
-    claim = await _claim_next_job(database)
+    claim = await _claim_next_job(database, job_types=job_types)
     if claim is None:
         return None
     job_id = claim.job_id
@@ -1150,17 +1146,12 @@ async def process_next_job(
             else:
                 raise RuntimeError(f"Unsupported job type: {job.job_type}")
             await session.refresh(job, attribute_names=["status", "attempt_count"])
-            if (
-                job.status != JobStatus.RUNNING.value
-                or job.attempt_count != claim.attempt_count
-            ):
+            if job.status != JobStatus.RUNNING.value or job.attempt_count != claim.attempt_count:
                 raise RuntimeError("Job lease ownership was lost")
             if requeue_partial:
                 job.status = JobStatus.PENDING.value
                 job.last_error_code = "DiscoveryPartialRetry"
-                job.available_at = utcnow() + timedelta(
-                    seconds=min(300, 2**job.attempt_count)
-                )
+                job.available_at = utcnow() + timedelta(seconds=min(300, 2**job.attempt_count))
                 job.completed_at = None
             else:
                 job.status = JobStatus.SUCCEEDED.value
@@ -1196,7 +1187,13 @@ async def process_next_job(
             )
             if job:
                 job.status = JobStatus.PENDING.value
-                job.last_error_code = "WorkerCancelled"
+                job.last_error_code = (
+                    "WorkerTimeSlice" if continuation_on_cancel else "WorkerCancelled"
+                )
+                if continuation_on_cancel:
+                    # A bounded slice is a continuation, not a failed attempt.
+                    # Keep attempt_count monotonic: it fences stale worker writes.
+                    job.max_attempts += 1
                 job.completed_at = utcnow()
                 job.available_at = utcnow() + timedelta(seconds=2)
                 if job.ingestion_run_id:

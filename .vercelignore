@@ -1,9 +1,16 @@
-# The Services deployment only needs the two service roots and root config.
+# Include both service roots and the reviewed resources required by the API build.
 /*
 !vercel.json
 !.vercelignore
 !apps
 !services
+!contracts
+!fixtures
+!scripts
+/fixtures/*
+!/fixtures/internal_quality
+/scripts/*
+!/scripts/prepare-vercel-resources.py
 
 # Never upload local dependencies, build products, tests, data, or secrets.
 /apps/web/node_modules/
@@ -21,5 +28,9 @@
 /services/api/tests/
 /services/api/data/
 /services/api/.env*
+/services/api/app/_resources/
 **/__pycache__/
 **/*.py[cod]
+**/.env*
+**/*.pem
+**/*.key

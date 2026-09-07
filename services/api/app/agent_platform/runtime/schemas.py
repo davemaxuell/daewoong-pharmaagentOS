@@ -43,6 +43,8 @@ class RunControlRequest(StrictRuntimeModel):
 
 
 class InvocationUsage(StrictRuntimeModel):
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+
     turns: int = Field(default=0, ge=0)
     tool_calls: int = Field(default=0, ge=0)
     input_tokens: int = Field(default=0, ge=0)
@@ -146,4 +148,3 @@ class RunEventPage(StrictRuntimeModel):
     items: list[RunEventResponse]
     next_cursor: str | None
     has_more: bool
-

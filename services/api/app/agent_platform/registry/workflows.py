@@ -10,13 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cases.hashing import canonical_sha256
 from app.models import RegistryReleaseStatus, WorkflowTemplateVersion
+from app.resource_paths import resource_root
 
 _BUNDLED_WORKFLOW = "regulatory-impact-review.v1.0.0.yaml"
 
 
 def bundled_workflow_path() -> Path:
     return (
-        Path(__file__).resolve().parents[5]
+        resource_root()
         / "contracts"
         / "workflows"
         / _BUNDLED_WORKFLOW
@@ -103,4 +104,3 @@ async def approved_workflow_template(
             return 0, 0, 0, item.version
 
     return max(executable, key=version_key) if executable else None
-

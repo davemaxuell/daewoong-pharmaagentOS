@@ -27,6 +27,7 @@ data:
   EMBEDDING_DIMENSIONS: "1536"
   AUTH_REQUIRED: "true"
   AUTH_TRUST_HOST: "true"
+  AUTH_ADMISSION_MODE: restricted
   AUTH_URL: https://fda-intel.example.invalid
   AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON: "{}"
   API_SESSION_ISSUER: daewoong-fda-web

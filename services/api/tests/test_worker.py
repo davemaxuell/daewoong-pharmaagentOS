@@ -311,9 +311,7 @@ async def test_standalone_worker_recovers_stale_leases_and_dead_letters_exhauste
     async def observe_recovery(_database: Database, _settings: Settings):
         async with _database.session_factory() as session:
             rows = (
-                await session.execute(
-                    select(ProcessingJob.idempotency_key, ProcessingJob.status)
-                )
+                await session.execute(select(ProcessingJob.idempotency_key, ProcessingJob.status))
             ).all()
             observed_statuses.update(dict(rows))
         return None
@@ -369,9 +367,7 @@ async def test_standalone_worker_recovers_stale_leases_and_dead_letters_exhauste
                 )
             )
             exhausted = await session.scalar(
-                select(ProcessingJob).where(
-                    ProcessingJob.idempotency_key == "stale-exhausted-job"
-                )
+                select(ProcessingJob).where(ProcessingJob.idempotency_key == "stale-exhausted-job")
             )
             assert recoverable is not None
             assert recoverable.attempt_count == 1
@@ -424,10 +420,12 @@ async def test_stale_lease_recovery_is_bounded(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("continuation", [False, True])
 async def test_live_discovery_resume_skips_completed_details_and_preserves_metrics(
     settings: Settings,
     fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
+    continuation: bool,
 ) -> None:
     listing_url = "https://www.fda.gov/warning-letters/resume-regression.csv"
     detail_urls = [
@@ -537,7 +535,12 @@ async def test_live_discovery_resume_skips_completed_details_and_preserves_metri
             job_id = job.id
 
         with pytest.raises(asyncio.CancelledError):
-            await process_next_job(database, settings, reference_date=date(2026, 8, 30))
+            await process_next_job(
+                database,
+                settings,
+                reference_date=date(2026, 8, 30),
+                continuation_on_cancel=continuation,
+            )
 
         async with database.session_factory() as session:
             interrupted_run = await session.get(IngestionRun, run_id)
@@ -546,6 +549,11 @@ async def test_live_discovery_resume_skips_completed_details_and_preserves_metri
             assert interrupted_job is not None
             assert interrupted_run.status == RunStatus.PENDING.value
             assert interrupted_job.status == JobStatus.PENDING.value
+            assert interrupted_job.attempt_count == 1
+            assert interrupted_job.max_attempts == 3 + int(continuation)
+            assert interrupted_job.last_error_code == (
+                "WorkerTimeSlice" if continuation else "WorkerCancelled"
+            )
             checkpoint_metrics = dict(interrupted_run.metrics or {})
             assert checkpoint_metrics["fetched"] == 2
             assert checkpoint_metrics["in_scope"] == 1
@@ -614,8 +622,7 @@ async def test_systemic_acquisition_outage_circuit_breaks_without_failure_avalan
 ) -> None:
     listing_url = "https://www.fda.gov/warning-letters/systemic-outage.csv"
     detail_urls = [
-        f"https://www.fda.gov/warning-letters/systemic-outage-{index}"
-        for index in range(1, 5)
+        f"https://www.fda.gov/warning-letters/systemic-outage-{index}" for index in range(1, 5)
     ]
     listing = (
         "Posted Date,Letter Issue Date,Company Name,Letter URL\n"
@@ -680,9 +687,7 @@ async def test_systemic_acquisition_outage_circuit_breaks_without_failure_avalan
             job_id = job.id
 
         with caplog.at_level("WARNING", logger="uvicorn.error"):
-            result = await process_next_job(
-                database, settings, reference_date=date(2026, 8, 30)
-            )
+            result = await process_next_job(database, settings, reference_date=date(2026, 8, 30))
         assert result is not None
         assert result.status == JobStatus.PENDING.value
         assert detail_attempts == detail_urls[:2]
@@ -782,9 +787,7 @@ async def test_unresolved_candidate_failure_automatically_retries_same_checkpoin
             job_id = job.id
 
         for expected_attempt in (1, 2):
-            result = await process_next_job(
-                database, settings, reference_date=date(2026, 8, 30)
-            )
+            result = await process_next_job(database, settings, reference_date=date(2026, 8, 30))
             assert result is not None
             assert result.status == JobStatus.PENDING.value
             assert result.metrics["failed"] == 1
@@ -811,9 +814,7 @@ async def test_unresolved_candidate_failure_automatically_retries_same_checkpoin
             assert final_job is not None
             assert final_run.status == RunStatus.SUCCEEDED.value
             assert final_job.status == JobStatus.SUCCEEDED.value
-            _, completed, failed, _, _ = _load_live_discovery_checkpoint(
-                final_job, listing_url
-            )
+            _, completed, failed, _, _ = _load_live_discovery_checkpoint(final_job, listing_url)
             assert len(completed) == 2
             assert failed == set()
     finally:

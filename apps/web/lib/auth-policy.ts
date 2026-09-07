@@ -60,7 +60,12 @@ export function rolesForSubject(
   serializedDirectory = process.env.AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON,
 ): AppRole[] {
   if (!isTrustedAuthSubject(value)) return [];
-  if (!serializedDirectory?.trim()) return ["viewer"];
+  const mode = process.env.AUTH_ADMISSION_MODE?.trim() || "public";
+  if (mode !== "public" && mode !== "restricted") {
+    throw new Error("AUTH_ADMISSION_MODE must be public or restricted.");
+  }
+  const unassignedRoles: AppRole[] = mode === "public" ? ["viewer"] : [];
+  if (!serializedDirectory?.trim()) return unassignedRoles;
 
   let parsed: unknown;
   try {
@@ -97,7 +102,7 @@ export function rolesForSubject(
     if (subject === value) assigned = roles;
   }
 
-  if (!assigned) return ["viewer"];
+  if (!assigned) return unassignedRoles;
   const assignedSet = new Set(assigned);
   return APP_ROLES.filter((role) => assignedSet.has(role));
 }
@@ -112,7 +117,7 @@ export function isAllowedGoogleProfile(profile: GoogleProfile) {
   if (profile.email_verified !== true || !subject || !email || !isAllowedEmail(email)) {
     return false;
   }
-  return true;
+  return rolesForSubject(subject).length > 0;
 }
 
 export function isAllowedNaverProfile(profile: NaverProfile) {
@@ -126,6 +131,7 @@ export function isAllowedNaverProfile(profile: NaverProfile) {
     profile.resultcode === "00" &&
     subject !== null &&
     Boolean(email) &&
-    isAllowedEmail(email)
+    isAllowedEmail(email) &&
+    rolesForSubject(subject).length > 0
   );
 }

@@ -27,6 +27,9 @@ COPY fixtures/synthetic-quality /srv/pharma/fixtures/synthetic-quality
 COPY infra/migrations /srv/pharma/infra/migrations
 COPY infra/policies /srv/pharma/infra/policies
 COPY infra/deployment/kubernetes/base /srv/pharma/infra/deployment/kubernetes/base
+COPY scripts/deployment-preflight.py /srv/pharma/scripts/deployment-preflight.py
+COPY scripts/prepare-vercel-resources.py /srv/pharma/scripts/prepare-vercel-resources.py
+COPY infra/deployment/vercel/supabase-data-api-boundary.sql /srv/pharma/infra/deployment/vercel/supabase-data-api-boundary.sql
 ENV APP_ENV=test OBJECT_STORE_PATH=/tmp/objects
 ENTRYPOINT []
 CMD ["python", "-m", "pytest", "--tb=short"]

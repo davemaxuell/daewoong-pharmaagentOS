@@ -18,9 +18,10 @@ from app.models import (
     InternalAssetVersion,
     RelationEvidence,
 )
+from app.resource_paths import resource_root
 
 CORPUS_PATH = (
-    Path(__file__).resolve().parents[4]
+    resource_root()
     / "fixtures"
     / "internal_quality"
     / "synthetic_quality_system.v1.yaml"

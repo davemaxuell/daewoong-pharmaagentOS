@@ -19,8 +19,8 @@ and `docs/architecture/agent-platform.md`. The complete implementation inventory
 verification evidence, migration order, and operations handoff are in
 [`PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md`](PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md).
 
-Deployment status and the limits of the reference implementation are recorded in
-the [2026-09-05 readiness audit](docs/assurance/deployment-readiness-20260905.md).
+Deployment status and the remaining launch blockers are recorded in
+the [2026-09-06 readiness audit](docs/assurance/launch-readiness-20260906.md).
 Passing local tests does not constitute production release approval.
 
 ## What is implemented
@@ -160,8 +160,10 @@ http://localhost:3000/api/auth/callback/google
 http://localhost:3000/api/auth/callback/naver
 ```
 
-Every verified Google identity or valid Naver identity with a consented email defaults
-to the viewer role. Additional roles are assigned only through the server-side
+In `AUTH_ADMISSION_MODE=public` (the compatibility default), verified Google and
+valid Naver identities with a consented email default to viewer. Private deployments
+use `AUTH_ADMISSION_MODE=restricted`, which admits only explicitly assigned subjects.
+Roles are assigned only through the server-side
 `AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON` directory keyed by the provider's immutable
 `google:<sub>` or `naver:<id>` subject—not by email. The web server retains the
 provider session and sends FastAPI only a 90-second, audience-bound RS256 assertion.

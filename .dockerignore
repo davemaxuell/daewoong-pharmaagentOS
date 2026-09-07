@@ -9,6 +9,9 @@
 !services/api/app/**
 !services/api/tests/
 !services/api/tests/**
+!scripts/
+!scripts/deployment-preflight.py
+!scripts/prepare-vercel-resources.py
 !tests/
 !tests/fixtures/
 !tests/fixtures/**
@@ -30,6 +33,8 @@
 !infra/deployment/kubernetes/
 !infra/deployment/kubernetes/base/
 !infra/deployment/kubernetes/base/**
+!infra/deployment/vercel/
+!infra/deployment/vercel/supabase-data-api-boundary.sql
 **/__pycache__/
 **/*.pyc
 **/.env*

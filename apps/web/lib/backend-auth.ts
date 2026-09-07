@@ -48,13 +48,15 @@ export const getAuthenticatedPortalIdentity = cache(async (): Promise<PortalIden
     isTrustedAuthSubject(session.user.subject) &&
     isAllowedEmail(session.user.email)
   ) {
+    const roles = rolesForSubject(session.user.subject);
+    if (roles.length === 0) return null;
     return {
       subject: session.user.subject,
       name: session.user.name ?? null,
       email: session.user.email ?? null,
       image: session.user.image ?? null,
       provider,
-      roles: rolesForSubject(session.user.subject),
+      roles,
       authenticated: true,
     };
   }

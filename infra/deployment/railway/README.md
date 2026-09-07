@@ -24,13 +24,15 @@ source. This prevents an incomplete automatic deployment.
 | Railway resource | Root directory | Start command | Exposure / probe |
 | --- | --- | --- | --- |
 | `web` | `/apps/web` | Dockerfile `CMD` | Public; `/api/health` |
-| `api` | `/services/api` | Dockerfile `CMD` | Private only; `/health/ready` |
-| `worker` | `/services/api` | `fda-intel worker --poll-seconds 2` | Private; no HTTP probe |
-| `cron` | `/services/api` | `fda-intel discover --source-url https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/compliance-actions-and-activities/warning-letters` | Private; `0 */6 * * *` UTC |
+| `api` | `/` | Dockerfile `CMD` | Private only; `/health/ready` |
+| `worker` | `/` | `fda-intel worker --poll-seconds 2` | Private; no HTTP probe |
+| `cron` | `/` | `fda-intel discover --source-url https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/compliance-actions-and-activities/warning-letters` | Private; `0 */6 * * *` UTC |
 | `pgvector` | Railway pgvector PostgreSQL template | Template managed | Private only |
 | `fda-objects` | Railway Bucket | N/A | Private; region `sin` |
 
-Use the repository Dockerfiles in each root. The API image honors Railway's
+API, worker, and cron require the repository-root build context and
+`services/api/Dockerfile`; set `RAILWAY_DOCKERFILE_PATH=services/api/Dockerfile`.
+The web uses `apps/web/Dockerfile` from its application context. The API image honors Railway's
 runtime `PORT`; the web standalone server does the same. Set the API and web
 restart policy to `ON_FAILURE`, the worker to `ALWAYS`, and cron to `NEVER`.
 Railway skips a cron occurrence while the previous execution remains active.
@@ -98,18 +100,18 @@ normal operation.
 ```text
 AUTH_REQUIRED=true
 AUTH_TRUST_HOST=true
-AUTH_REQUIRE_ALLOWLIST=true
-AUTH_ALLOWED_EMAILS=grisellacrystabel@gmail.com
-AUTH_ADMIN_EMAILS=grisellacrystabel@gmail.com
+AUTH_ADMISSION_MODE=restricted
+AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON={}
 API_SESSION_ISSUER=daewoong-fda-web
 API_SESSION_AUDIENCE=daewoong-fda-api
 API_SESSION_KEY_ID=web-session-v1
 ```
 
 After generating the public web domain, set `AUTH_URL` to its exact HTTPS origin
-and register exact Google/Naver callback URLs. Standard Naver Login admits
-allowlisted `@naver.com` profiles; a NAVER WORKS-hosted company domain needs its
-separate approved identity integration.
+and register exact Google/Naver callback URLs. Populate the private role directory
+with approved immutable `google:<sub>` and `naver:<id>` account IDs before login;
+an empty restricted directory denies everyone. Email lists grant neither access
+nor roles. Naver profiles may return any consented email domain.
 
 ## Secrets entered directly in Railway
 
@@ -129,8 +131,10 @@ and rotated. Keep `SMTP_ENABLED=false` until a controlled delivery test is ready
 
 1. Enable billing and a budget/usage alert.
 2. Create the pgvector template and `fda-objects` bucket in Singapore.
-3. Create and configure `api`; run the controlled one-time `fda-intel init-db`
-   bootstrap with the migration identity, then retain `AUTO_CREATE_SCHEMA=false`.
+3. Create and configure `api`; execute the complete controlled schema bootstrap,
+   M1–M8 migrations, and runtime grants in the authoritative
+   [handoff](../../../PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md#database-migration-order)
+   with the migration identity, then retain `AUTO_CREATE_SCHEMA=false`.
 4. Create `worker` and `cron` from the same API image and references.
 5. Create `web`, generate its public domain, then finalize hosts, origins and OAuth
    callbacks before enabling login.

@@ -10,7 +10,9 @@ portal mode.
   `email_verified=true`.
 - A Naver profile must return a successful result, immutable provider ID, and a
   consented email. The email may use any domain because the account key is the Naver ID.
-- Every unassigned Google or Naver identity receives `viewer`.
+- `AUTH_ADMISSION_MODE=public` (the compatibility default) gives unassigned
+  identities `viewer`. `restricted` admits only subjects in the role directory.
+  The Kubernetes template selects `restricted` and initially admits nobody.
 - Privileged roles are assigned only by immutable provider subject in a private,
   server-side role directory. Email configuration never grants authority.
 - In production, service tokens must resolve to exactly the `service` role after
@@ -62,9 +64,13 @@ AUTH_NAVER_SECRET=<server-side client secret>
 Generate `AUTH_SECRET` with `npx auth secret`. Do not commit any value produced by that
 command. For local development, use `AUTH_URL=http://localhost:3000`.
 
-No email allowlist or privileged-email list is used. Provider verification establishes
-email ownership. Unassigned accounts receive `viewer`. To assign governed workflow
-roles, set a private JSON object whose keys are exact provider subjects:
+No email allowlist or privileged-email list is used. Old `AUTH_REQUIRE_ALLOWLIST`,
+`AUTH_ALLOWED_EMAILS`, and `AUTH_ADMIN_EMAILS` settings do not control access.
+For a private pilot or internal deployment, set `AUTH_ADMISSION_MODE=restricted`
+and explicitly assign every admitted account, including viewers. Obtain immutable
+IDs through the provider's approved account onboarding process. For an intentionally
+public viewer service, explicitly set `AUTH_ADMISSION_MODE=public`.
+To assign governed workflow roles, use exact provider subjects:
 
 ```text
 AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON={"google:0123456789":["analyst"],"naver:abc123":["reviewer"]}
@@ -75,7 +81,11 @@ Supported human application roles are `viewer`, `analyst`, `reviewer`, `domain_s
 rejects malformed JSON, email keys, unknown or duplicate roles, empty assignments, and
 oversized directories. Keep this value in the deployment secret/configuration system;
 do not expose it through a `NEXT_PUBLIC_*` variable. Role changes take effect when the
-server evaluates the session and signs the next short-lived API assertion.
+server evaluates the session and signs the next short-lived API assertion. Removing
+a subject in restricted mode rejects its next portal request and prevents new API
+assertions, even if the Auth.js cookie is still valid. Previously issued API
+assertions expire within 90 seconds. An empty restricted directory admits nobody;
+an invalid admission mode or malformed directory fails closed.
 
 ## Web-to-API assertion
 
@@ -116,9 +126,11 @@ The web assertion expires after 90 seconds. Provider tokens never cross this bou
 3. Repeat with Naver using an account that consents to email return.
 4. Confirm an unverified Google email, missing Naver email, malformed provider subject,
    and cross-origin callback are rejected.
-5. Confirm an unassigned account receives only viewer access, then assign roles by its
-   exact provider subject and verify the corresponding server actions and signed API
-   assertion. Confirm email-only configuration never changes roles.
+5. Confirm an unassigned account is denied in restricted mode (or receives only
+   viewer access in public mode). Assign roles by its exact provider subject and
+   verify the server actions and API assertion. Remove the subject in restricted
+   mode and verify its existing session loses access. Email-only configuration
+   must never change roles.
 6. Confirm direct signed-out POSTs to chat and document-generation routes return `401`.
 7. Use two different provider accounts and verify chat threads, saved views, and
    subscriptions never cross account subjects.

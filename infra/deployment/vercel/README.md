@@ -1,131 +1,152 @@
-# Vercel Services + Supabase deployment
+﻿# Production on Vercel and Supabase
 
-The root `vercel.json` deploys the Next.js portal and FastAPI application as one
-Vercel Services project. The web service receives a private `API_BASE_URL`
-binding to the API service. Only FastAPI health endpoints are public; browser API
-requests continue to use the authenticated Next.js BFF routes.
+The service owner selected this production platform on 2026-09-07. The repository
+now prepares three Vercel Services: the Next.js portal, private FastAPI API, and
+an authenticated, bounded database-queue worker. Supabase supplies PostgreSQL,
+private evidence Storage, Vault, and Cron. This configuration is not yet deployed
+or qualified on a dedicated target.
 
-## Supabase resources
+The web receives `API_BASE_URL` through a private service binding. Public routing
+exposes health checks and exactly two worker trigger paths; ordinary browser API
+requests pass through the authenticated Next.js BFF. Worker triggers require the
+server-only bearer secret and accept only an absent body or `{}`. Callers cannot
+choose a job, source URL, model, or tool through this endpoint.
 
-Provision or connect one Supabase project through the Vercel Marketplace, then
-create a private Storage bucket for immutable FDA evidence. Enable the `vector`
-extension before bootstrapping the database.
+## Files and production decisions
 
-The API uses native Postgres plus Supabase's server-side Storage API. A Supabase
-publishable key is not used for privileged storage operations. The Marketplace
-integration supplies `SUPABASE_URL` and the server-only `SUPABASE_SECRET_KEY`;
-never expose the secret key through a `NEXT_PUBLIC_*` variable.
+- `production.env.example`: non-secret configuration; placeholders must be resolved.
+- `supabase-data-api-boundary.sql`: explicit application-table grants and RLS boundary.
+- `supabase-worker-cron.sql`: two named, every-minute triggers using Vault references.
+- Root `vercel.json`: services, routing, 300-second function limits and resource builds.
+- `scripts/prepare-vercel-resources.py`: bundles reviewed contracts and the explicitly
+  synthetic internal corpus into the Python service; local secrets are excluded.
+- [Architecture decision](../../../docs/adr/0004-vercel-supabase-production.md):
+  platform secrets and bounded database workers, with qualification limits.
 
-Use the Supabase transaction-pooler connection string for the Vercel FastAPI
-service. Preserve the URL-encoded database password. The application normalizes
-ordinary `postgres://` and `postgresql://` URLs to the asyncpg driver. For a
-port-6543 transaction-pooler URL it also selects SQLAlchemy `NullPool` and
-disables both SQLAlchemy and asyncpg prepared-statement caches.
+The selected Vercel team currently has no dedicated PharmaAgent OS project. Do not
+link to the separate FDA application. Confirm dedicated Vercel/Supabase project
+identifiers, exact domain, operating plan and service owner before cloud activation.
 
-The official Vercel Marketplace integration supplies this connection as
-`POSTGRES_URL`, which the API accepts as a fallback for `DATABASE_URL`. If both
-are present, `DATABASE_URL` takes precedence.
+## Database and evidence setup
 
-Create the private bucket before deployment:
+Use a dedicated Supabase project. Enable pgvector and create a **private**
+`pharma-evidence` Storage bucket. With a migration identity on a direct/session
+connection, follow the fresh-database prerequisites in `.github/workflows/ci.yml`
+and apply the control-plane migration, ORM bootstrap (`python -m app.cli init-db`),
+remaining migrations and runtime grants in the
+[handoff's authoritative order](../../../PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md#database-migration-order).
+`contracts/schema.sql` is a reference, not the runtime bootstrap. Keep production
+`AUTO_CREATE_SCHEMA=false` and never use the database owner as a runtime login.
+Run that one-off CLI from `services/api` with its migration-only environment
+(`APP_ENV=staging`, `SECRET_PROVIDER=environment`, the migration `DATABASE_URL`,
+and required Storage settings). Do not copy Vercel system metadata onto a local
+machine to bypass the production provider check. These one-off process settings
+must not replace the Vercel production environment.
 
-```text
-OBJECT_STORE_BACKEND=supabase
-OBJECT_STORE_SUPABASE_BUCKET=fda-evidence
-# Supplied by the Vercel Marketplace integration:
-SUPABASE_URL=https://PROJECT_REF.supabase.co
-SUPABASE_SECRET_KEY=<server-only secret key>
-```
+Apply `supabase-data-api-boundary.sql` after those migrations. It revokes browser
+role access and enables RLS on all 57 current application tables. Runtime policies
+permit the existing backend roles to exercise their existing grants; API code
+continues to enforce user and evidence ACLs. The script neither changes Supabase
+Auth/Storage schemas nor unrelated tables. New application tables must be added
+to this boundary; a regression check compares the list to ORM metadata.
 
-The object adapter uses content-addressed keys and conditional creation to
-preserve application-level immutability. Supabase Storage does not provide native
-S3 object versioning, so production operators must also prohibit destructive
-bucket access and maintain a separately tested evidence backup.
+Provision distinct, non-owner, non-BYPASSRLS database logins that inherit
+`fda_api_runtime` and `fda_worker_runtime`, respectively. Set `DATABASE_URL` and
+`WORKER_DATABASE_URL` to their transaction-pooler URLs (port 6543, encoded passwords,
+`sslmode=require`). The application disables local pooling and prepared-statement
+caches for that port. Verify grants and pooler connectivity with each actual login;
+merely granting a NOINHERIT group does not establish the login's inheritance settings.
 
-## Required Vercel environment
+Use `SUPABASE_SECRET_KEY` only on the server. The current Storage adapter uses
+content-addressed, conditional writes. Supabase Storage is not WORM storage: qualify
+evidence backup, restore, retention and administrative deletion controls separately
+from database PITR. Never place this key in a `NEXT_PUBLIC_*` variable.
 
-Set these variables for Production and Preview as appropriate. Secret values
-belong in Vercel Environment Variables and must not be committed.
+## Vercel configuration and secrets
 
-```text
-APP_ENV=production
-AUTO_CREATE_SCHEMA=false
-DEV_AUTH_ENABLED=false
-EMBEDDED_WORKER_ENABLED=false
-# Supplied as POSTGRES_URL by the Vercel Supabase integration. Otherwise set:
-DATABASE_URL=<Supabase transaction-pooler URL>
+Import the repository root as a Services project. The API and worker share source
+code but use different entrypoints and database URLs. Build both with the supplied
+resource-copy command; missing reviewed contracts must fail the build.
 
-OBJECT_STORE_BACKEND=supabase
-OBJECT_STORE_SUPABASE_BUCKET=fda-evidence
-# SUPABASE_URL and SUPABASE_SECRET_KEY are integration-managed.
+Populate the template for Production. Set credentials as Vercel **Secret** values:
+Auth.js secret, enabled OAuth provider credentials, API session private key, both
+runtime database URLs, Supabase secret key, worker trigger secret, model credentials
+when qualified, and collector authentication where required. Configure the matching
+OIDC public key and issuer/audience. Use separate Preview resources and secrets.
+Do not manually set `API_BASE_URL`; the service binding supplies it at runtime.
 
-ALLOWED_ORIGINS=https://YOUR_VERCEL_DOMAIN
-# Vercel service bindings use deployment-specific internal hosts. Public API
-# access remains limited to the top-level health rewrites and Vercel's edge.
-ALLOWED_HOSTS=*
-OIDC_ISSUER=daewoong-fda-web
-OIDC_AUDIENCE=daewoong-fda-api
-OIDC_ALGORITHMS=RS256
-OIDC_PUBLIC_KEY=<matching RSA public key>
+`SECRET_PROVIDER=vercel` accepts platform-injected deployment secrets. Startup
+requires Vercel system metadata; this check is not cryptographic attestation and
+cannot prove that dashboard variables were marked Secret. Keep system variables
+available. Project environment values are a shared trust boundary: separate
+DATABASE_URL selection is not isolation from every secret held by another service
+in this same project. If separate secret visibility is mandatory, qualify distinct
+projects with authenticated connectivity before admitting data.
 
-AUTH_URL=https://YOUR_VERCEL_DOMAIN
-AUTH_TRUST_HOST=true
-AUTH_SECRET=<Auth.js secret>
-AUTH_GOOGLE_ID=<Google OAuth client ID>
-AUTH_GOOGLE_SECRET=<Google OAuth client secret>
-AUTH_NAVER_ID=<Naver OAuth client ID>
-AUTH_NAVER_SECRET=<Naver OAuth client secret>
-API_SESSION_PRIVATE_KEY=<PKCS#8 RSA private key>
-API_SESSION_KEY_ID=web-session-v1
-API_SESSION_ISSUER=daewoong-fda-web
-API_SESSION_AUDIENCE=daewoong-fda-api
+Register the enabled provider callbacks at the final HTTPS domain:
+`/api/auth/callback/google` and/or `/api/auth/callback/naver`. Keep
+`AUTH_ADMISSION_MODE=restricted`, populate immutable provider-subject role assignments,
+and prove allowed, denied, revoked, analyst and reviewer behavior. An empty subject
+directory deliberately admits nobody. Models and workers stay disabled in the
+checked-in template until qualified.
 
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=<server-only Gemini key>
-EMBEDDING_ENABLED=true
-EMBEDDING_DIMENSIONS=1536
-SMTP_ENABLED=false
-```
+Set `ALLOWED_HOSTS` to exact public, internal API and worker/probe hosts observed
+in the target deployment. Binding reachability does not replace OIDC checks.
+Hosted Host/proxy behavior must be tested; do not solve routing failures by enabling
+wildcard host admission. Configure an actual HTTPS telemetry collector and alarms.
 
-The Vercel service binding supplies `API_BASE_URL`; do not set it manually in
-Vercel.
+## Bounded workers and scheduling
 
-## First database activation
+`SERVERLESS_WORKER_ENABLED=false` rejects triggers until activation. When enabled,
+Temporal and the embedded polling worker must be disabled. Each request recovers
+expired job leases and processes at most eight jobs within a default 210-second
+cooperative slice, leaving time before the configured 300-second function deadline.
+Case and ingestion lanes claim only their own job types using the existing atomic
+queue claim. A cooperative timeout preserves checkpoints and refunds that attempt's
+failure budget while retaining monotonic claim fencing. Hard termination is recovered
+through the existing five-minute lease and consumes the ordinary retry budget.
 
-Before the first application deployment, use the Supabase direct connection with
-a migration-capable database user from a trusted machine:
+Enable Supabase pg_cron, pg_net and Vault. Add `pharma_worker_origin` (exact HTTPS
+origin) and `pharma_worker_trigger_secret` (matching the Vercel secret) through the
+Vault dashboard. After proving authenticated triggers on the actual deployment,
+apply the Cron SQL. Its commands store references, not literal credentials.
+These jobs **drain queued work**; they do not enqueue the six-hour FDA discovery
+schedule. Add and qualify that schedule before claiming automatic corpus refresh.
 
-```powershell
-$env:DATABASE_URL = "postgresql+asyncpg://..."
-$env:OBJECT_STORE_BACKEND = "supabase"
-# Set SUPABASE_URL and SUPABASE_SECRET_KEY from the integration environment.
-Set-Location services/api
-python -m app.cli init-db
-```
+Monitor HTTP outcomes in `net._http_response`, Cron history, pending-job age, stale
+leases, dead letters, repeated time slices, and the business case state. A successful
+Cron enqueue or HTTP 200 does not prove successful agent execution. Database claims
+protect against overlapping requests, but the provider's actual duration, network
+behavior and concurrency limits require a hosted recovery test. Vercel deployment
+protection must permit the authorized scheduler's path; retain bearer authentication.
 
-Keep `AUTO_CREATE_SCHEMA=false` in Vercel after the one-time bootstrap. This
-repository's `contracts/schema.sql` is an architectural reference and must not be
-used to initialize the runtime database.
+Pause by setting `SERVERLESS_WORKER_ENABLED=false` and unscheduling both named Cron
+jobs. Use the existing platform kill switch for running case execution. Preserve
+queue/checkpoint evidence while investigating; do not reset counters to hide failures.
 
-## Deployment
+## Release gate
 
-Create or import the Vercel project from the repository root, choose the
-**Services** framework preset, connect the existing Supabase project from the
-Vercel Marketplace, add the remaining environment variables, and deploy:
+Use a preview with isolated data to verify the deployed build, private service binding,
+exact Host admission, both database identities, Storage permissions, real OAuth,
+worker interruption/recovery, telemetry, restore and rollback. Capture deployment,
+case/run/artifact IDs and version hashes. Promote only the tested revision after
+[release evidence](../../../docs/assurance/release-evidence-checklist.md) is complete.
 
-```powershell
-vercel link --repo
-vercel build --prod
-vercel deploy --prebuilt --prod
-```
+The current case dispatch still records specialist invocations without executing
+them. The evaluation runner still accepts fixture-supplied outcomes. Connecting
+real specialist execution and independently observed evaluation is required before
+a production case-review launch; keep existing production promotion guards intact.
+No cloud project, migration, schedule, DNS change or production release has been
+performed by this preparation.
 
-After deployment, register these OAuth callback URLs for every enabled provider:
+## Platform references
 
-```text
-https://YOUR_VERCEL_DOMAIN/api/auth/callback/google
-https://YOUR_VERCEL_DOMAIN/api/auth/callback/naver
-```
-
-Vercel Services hosts the HTTP API but not the continuously polling worker or the
-six-hour FDA discovery scheduler. Those jobs still need a durable container/cron
-runtime, or a separate bounded Vercel Workflow design, before live ingestion is
-enabled.
+Verified 2026-09-07: [Vercel Services configuration](https://vercel.com/docs/services/config-reference),
+[service bindings](https://vercel.com/docs/services/bindings),
+[Vercel Secret values](https://vercel.com/docs/environment-variables/sensitive-environment-variables),
+[Supabase connections](https://supabase.com/docs/guides/database/connecting-to-postgres),
+[RLS](https://supabase.com/docs/guides/database/postgres/row-level-security),
+[Vault](https://supabase.com/docs/guides/database/vault), and
+[pg_net](https://supabase.com/docs/guides/database/extensions/pg_net).
+Services and pg_net currently carry beta qualifications in their documentation;
+record acceptance of platform maturity and test the actual target behavior.

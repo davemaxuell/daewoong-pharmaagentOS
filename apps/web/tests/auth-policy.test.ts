@@ -119,6 +119,44 @@ describe("single viewer role", () => {
   });
 });
 
+describe("restricted portal admission", () => {
+  it("denies unassigned accounts from both providers", () => {
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
+    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", "{}");
+    expect(isAllowedGoogleProfile(googleProfile())).toBe(false);
+    expect(isAllowedNaverProfile(naverProfile())).toBe(false);
+    expect(rolesForSubject("google:unassigned")).toEqual([]);
+  });
+
+  it("admits only exact provider subjects, independently of email", () => {
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
+    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", JSON.stringify({
+      "google:google-user-123": ["viewer"],
+      "naver:naver-user-123": ["reviewer"],
+    }));
+    expect(isAllowedGoogleProfile(googleProfile())).toBe(true);
+    expect(isAllowedNaverProfile(naverProfile())).toBe(true);
+    expect(isAllowedGoogleProfile(googleProfile({ sub: "different-account" }))).toBe(false);
+    expect(isAllowedNaverProfile(naverProfile({ id: "different-account" }))).toBe(false);
+    expect(rolesForSubject("naver:google-user-123")).toEqual([]);
+  });
+
+  it("revokes the next session evaluation when a subject is removed", () => {
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
+    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", '{"google:123":["viewer"]}');
+    expect(rolesForSubject("google:123")).toEqual(["viewer"]);
+    vi.stubEnv("AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON", "{}");
+    expect(rolesForSubject("google:123")).toEqual([]);
+  });
+
+  it("fails closed for missing directories and invalid admission modes", () => {
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restricted");
+    expect(rolesForSubject("google:123", "")).toEqual([]);
+    vi.stubEnv("AUTH_ADMISSION_MODE", "restrcted");
+    expect(() => rolesForSubject("google:123", "{}")).toThrow(/AUTH_ADMISSION_MODE/);
+  });
+});
+
 describe("safe authentication callbacks", () => {
   it("preserves same-origin relative destinations", () => {
     expect(safeAuthCallbackUrl("/drug-letters?category=Laboratory#source")).toBe(

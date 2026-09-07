@@ -10,8 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cases.hashing import canonical_sha256
 from app.models import AgentVersion, SkillVersion, ToolVersion
+from app.resource_paths import resource_root
 
-ROOT = Path(__file__).resolve().parents[5]
+ROOT = resource_root()
 AGENT_FILES = (
     "regulatory-evidence-agent.v1.3.0.yaml",
     "case-orchestrator.v1.0.0.yaml",

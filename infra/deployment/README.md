@@ -1,5 +1,9 @@
 # Deployment baseline
 
+The selected production target is now **Vercel + Supabase**. Follow the
+[production runbook](vercel/README.md) and its architecture decision for that
+target. The Kubernetes/AWS material below remains an alternative reference.
+
 This directory contains a platform-neutral configuration shape and an example hardened Kubernetes base. It is a starting template, not authorization to deploy to production. Final ingress/WAF, workload identity, secret manager, private managed data services, egress enforcement, certificates, SIEM, backup/PITR, and HA settings depend on Daewoong's approved platform.
 
 ## Container builds
@@ -123,7 +127,12 @@ Before applying an environment overlay:
 
 1. Provision `fda-api-runtime`, `fda-web-runtime`, and `fda-worker-runtime` through the approved secret manager/CSI integration. Do not commit Secret manifests. The web secret contains the Auth.js secret, enabled Google/Naver OAuth client credentials, and API-session private key; the API receives only the matching public key.
 2. Add environment-specific network policy for the corporate ingress, private PostgreSQL/queue/object endpoints, approved FDA hosts through the egress proxy, Gemini/AI gateway, notifications, DNS, and SIEM. Google login needs controlled HTTPS egress to its authorization/token/user-info endpoints. Naver login needs controlled HTTPS egress to `nid.naver.com` and `openapi.naver.com`. The base defaults to deny and intentionally cannot reach external dependencies.
-3. Replace placeholder images and `*.example.invalid` values; register `/api/auth/callback/google` and/or `/api/auth/callback/naver` exactly for enabled providers, enable the account/domain allowlist, and assign reviewer/admin roles only through server-side exact-email lists. Google Workspace-domain entries require a matching verified `hd` claim. Naver requires a returned `@naver.com` profile email; prefer exact Naver email admission because adding `naver.com` to the domain allowlist authorizes every Naver Mail account.
+3. Replace placeholder images and `*.example.invalid` values; register exact
+   `/api/auth/callback/google` and/or `/api/auth/callback/naver` URLs. Keep
+   `AUTH_ADMISSION_MODE=restricted` for a private deployment and populate
+   `AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON` with approved immutable provider subjects,
+   including viewers. Email/domain lists do not grant access or privileges.
+   See the [authentication runbook](../../docs/runbooks/authentication.md).
 4. Enable PostgreSQL 16 with `pgvector`, run the controlled initial bootstrap or approved forward migrations with a separate migration identity, apply `postgres-runtime-roles.sql`, then deploy API/web before workers. Keep `EMBEDDING_DIMENSIONS=1536` unless a controlled full-corpus re-embedding migration is approved.
 5. Configure managed PostgreSQL HA/PITR, object versioning/encryption, persistent queue, restore tests, centralized telemetry, WAF/TLS, and at least two API/web replicas.
 6. Configure the platform scheduler with `concurrencyPolicy: Forbid` to run one bounded

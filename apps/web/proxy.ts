@@ -9,6 +9,7 @@ import {
   isAllowedEmail,
   isAuthConfigured,
   isTrustedAuthSubject,
+  rolesForSubject,
 } from "@/auth";
 
 function redirectToSignIn(request: NextRequest) {
@@ -45,7 +46,8 @@ const authenticatedProxy = auth((request: NextAuthRequest, _event: NextFetchEven
   if (
     !request.auth?.user ||
     !isTrustedAuthSubject(request.auth.user.subject) ||
-    !isAllowedEmail(request.auth.user.email)
+    !isAllowedEmail(request.auth.user.email) ||
+    rolesForSubject(request.auth.user.subject).length === 0
   ) {
     return denyAccess(request, 401);
   }

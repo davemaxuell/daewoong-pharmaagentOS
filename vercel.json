@@ -16,10 +16,37 @@
     "api": {
       "root": "services/api",
       "framework": "fastapi",
-      "entrypoint": "app.main:app"
+      "entrypoint": "app.main:app",
+      "buildCommand": "python ../../scripts/prepare-vercel-resources.py",
+      "functions": {
+        "app/main.py": {
+          "maxDuration": 300,
+          "includeFiles": "app/_resources/**"
+        }
+      }
+    },
+    "worker": {
+      "root": "services/api",
+      "framework": "fastapi",
+      "entrypoint": "app.worker_entrypoint:app",
+      "buildCommand": "python ../../scripts/prepare-vercel-resources.py",
+      "functions": {
+        "app/worker_entrypoint.py": {
+          "maxDuration": 300,
+          "includeFiles": "app/_resources/**"
+        }
+      }
     }
   },
   "rewrites": [
+    {
+      "source": "/internal/worker/cases",
+      "destination": {"service": "worker"}
+    },
+    {
+      "source": "/internal/worker/ingestion",
+      "destination": {"service": "worker"}
+    },
     {
       "source": "/health/(.*)",
       "destination": {

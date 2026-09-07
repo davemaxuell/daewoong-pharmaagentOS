@@ -19,8 +19,10 @@ https://YOUR_DOMAIN/api/auth/callback/google
 https://YOUR_DOMAIN/api/auth/callback/naver
 ```
 
-Any verified Google identity or valid Naver identity with a consented email receives the
-normal viewer role. Email configuration cannot elevate an account to reviewer or admin.
+Public admission mode gives verified Google and valid Naver identities viewer access.
+For private deployments, set `AUTH_ADMISSION_MODE=restricted` and explicitly assign
+each admitted subject in `AUTH_SUBJECT_ROLE_ASSIGNMENTS_JSON`, including viewers.
+An empty restricted directory denies everyone. Email configuration cannot grant access or roles.
 Provider tokens are not forwarded to FastAPI. The web server uses the separate
 short-lived RS256 application assertion described in `.env.example`.
 
