@@ -1,8 +1,23 @@
 # PharmaAgent OS — next engineer handoff
 
-Prepared: **2026-09-07**  
+Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
+
+**Employee UX update (2026-09-08):** Home now guides staff through choosing a task,
+writing a question, and saving/downloading a review request. Multiple browser
+drafts, legacy migration, readable export, unsaved-work protection, plain-language
+errors and a bilingual `/help` guide are implemented. Everyday navigation has six
+destinations; specialist/operational tools expand separately. Build, lint, 26 tests
+and production browser journeys passed. See the implementation record for full
+evidence. Requests remain local drafts; live analysis and shared data are pending.
+
+**Supabase access update:** The owner supplied project `wdaflyddglimtijvgazl`.
+Authenticated CLI access works. It is named `Daewoong FDA`; metadata inspection
+found no application tables and zero public tables. Database destination selection
+is pending because the existing runbook specifies a dedicated PharmaAgent OS
+project. No application schema or hosted configuration was changed. See
+[access evidence](docs/assurance/supabase-access-20260907.md).
 
 **Latest sizing update:** Text is approximately 18% larger across the portal,
 with larger controls, a 280px sidebar, a 76px header and taller workflow steps.

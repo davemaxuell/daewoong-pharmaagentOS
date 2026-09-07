@@ -9,10 +9,11 @@ related_targets: ["apps/web/components/agent-platform/agent-home.tsx","apps/web/
 
 Mode: Operate. Scope: the primary portal entry and specialist exploration.
 Audience: pharmaceutical regulatory/quality teams preparing evidence-backed reviews.
-Task: capture a review objective, inspect the specialist workflow, and enter case work.
-Direction: multidisciplinary protocol board with objective, sequential responsibility,
-evidence outputs and human checkpoints in the same workspace. The memorable
-interaction is selecting a step to inspect its responsibility and outputs.
+Task: choose a review need, write a question, save/download a request, and resume it.
+Direction: employee task first, with familiar form controls and concise examples.
+Three outcome-oriented stages explain agent assistance; detailed workflow steps
+expand on request. Operational tools are secondary navigation. Korean and English
+getting-started guidance explains current availability and next actions.
 Local drafts are browser-only; no case or execution is created by saving them.
 Live case failures render unavailable states without fake records or progress.
 Research remains at /ask; prior dashboard research URLs preserve their parameters.

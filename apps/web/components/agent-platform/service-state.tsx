@@ -7,8 +7,8 @@ import { useI18n } from "@/lib/i18n";
 
 const surfaces = {
   cases: [
-    "Cases & runs",
-    "케이스 · 실행",
+    "Team review records",
+    "팀 검토 기록",
     "Track a review from its objective through specialist work and the final human decision.",
     "검토 목표부터 전문가 작업, 최종 판단까지 하나의 흐름으로 살펴봅니다.",
   ],
@@ -55,28 +55,28 @@ export function ServiceState({
         <h2>
           {restricted
             ? text(
-                "This action requires an authorized reviewer or operator",
-                "이 작업에는 권한이 있는 검토자 또는 운영자가 필요합니다",
+                "A reviewer needs to handle this step",
+                "검토 담당자의 권한이 필요한 단계입니다",
               )
             : text(
-                "The live workspace is not available yet",
-                "실시간 워크스페이스를 아직 사용할 수 없습니다",
+                "We couldn’t load these review records",
+                "검토 기록을 불러오지 못했어요",
               )}
         </h2>
         <p>
           {restricted
             ? text(
-                "Public browsing is available without an account. Governed case actions retain their separate review and execution permissions.",
-                "계정 없이 공개 화면을 둘러볼 수 있습니다. 정식 케이스 작업에는 별도의 검토 및 실행 권한이 적용됩니다.",
+                "You can prepare a request without signing in. Approval and review actions are reserved for authorized staff.",
+                "로그인 없이 검토 요청을 준비할 수 있습니다. 승인과 정식 검토는 권한이 있는 담당자가 진행합니다.",
               )
             : text(
-                "Case data and agent execution depend on the connected backend. You can still prepare a browser draft and inspect the specialist workflow while the connection is being completed.",
-                "케이스 데이터와 에이전트 실행에는 백엔드 연결이 필요합니다. 연결이 완료되기 전에도 브라우저에서 초안을 준비하고 전문가 워크플로를 살펴볼 수 있습니다.",
+                "The review service is currently unavailable. You can still write, save, and download a request from the home page.",
+                "현재 검토 기록 서비스에 연결할 수 없습니다. 홈에서 요청을 작성하고 저장하거나 다운로드할 수 있습니다.",
               )}
         </p>
         <div className="os-service-state__actions">
           <Link className="button button--primary" href="/dashboard">
-            {text("Prepare a review brief", "검토 브리프 준비")}
+            {text("Prepare a request", "검토 요청 작성하기")}
             <ArrowRight size={16} />
           </Link>
           <button
@@ -88,36 +88,8 @@ export function ServiceState({
             {text("Check again", "다시 확인")}
           </button>
         </div>
-        <div className="os-service-state__steps">
-          <div>
-            <strong>{text("Define the objective", "검토 목표 정의")}</strong>
-            <p>
-              {text(
-                "Capture the question and scope in a local brief.",
-                "질문과 범위를 브라우저 초안에 정리합니다.",
-              )}
-            </p>
-          </div>
-          <div>
-            <strong>{text("Inspect the workflow", "워크플로 확인")}</strong>
-            <p>
-              {text(
-                "Review specialist roles, inputs, and expected outputs.",
-                "전문가별 역할, 입력, 예정된 출력을 살펴봅니다.",
-              )}
-            </p>
-          </div>
-          <div>
-            <strong>{text("Connect the evidence", "근거 연결")}</strong>
-            <p>
-              {text(
-                "Live case work requires retained sources and review authority.",
-                "정식 케이스 작업에는 보존된 원문과 검토 권한이 필요합니다.",
-              )}
-            </p>
-          </div>
-        </div>
-        {requestId ? <small>Request ID: {requestId}</small> : null}
+        <p><Link href="/help#availability">{text("See available features and next steps", "이용 가능한 기능과 다음 단계 보기")}</Link></p>
+        {requestId ? <details><summary>{text("Support details", "문의 시 참고 정보")}</summary><small>Request ID: {requestId}</small></details> : null}
       </div>
     </section>
   );

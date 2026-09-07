@@ -1,569 +1,838 @@
 "use client";
 
-/* THESIS: A review objective becomes an inspectable workflow, replacing a chat landing.
- * OWN-WORLD: Navy rail, cool white workbench, cobalt selection, orange attribution.
- * STORY: Prepare a brief, inspect responsibilities, then enter governed case work.
- * FIRST VIEWPORT: Objective at left; ordered workflow and step inspector at right.
- * FORM: Multidisciplinary protocol board, grounded candidate 5, seed 8dd383a8.
- */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowDown,
   ArrowRight,
   BookOpen,
   Check,
-  ChevronRight,
-  CircleDot,
+  ChevronDown,
   Download,
   FileText,
   GitBranch,
-  Layers3,
+  HelpCircle,
+  Plus,
   Save,
   ShieldCheck,
-  Users,
-  WifiOff,
+  Trash2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import {
   agentDefinitions,
-  parseReviewDraft,
   REVIEW_DRAFT_KEY,
   reviewTemplates,
   workflowSteps,
-  type LocalReviewDraft,
 } from "@/lib/agent-workspace";
+import {
+  MAX_REQUESTS,
+  readRequests,
+  REQUESTS_KEY,
+  requestText,
+  validFdaUrl,
+  type ReviewRequest,
+} from "@/lib/review-requests";
 import { formatCaseStatus, type AgentCase } from "@/lib/case-types";
 import styles from "./agent-home.module.css";
 
-type Props = {
+const choices = [
+  {
+    id: "evidence",
+    en: "Understand a warning letter",
+    ko: "경고서한 핵심 파악",
+    detail: [
+      "Key findings and their source passages",
+      "주요 지적 사항과 원문 근거 정리",
+    ],
+  },
+  {
+    id: "impact",
+    en: "Review the possible impact",
+    ko: "우리 업무 영향 검토",
+    detail: [
+      "Questions relevant to our quality work",
+      "우리 품질 업무에서 확인할 사항 정리",
+    ],
+  },
+  {
+    id: "process",
+    en: "Compare with a procedure",
+    ko: "내부 절차와 비교",
+    detail: [
+      "Connections and gaps to check with a reviewer",
+      "내부 절차와의 연관성 및 추가 확인 사항",
+    ],
+  },
+] as const;
+
+export function AgentHome({
+  cases,
+  access,
+}: {
   cases: AgentCase[] | null;
   access: "ready" | "unavailable" | "restricted";
-};
-
-export function AgentHome({ cases, access }: Props) {
+}) {
   const { text, locale } = useI18n();
-  const router = useRouter();
   const pick = (pair: readonly [string, string]) => text(pair[0], pair[1]);
+  const [template, setTemplate] = useState("evidence");
   const [objective, setObjective] = useState("");
-  const [template, setTemplate] = useState<string>("impact");
-  const [selectedStep, setSelectedStep] = useState(0);
-  const [saved, setSaved] = useState<LocalReviewDraft | null>(null);
-  const [notice, setNotice] = useState<
-    "saved" | "storage" | "restored" | "cleared" | null
-  >(null);
-  const objectiveRef = useRef<HTMLTextAreaElement>(null);
-  const [caseFilter, setCaseFilter] = useState("all");
-  const step = workflowSteps[selectedStep];
-  const agent = step.agent === null ? null : agentDefinitions[step.agent];
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [requests, setRequests] = useState<ReviewRequest[]>([]);
+  const [saved, setSaved] = useState<ReviewRequest | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [storageError, setStorageError] = useState(false);
+  const [error, setError] = useState<"question" | "url" | "limit" | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const questionRef = useRef<HTMLTextAreaElement>(null);
+  const sourceRef = useRef<HTMLInputElement>(null);
+  const sourceDetailsRef = useRef<HTMLDetailsElement>(null);
+  const receiptRef = useRef<HTMLHeadingElement>(null);
+  const dirty = saved
+    ? saved.objective !== objective ||
+      saved.template !== template ||
+      saved.sourceUrl !== sourceUrl
+    : !!objective || !!sourceUrl;
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const draft = parseReviewDraft(
-          window.localStorage.getItem(REVIEW_DRAFT_KEY),
+        setRequests(
+          readRequests(
+            localStorage.getItem(REQUESTS_KEY),
+            localStorage.getItem(REVIEW_DRAFT_KEY),
+          ),
         );
-        if (draft) {
-          setObjective(draft.objective);
-          setTemplate(draft.template);
-          setSaved(draft);
-          setNotice("restored");
-        }
       } catch {
-        setNotice("storage");
+        setStorageError(true);
       }
+      setLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
-  const dirty = saved?.objective !== objective || saved?.template !== template;
-  function selectStep(index: number) {
-    setSelectedStep(index);
-    if (window.matchMedia("(max-width: 600px)").matches) {
-      requestAnimationFrame(() => {
-        document.getElementById("step-inspector")?.scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-          block: "start",
-        });
-      });
-    }
-  }
-  function saveDraft(event: React.FormEvent) {
-    event.preventDefault();
-    if (!objective.trim()) {
-      objectiveRef.current?.focus();
-      return;
-    }
-    const draft: LocalReviewDraft = {
-      version: 1,
-      objective: objective.trim(),
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    const guardNavigation = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>("a[href]");
+      if (!link || link.target === "_blank" || link.hasAttribute("download"))
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (
+        destination.pathname === window.location.pathname &&
+        destination.search === window.location.search
+      )
+        return;
+      if (
+        !window.confirm(
+          text(
+            "Leave this page and discard your unsaved changes?",
+            "저장하지 않은 변경 내용을 버리고 다른 페이지로 이동할까요?",
+          ),
+        )
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guardNavigation, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guardNavigation, true);
+    };
+  }, [dirty, text]);
+
+  function currentRequest(): ReviewRequest {
+    return {
+      id: editingId ?? crypto.randomUUID(),
       template,
+      objective: objective.trim(),
+      sourceUrl: sourceUrl.trim(),
       updatedAt: new Date().toISOString(),
     };
+  }
+  function validate() {
+    if (!objective.trim()) {
+      setError("question");
+      questionRef.current?.focus();
+      return false;
+    }
+    if (!validFdaUrl(sourceUrl)) {
+      setError("url");
+      if (sourceDetailsRef.current) sourceDetailsRef.current.open = true;
+      sourceRef.current?.focus();
+      return false;
+    }
+    setError(null);
+    return true;
+  }
+  function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!validate()) return;
+    const draft = currentRequest();
     try {
-      window.localStorage.setItem(REVIEW_DRAFT_KEY, JSON.stringify(draft));
+      const latest = readRequests(
+        localStorage.getItem(REQUESTS_KEY),
+        localStorage.getItem(REVIEW_DRAFT_KEY),
+      );
+      const remaining = latest.filter((item) => item.id !== draft.id);
+      if (remaining.length >= MAX_REQUESTS) {
+        setError("limit");
+        return;
+      }
+      const next = [draft, ...remaining];
+      localStorage.setItem(REQUESTS_KEY, JSON.stringify(next));
+      setRequests(next);
       setSaved(draft);
+      setEditingId(draft.id);
       setObjective(draft.objective);
-      setNotice("saved");
+      setSourceUrl(draft.sourceUrl);
+      setStorageError(false);
+      setMessage(
+        text(
+          "Request draft saved on this device.",
+          "이 기기에 검토 요청 초안을 저장했습니다.",
+        ),
+      );
+      requestAnimationFrame(() => receiptRef.current?.focus());
     } catch {
-      setNotice("storage");
+      setStorageError(true);
     }
   }
-  function exportDraft() {
-    const draft = {
-      version: 1,
-      objective: objective.trim(),
-      template,
-      workflow: "regulatory-impact-review@1.0.0",
-      state: "LOCAL_DRAFT_NOT_EXECUTED",
-      exportedAt: new Date().toISOString(),
-    };
+  function download(json = false, draft = currentRequest()) {
+    if (!validate()) return;
+    const content = json
+      ? JSON.stringify(
+          {
+            ...draft,
+            state: "LOCAL_DRAFT_NOT_EXECUTED",
+            workflow: "regulatory-impact-review@1.0.0",
+          },
+          null,
+          2,
+        )
+      : requestText(draft, locale === "ko");
     const url = URL.createObjectURL(
-      new Blob([JSON.stringify(draft, null, 2)], { type: "application/json" }),
+      new Blob([content], {
+        type: json ? "application/json" : "text/plain;charset=utf-8",
+      }),
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "pharmaagent-review-brief.json";
+    anchor.download = `pharmaagent-request.${json ? "json" : "txt"}`;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  const visibleCases = cases?.filter(
-    (item) =>
-      caseFilter === "all" ||
-      (caseFilter === "review"
-        ? ["AWAITING_PLAN_APPROVAL", "WAITING_FOR_REVIEW"].includes(item.status)
-        : ["RUNNING", "READY", "PLANNING"].includes(item.status)),
-  );
+  function canLeave() {
+    return (
+      !dirty ||
+      window.confirm(
+        text(
+          "Discard the changes you have not saved?",
+          "저장하지 않은 변경 내용을 버릴까요?",
+        ),
+      )
+    );
+  }
+  function edit(draft?: ReviewRequest) {
+    if (!canLeave()) return;
+    setTemplate(draft?.template ?? "evidence");
+    setObjective(draft?.objective ?? "");
+    setSourceUrl(draft?.sourceUrl ?? "");
+    setEditingId(draft?.id ?? null);
+    setSaved(draft ?? null);
+    setError(null);
+    setMessage("");
+    questionRef.current?.focus();
+  }
+  function remove(id: string) {
+    try {
+      const next = readRequests(
+        localStorage.getItem(REQUESTS_KEY),
+        localStorage.getItem(REVIEW_DRAFT_KEY),
+      ).filter((item) => item.id !== id);
+      localStorage.setItem(REQUESTS_KEY, JSON.stringify(next));
+      setRequests(next);
+      setDeleting(null);
+      if (editingId === id) {
+        setSaved(null);
+        setEditingId(null);
+      }
+      setMessage(
+        text(
+          "Saved draft deleted. Any text in the editor is still available.",
+          "저장한 초안을 삭제했습니다. 작성 중인 입력 내용은 유지됩니다.",
+        ),
+      );
+    } catch {
+      setStorageError(true);
+    }
+  }
+  const chosen = choices.find((item) => item.id === template)!;
   return (
     <div className={styles.home}>
       <header className={styles.heading}>
         <div>
-          <div className={styles.location}>
-            <GitBranch size={15} />
-            {text("Agent workspace", "에이전트 워크스페이스")}
-          </div>
+          <p className={styles.eyebrow}>
+            {text(
+              "Daewoong · Regulatory review assistant",
+              "대웅 · 규제 검토 도우미",
+            )}
+          </p>
           <h1>
             {text(
-              "Give your next review a plan.",
-              "다음 검토를 에이전트와 설계하세요.",
+              "What would you like to review?",
+              "어떤 검토를 도와드릴까요?",
             )}
           </h1>
           <p>
             {text(
-              "Define the objective. Inspect the specialists. Keep every decision connected to evidence.",
-              "목표를 정하고, 전문가별 작업을 살펴보고, 모든 판단을 근거에 연결하세요.",
+              "Prepare a review of FDA findings, one question at a time.",
+              "FDA 지적 사항부터 우리 업무 영향까지, 검토할 질문을 정리해보세요.",
             )}
           </p>
         </div>
-        <Link className={styles.subtleLink} href="/cases">
-          {text("Case workspace", "케이스 워크스페이스")}
-          <ArrowRight size={16} />
+        <Link href="/help" className={styles.helpLink}>
+          <HelpCircle size={18} />
+          {text("How to use this", "처음 이용하시나요?")}
         </Link>
       </header>
-      <div className={styles.workbench}>
-        <section className={styles.brief} aria-labelledby="brief-heading">
-          <div className={styles.sectionTop}>
-            <span className={styles.sectionMark}>
-              <FileText size={18} />
-            </span>
-            <div>
-              <h2 id="brief-heading">{text("Review brief", "검토 브리프")}</h2>
-              <p>
-                {text(
-                  "Start with the question that matters.",
-                  "확인해야 할 질문부터 시작하세요.",
-                )}
-              </p>
-            </div>
+
+      <div className={styles.availability}>
+        <span className={styles.stateDot} aria-hidden="true" />
+        <div>
+          <strong>
+            {text(
+              "Request drafts are available",
+              "지금은 검토 요청을 준비할 수 있어요",
+            )}
+          </strong>
+          <p>
+            {text(
+              "Save and download your request now. Automated analysis and company-wide sharing are not available yet.",
+              "요청을 작성하고 저장·다운로드할 수 있습니다. 자동 분석과 사내 공유 기능은 아직 준비 중입니다.",
+            )}
+          </p>
+        </div>
+        <Link href="/help#availability">
+          {text("What’s available", "이용 가능 기능")}
+          <ArrowRight size={16} />
+        </Link>
+      </div>
+
+      <div className={styles.workspace}>
+        <section className={styles.editor} aria-labelledby="request-heading">
+          <div className={styles.sectionHeading}>
+            <h2 id="request-heading">
+              {editingId
+                ? text("Edit your request", "검토 요청 수정")
+                : text("Prepare a review request", "검토 요청 작성")}
+            </h2>
+            {editingId ? (
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={() => edit()}
+              >
+                <Plus size={16} />
+                {text("New request", "새 요청")}
+              </button>
+            ) : (
+              <span>
+                {text("No agent setup needed", "에이전트 설정 없이 시작")}
+              </span>
+            )}
           </div>
-          <form onSubmit={saveDraft}>
-            <label className={styles.fieldLabel} htmlFor="review-objective">
+          <form onSubmit={save} noValidate>
+            <fieldset className={styles.tasks}>
+              <legend>
+                <span>1</span>
+                {text("Choose your task", "하고 싶은 일을 선택하세요")}
+              </legend>
+              <div className={styles.taskOptions}>
+                {choices.map((choice) => (
+                  <label
+                    key={choice.id}
+                    className={
+                      template === choice.id ? styles.selectedTask : undefined
+                    }
+                  >
+                    <input
+                      type="radio"
+                      name="review-type"
+                      value={choice.id}
+                      checked={template === choice.id}
+                      onChange={() => {
+                        setTemplate(choice.id);
+                        setMessage("");
+                      }}
+                    />
+                    <span>
+                      <strong>{text(choice.en, choice.ko)}</strong>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className={styles.taskDescription}>{pick(chosen.detail)}</p>
+            </fieldset>
+            <div className={styles.questionHeading}>
+              <label htmlFor="review-objective">
+                <span>2</span>
+                {text("What do you want to find out?", "무엇이 궁금한가요?")}
+              </label>
+              {!objective ? (
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => {
+                    const example = reviewTemplates.find(
+                      (item) => item.id === template,
+                    )!;
+                    setObjective(pick(example.objective));
+                    setError(null);
+                    questionRef.current?.focus();
+                  }}
+                >
+                  {text("Use an example", "예시로 시작")}
+                </button>
+              ) : null}
+            </div>
+            <p id="question-help" className={styles.fieldHint}>
               {text(
-                "What would you like to investigate?",
-                "무엇을 검토할까요?",
+                "Include the company, topic, or process you want to review. A short question is enough.",
+                "회사명, 관심 주제 또는 검토할 업무를 적어주세요. 짧은 질문도 괜찮습니다.",
               )}
-            </label>
+            </p>
             <textarea
-              ref={objectiveRef}
+              ref={questionRef}
               id="review-objective"
               value={objective}
               maxLength={3000}
+              rows={4}
               required
-              rows={6}
+              aria-invalid={error === "question"}
+              aria-describedby={
+                error === "question"
+                  ? "question-help question-error"
+                  : "question-help"
+              }
+              placeholder={text(
+                "e.g. What should our quality team check after reading this warning letter?",
+                "예: 이 경고서한을 보고 우리 품질팀이 확인해야 할 사항은 무엇인가요?",
+              )}
               onChange={(event) => {
                 setObjective(event.target.value);
-                setNotice(null);
+                setError(null);
+                setMessage("");
               }}
-              placeholder={text(
-                "Describe the warning letter, quality process, or evidence question you want to review…",
-                "검토할 경고서한, 품질 프로세스 또는 근거에 관한 질문을 입력하세요…",
-              )}
             />
-            <div className={styles.inputMeta}>
+            <div className={styles.fieldMeta}>
               <span>
-                {text("Saved on this browser only", "이 브라우저에만 저장")}
+                {text(
+                  dirty ? "Unsaved changes" : "Drafts stay on this device",
+                  dirty
+                    ? "아직 저장하지 않은 내용이 있습니다"
+                    : "초안은 이 기기에만 저장됩니다",
+                )}
               </span>
               <span>{objective.length.toLocaleString()} / 3,000</span>
             </div>
-            <fieldset className={styles.templates}>
-              <legend>
+            {error === "question" ? (
+              <p id="question-error" className={styles.error} role="alert">
                 {text(
-                  "Or start from a review prompt",
-                  "검토 질문 예시로 시작하기",
+                  "Enter a question, or use the example to get started.",
+                  "질문을 입력하거나 ‘예시로 시작’을 눌러주세요.",
                 )}
-              </legend>
-              {reviewTemplates.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-pressed={template === item.id && !!objective}
-                  onClick={() => {
-                    setTemplate(item.id);
-                    setObjective(pick(item.objective));
-                    setNotice(null);
-                    objectiveRef.current?.focus();
-                  }}
-                >
-                  {text(item.en, item.ko)}
-                  <ArrowRight size={14} />
-                </button>
-              ))}
-            </fieldset>
-            <div className={styles.briefActions}>
+              </p>
+            ) : null}
+            <details ref={sourceDetailsRef} className={styles.source}>
+              <summary>
+                {text("Add an FDA source link", "FDA 원문 링크 추가")}{" "}
+                <span>{text("Optional", "선택")}</span>
+                <ChevronDown size={16} />
+              </summary>
+              <label htmlFor="source-url">
+                {text("FDA webpage address", "FDA 웹페이지 주소")}
+              </label>
+              <input
+                ref={sourceRef}
+                id="source-url"
+                type="url"
+                value={sourceUrl}
+                maxLength={2000}
+                placeholder="https://www.fda.gov/…"
+                aria-invalid={error === "url"}
+                aria-describedby="source-help"
+                onChange={(event) => {
+                  setSourceUrl(event.target.value);
+                  setError(null);
+                  setMessage("");
+                }}
+              />
+              <p
+                id="source-help"
+                className={error === "url" ? styles.error : styles.fieldHint}
+              >
+                {error === "url"
+                  ? text(
+                      "Use an HTTPS link from fda.gov, or leave this blank.",
+                      "fda.gov의 HTTPS 주소를 입력하거나 비워두세요.",
+                    )
+                  : text(
+                      "The link is saved with your request. Its content is not imported or analyzed yet.",
+                      "링크를 요청과 함께 저장합니다. 원문을 가져오거나 분석하지는 않습니다.",
+                    )}
+              </p>
+            </details>
+            {error === "limit" ? (
+              <p className={styles.error} role="alert">
+                {text(
+                  "This device holds 30 drafts. Download and remove an older draft to save another.",
+                  "이 기기에 초안 30개가 저장되어 있습니다. 기존 초안을 다운로드하고 삭제한 뒤 저장해주세요.",
+                )}
+              </p>
+            ) : null}
+            <div className={styles.formActions}>
               <button
                 className={styles.primaryButton}
                 type="submit"
-                disabled={!objective.trim() || (!dirty && !!saved)}
+                disabled={!loaded || (!!saved && !dirty)}
               >
-                <Save size={16} />
+                <Save size={18} />
                 {saved && !dirty
                   ? text("Draft saved", "초안 저장됨")
-                  : text("Save review brief", "검토 브리프 저장")}
+                  : text("Save request draft", "검토 요청 초안 저장")}
               </button>
               <button
-                className={styles.exportButton}
+                className={styles.secondaryButton}
                 type="button"
                 disabled={!objective.trim()}
-                onClick={exportDraft}
-                aria-label={text("Export review brief", "검토 브리프 내보내기")}
-                title={text("Export review brief", "검토 브리프 내보내기")}
+                onClick={() => download()}
               >
-                <Download size={17} />
+                <Download size={18} />
+                {text("Download", "다운로드")}
               </button>
             </div>
-            <div className={styles.notice} aria-live="polite">
-              {notice === "saved"
-                ? text(
-                    "Brief saved locally. No agent run has been started.",
-                    "브리프를 브라우저에 저장했습니다. 에이전트 실행은 시작되지 않았습니다.",
-                  )
-                : notice === "restored"
-                  ? text(
-                      "Your browser draft has been restored.",
-                      "이 브라우저에 저장한 초안을 불러왔습니다.",
-                    )
-                  : notice === "storage"
-                    ? text(
-                        "Browser storage is unavailable. Export your brief to keep a copy.",
-                        "브라우저 저장소를 사용할 수 없습니다. 브리프를 내보내 보관하세요.",
-                      )
-                    : notice === "cleared"
-                      ? text(
-                          "Local draft removed.",
-                          "브라우저 초안을 삭제했습니다.",
-                        )
-                      : text(
-                          "Preparing a brief does not create or execute a case.",
-                          "브리프 준비만으로 케이스가 생성되거나 실행되지 않습니다.",
-                        )}
-            </div>
-            {saved ? (
-              <button
-                className={styles.textButton}
-                type="button"
-                onClick={() => {
-                  try {
-                    window.localStorage.removeItem(REVIEW_DRAFT_KEY);
-                    setSaved(null);
-                    setObjective("");
-                    setNotice("cleared");
-                  } catch {
-                    setNotice("storage");
-                  }
-                }}
-              >
-                {text("Delete browser draft", "브라우저 초안 삭제")}
-              </button>
-            ) : null}
+            <p className={styles.fieldHint}>
+              {text(
+                "Saving prepares a request. It does not submit it or start an AI analysis.",
+                "저장하면 요청 초안이 만들어집니다. 제출되거나 AI 분석이 시작되지는 않습니다.",
+              )}
+            </p>
           </form>
-          <div className={styles.sourceHint}>
-            <BookOpen size={18} />
-            <div>
+          {storageError ? (
+            <div className={styles.storageError} role="alert">
               <strong>
-                {text("Evidence comes first", "근거부터 연결합니다")}
+                {text(
+                  "Saved drafts are unavailable",
+                  "초안 저장소를 이용할 수 없습니다",
+                )}
               </strong>
               <p>
                 {text(
-                  "A governed case starts with an exact FDA source version. Find the source before assigning work.",
-                  "정식 케이스는 정확한 FDA 원문 버전에서 시작합니다. 작업을 배정하기 전에 근거를 선택하세요.",
+                  "The browser could not read or save your drafts. Your question is still here. Download it to keep a copy; existing saved data has not been overwritten.",
+                  "브라우저에서 초안을 읽거나 저장할 수 없습니다. 입력한 질문은 유지되니 다운로드로 보관해주세요. 기존 저장 데이터는 덮어쓰지 않았습니다.",
                 )}
               </p>
-              <Link href="/drug-letters">
-                {text("Find source evidence", "원문 근거 찾기")}
-                <ArrowRight size={14} />
-              </Link>
+              <button
+                className={styles.secondaryButton}
+                disabled={!objective.trim()}
+                onClick={() => download()}
+              >
+                {text("Download my request", "요청 다운로드")}
+              </button>
             </div>
-          </div>
-        </section>
-        <section className={styles.plan} aria-labelledby="workflow-heading">
-          <div className={styles.planHeading}>
-            <div>
-              <div className={styles.definitionLabel}>
-                {text("Workflow definition", "워크플로 정의")}
-                <span>v1.0.0</span>
-              </div>
-              <h2 id="workflow-heading">
-                {text("Regulatory impact review", "규제 영향 검토")}
-              </h2>
-            </div>
-            <span className={styles.outlineBadge}>
-              {text("Not executing", "실행 전")}
-            </span>
-          </div>
-          <p className={styles.planIntro}>
-            {text(
-              "Five specialists. Two human checkpoints. One traceable review.",
-              "다섯 전문 에이전트와 두 차례 사람의 검토를 하나의 흐름으로 연결합니다.",
-            )}
+          ) : null}
+          <p className={styles.announcement} role="status">
+            {message}
           </p>
-          <div className={styles.planBody}>
-            <ol
-              className={styles.steps}
-              aria-label={text("Workflow steps", "워크플로 단계")}
-            >
-              {workflowSteps.map((item, index) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => selectStep(index)}
-                    aria-pressed={selectedStep === index}
-                    aria-controls="step-inspector"
-                    className={
-                      selectedStep === index ? styles.selectedStep : undefined
-                    }
-                  >
-                    <span className={styles.stepIcon} data-kind={item.kind}>
-                      {item.kind === "human" ? (
-                        <Users size={15} />
-                      ) : item.kind === "service" ? (
-                        <Check size={15} />
-                      ) : (
-                        <GitBranch size={15} />
-                      )}
-                    </span>
-                    <span>
-                      <strong>{pick(item.name)}</strong>
-                      <small>
-                        {item.agent !== null
-                          ? pick(agentDefinitions[item.agent].name)
-                          : item.kind === "human"
-                            ? text("Human checkpoint", "사람의 검토 지점")
-                            : text("Deterministic check", "규칙 기반 처리")}
-                      </small>
-                    </span>
-                    <ChevronRight size={14} />
-                  </button>
-                  {index < workflowSteps.length - 1 ? (
-                    <ArrowDown
-                      className={styles.connector}
-                      size={12}
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-            <aside
-              id="step-inspector"
-              className={styles.inspector}
-              aria-live="polite"
-            >
-              <a className={styles.mobileBack} href="#workflow-heading">
-                {text("Back to workflow steps", "워크플로 단계로 돌아가기")}
-              </a>
-              <span className={styles.inspectorKind}>
-                {step.kind === "agent"
-                  ? text("Specialist responsibility", "전문 에이전트 역할")
-                  : step.kind === "human"
-                    ? text("Human decision", "사람의 판단")
-                    : text("Deterministic service", "규칙 기반 서비스")}
-              </span>
-              <h3>{agent ? pick(agent.name) : pick(step.name)}</h3>
+          {saved && !dirty ? (
+            <section className={styles.receipt} aria-labelledby="saved-heading">
+              <h3 ref={receiptRef} tabIndex={-1} id="saved-heading">
+                <Check size={20} />
+                {text(
+                  "Your request is ready to keep",
+                  "검토 요청 초안을 준비했어요",
+                )}
+              </h3>
               <p>
-                {agent
-                  ? pick(agent.role)
-                  : step.kind === "human"
-                    ? text(
-                        "An authorized reviewer inspects the bound record and records an independent decision before work proceeds.",
-                        "권한이 있는 검토자가 연결된 기록을 확인하고 독립적인 판단을 기록해야 다음 작업으로 진행합니다.",
-                      )
-                    : text(
-                        "A defined service checks or assembles the retained records. This step does not make an autonomous regulatory decision.",
-                        "정해진 서비스가 보존된 기록을 검증하거나 구성합니다. 이 단계에서 규제 판단을 자율적으로 내리지 않습니다.",
-                      )}
+                {text(
+                  "It is saved on this device. Download a copy to share through your usual company channels.",
+                  "이 기기에 저장되었습니다. 다운로드한 파일은 평소 사용하는 사내 채널로 전달할 수 있습니다.",
+                )}
               </p>
               <dl>
                 <div>
-                  <dt>{text("Receives", "입력")}</dt>
-                  <dd>
-                    {agent
-                      ? pick(agent.input)
-                      : text(
-                          "Version-bound output from the preceding step",
-                          "이전 단계의 버전이 고정된 결과",
-                        )}
-                  </dd>
+                  <dt>{text("Task", "검토 유형")}</dt>
+                  <dd>{text(chosen.en, chosen.ko)}</dd>
                 </div>
                 <div>
-                  <dt>{text("Produces", "출력")}</dt>
-                  <dd>{pick(step.output)}</dd>
+                  <dt>{text("Question", "검토 질문")}</dt>
+                  <dd>{saved.objective}</dd>
                 </div>
-                {agent ? (
-                  <div>
-                    <dt>{text("Tools & scope", "도구와 범위")}</dt>
-                    <dd>{pick(agent.tools)}</dd>
-                  </div>
-                ) : null}
               </dl>
-              <div className={styles.inspectorFooter}>
-                <ShieldCheck size={16} />
-                <span>
-                  {text(
-                    "Human decisions remain separate from agent outputs.",
-                    "사람의 판단과 에이전트 결과는 구분하여 기록합니다.",
-                  )}
-                </span>
-              </div>
-              <Link href="/agents">
-                {text("Explore the agent team", "에이전트 팀 살펴보기")}
-                <ArrowRight size={14} />
-              </Link>
-            </aside>
-          </div>
+              <p className={styles.fieldHint}>
+                {text(
+                  "Next: once source access and analysis are enabled, the request can be used to prepare a formal review.",
+                  "다음 단계: 자료 조회와 분석 기능이 준비되면 이 요청을 바탕으로 정식 검토를 진행할 수 있습니다.",
+                )}
+              </p>
+              <details>
+                <summary>{text("Technical export", "기술용 내보내기")}</summary>
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => download(true, saved)}
+                >
+                  {text("Download JSON", "JSON 다운로드")}
+                </button>
+              </details>
+            </section>
+          ) : null}
         </section>
-      </div>
-      <section className={styles.caseSection} aria-labelledby="case-heading">
-        <div className={styles.caseHeading}>
-          <div>
-            <h2 id="case-heading">{text("Review activity", "검토 활동")}</h2>
+
+        <aside className={styles.guide} aria-labelledby="guide-heading">
+          <span className={styles.guideIcon}>
+            <GitBranch size={24} />
+          </span>
+          <h2 id="guide-heading">
+            {text(
+              "You ask. The agents organize the review.",
+              "질문은 간단하게, 검토는 에이전트와 함께.",
+            )}
+          </h2>
+          <p>
+            {text(
+              "When analysis is enabled, the specialists work through these steps. You remain in charge of the decision.",
+              "분석 기능이 준비되면 전문 에이전트가 아래 순서로 검토를 돕습니다. 최종 판단은 담당자가 합니다.",
+            )}
+          </p>
+          <ol className={styles.outcomes}>
+            <li>
+              <BookOpen size={21} />
+              <div>
+                <strong>
+                  {text("Find the source evidence", "원문 근거 확인")}
+                </strong>
+                <p>
+                  {text(
+                    "Relevant findings with links back to the FDA source.",
+                    "FDA 원문에서 관련 지적 사항과 근거를 확인합니다.",
+                  )}
+                </p>
+              </div>
+            </li>
+            <li>
+              <GitBranch size={21} />
+              <div>
+                <strong>
+                  {text("Connect it to your question", "우리 업무와 연결")}
+                </strong>
+                <p>
+                  {text(
+                    "Potential implications and information that still needs checking.",
+                    "업무에 미칠 수 있는 영향과 추가 확인 사항을 정리합니다.",
+                  )}
+                </p>
+              </div>
+            </li>
+            <li>
+              <ShieldCheck size={21} />
+              <div>
+                <strong>
+                  {text("Prepare for human review", "담당자 검토 준비")}
+                </strong>
+                <p>
+                  {text(
+                    "A source-linked package for a reviewer to verify and decide.",
+                    "담당자가 근거를 확인하고 판단할 검토 자료를 준비합니다.",
+                  )}
+                </p>
+              </div>
+            </li>
+          </ol>
+          <details className={styles.workflow}>
+            <summary>
+              {text(
+                "See the detailed agent steps",
+                "에이전트 작업 단계 자세히 보기",
+              )}
+              <ChevronDown size={17} />
+            </summary>
             <p>
               {text(
-                "Cases and execution records from your accessible workspace.",
-                "접근 가능한 워크스페이스의 케이스와 실행 기록입니다.",
+                "Planned workflow · No analysis is running",
+                "예정된 검토 절차 · 현재 실행 중인 분석 없음",
+              )}
+            </p>
+            <ol>
+              {workflowSteps.map((step) => (
+                <li key={step.id}>
+                  <strong>{pick(step.name)}</strong>
+                  <span>
+                    {step.agent === null
+                      ? step.kind === "human"
+                        ? text("Reviewer", "검토 담당자")
+                        : text("System check", "시스템 확인")
+                      : pick(agentDefinitions[step.agent].name)}
+                  </span>
+                  <small>
+                    {text("Output: ", "결과: ")}
+                    {pick(step.output)}
+                  </small>
+                </li>
+              ))}
+            </ol>
+            <Link href="/agents">
+              {text("Meet the specialist agents", "전문 에이전트 알아보기")}
+              <ArrowRight size={16} />
+            </Link>
+          </details>
+          <Link href="/help" className={styles.guideHelp}>
+            {text("Read the getting-started guide", "처음 사용하기 안내")}
+            <ArrowRight size={17} />
+          </Link>
+        </aside>
+      </div>
+
+      <section
+        className={styles.savedSection}
+        id="saved-requests"
+        aria-labelledby="drafts-heading"
+      >
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="drafts-heading">
+              {text("Continue a saved request", "저장한 요청 이어서 작성")}
+            </h2>
+            <p>
+              {text(
+                "Only drafts saved in this browser appear here. They are not shared company records.",
+                "이 브라우저에 저장한 초안만 표시됩니다. 회사 공용 기록에는 저장되지 않습니다.",
               )}
             </p>
           </div>
-          <Link className={styles.subtleLink} href="/cases">
-            {text("All cases", "전체 케이스")}
-            <ArrowRight size={15} />
-          </Link>
+          <span>
+            {storageError
+              ? text("Storage unavailable", "저장소 확인 필요")
+              : `${requests.length}${text(requests.length === 1 ? " draft" : " drafts", "개 초안")}`}
+          </span>
         </div>
-        <div
-          className={styles.caseToolbar}
-          role="group"
-          aria-label={text("Filter review activity", "검토 활동 필터")}
-        >
-          {[
-            ["all", "All activity", "전체 활동"],
-            ["active", "In progress", "진행 중"],
-            ["review", "Needs review", "검토 필요"],
-          ].map(([value, en, ko]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={caseFilter === value}
-              onClick={() => setCaseFilter(value)}
-            >
-              {text(en, ko)}
-            </button>
-          ))}
-        </div>
-        {access !== "ready" ? (
-          <div className={styles.unavailable}>
-            <WifiOff size={22} />
-            <div>
-              <h3>
-                {access === "restricted"
-                  ? text(
-                      "Case records require additional access",
-                      "케이스 기록에 대한 추가 권한이 필요합니다",
-                    )
-                  : text(
-                      "Live workspace is not connected yet",
-                      "실시간 워크스페이스가 아직 연결되지 않았습니다",
-                    )}
-              </h3>
-              <p>
-                {text(
-                  "You can prepare a local brief and inspect the workflow. Live cases, source retrieval, and agent execution are not available in this view.",
-                  "브라우저에서 브리프를 준비하고 워크플로를 살펴볼 수 있습니다. 현재 화면에서 실시간 케이스, 원문 검색, 에이전트 실행은 사용할 수 없습니다.",
-                )}
-              </p>
-            </div>
-            <button type="button" onClick={() => router.refresh()}>
-              {text("Check connection", "연결 확인")}
-            </button>
-          </div>
-        ) : visibleCases?.length ? (
-          <div className={styles.caseList}>
-            {visibleCases.slice(0, 5).map((item) => (
-              <Link key={item.id} href={`/cases/${item.id}`}>
-                <CircleDot size={18} />
-                <span>
-                  <strong>{item.title}</strong>
-                  <small>{item.objective}</small>
-                </span>
-                <span>{formatCaseStatus(item.status)}</span>
-                <time dateTime={item.updatedAt}>
-                  {new Intl.DateTimeFormat(locale, {
-                    month: "short",
-                    day: "numeric",
-                  }).format(new Date(item.updatedAt))}
-                </time>
-                <ArrowRight size={16} />
-              </Link>
+        {!loaded ? (
+          <p>{text("Loading your drafts…", "저장한 초안을 불러오는 중…")}</p>
+        ) : storageError && !requests.length ? (
+          <p>
+            {text(
+              "We could not read your saved drafts. They have not been overwritten.",
+              "저장한 초안을 읽을 수 없습니다. 기존 데이터는 덮어쓰지 않았습니다.",
+            )}
+          </p>
+        ) : requests.length ? (
+          <ul className={styles.drafts}>
+            {requests.map((draft) => (
+              <li key={draft.id}>
+                <FileText size={22} />
+                <button
+                  className={styles.draftOpen}
+                  onClick={() => edit(draft)}
+                >
+                  <strong>{draft.objective}</strong>
+                  <span>
+                    {text(
+                      choices.find((item) => item.id === draft.template)!.en,
+                      choices.find((item) => item.id === draft.template)!.ko,
+                    )}{" "}
+                    ·{" "}
+                    {new Intl.DateTimeFormat(locale, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(draft.updatedAt))}
+                  </span>
+                </button>
+                <button
+                  className={styles.iconButton}
+                  aria-label={text(
+                    `Delete draft: ${draft.objective.slice(0, 50)}`,
+                    `초안 삭제: ${draft.objective.slice(0, 50)}`,
+                  )}
+                  onClick={() => setDeleting(draft.id)}
+                >
+                  <Trash2 size={18} />
+                </button>
+                {deleting === draft.id ? (
+                  <div className={styles.deleteConfirm}>
+                    <span>
+                      {text(
+                        "Delete this saved draft?",
+                        "이 저장 초안을 삭제할까요?",
+                      )}
+                    </span>
+                    <button onClick={() => remove(draft.id)}>
+                      {text("Delete", "삭제")}
+                    </button>
+                    <button onClick={() => setDeleting(null)}>
+                      {text("Cancel", "취소")}
+                    </button>
+                  </div>
+                ) : null}
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
-          <div className={styles.unavailable}>
-            <Layers3 size={24} />
+          <div className={styles.empty}>
+            <FileText size={25} />
             <div>
-              <h3>
+              <strong>
                 {text(
-                  "No cases in this view",
-                  "이 보기에 표시할 케이스가 없습니다",
+                  "Your first request starts above",
+                  "위에서 첫 검토 요청을 작성해보세요",
                 )}
-              </h3>
+              </strong>
               <p>
                 {text(
-                  "Choose another filter or open the case workspace to inspect available records.",
-                  "다른 필터를 선택하거나 케이스 워크스페이스에서 기록을 확인하세요.",
+                  "Save a draft and return here to continue it later.",
+                  "초안을 저장하면 여기에서 다시 이어서 작성할 수 있습니다.",
                 )}
               </p>
             </div>
           </div>
         )}
       </section>
-      <footer className={styles.homeFooter}>
-        <span>PharmaAgent OS</span>
-        <p>
+      {access === "ready" && cases && cases.length > 0 ? (
+        <section className={styles.savedSection}>
+          <div className={styles.sectionHeading}>
+            <h2>{text("Team review records", "팀 검토 기록")}</h2>
+            <Link href="/cases">{text("See all", "전체 보기")}</Link>
+          </div>
+          <ul className={styles.drafts}>
+            {cases.slice(0, 5).map((item) => (
+              <li key={item.id}>
+                <Link href={`/cases/${item.id}`} className={styles.draftOpen}>
+                  <strong>{item.title}</strong>
+                  <span>{formatCaseStatus(item.status)}</span>
+                </Link>
+                <ArrowRight size={18} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <footer className={styles.footer}>
+        <span>
+          <ShieldCheck size={17} />
           {text(
-            "Agent-assisted research. Evidence-backed review. Human decisions.",
-            "에이전트가 돕는 조사, 근거에 기반한 검토, 사람이 내리는 판단.",
+            "AI supports the review. People make the decision.",
+            "AI는 검토를 돕고, 최종 판단은 사람이 합니다.",
           )}
-        </p>
-        <Link href="/ask">
-          {text("Open research chat", "리서치 대화 열기")}
-          <ArrowRight size={14} />
+        </span>
+        <Link href="/help#availability">
+          {text("Service availability", "서비스 이용 안내")}
         </Link>
       </footer>
     </div>

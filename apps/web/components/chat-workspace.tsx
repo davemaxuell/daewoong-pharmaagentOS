@@ -1354,9 +1354,9 @@ export function ChatWorkspace({
         {dataMode !== "live" ? (
           <div className="chat-service-notice" role="status">
             <CircleAlert size={16} aria-hidden="true" />
-            <p><strong>{text("Live filter facets unavailable.", "실시간 필터 정보를 사용할 수 없습니다.")}</strong> {text(
-              "Synthetic companies and categories are not shown. Evidence search also fails closed whenever retrieval is unavailable.",
-              "합성 기업 및 범주는 표시하지 않습니다. 증거 검색도 검색 서비스를 사용할 수 없을 때 오류 상태로 종료됩니다.",
+            <p><strong>{text("FDA sources are not connected yet.", "FDA 자료를 아직 조회할 수 없어요.")}</strong> {text(
+              "Answers about source evidence require the data service. You can prepare and save your review question on the home page.",
+              "원문 근거를 확인하는 답변에는 자료 서비스 연결이 필요합니다. 홈에서 검토 질문을 작성하고 저장할 수 있습니다.",
             )}</p>
           </div>
         ) : null}

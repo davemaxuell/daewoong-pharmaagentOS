@@ -20,10 +20,10 @@ spacing:
 
 ## Overview
 
-An operating workbench for pharmaceutical review. A multidisciplinary protocol
-board supplies the structure: objective, specialist responsibilities, ordered
-steps, evidence outputs, and a human handoff. Replace the former FDA chat landing
-page and inconsistent green/orange workspaces with this shared system.
+An employee-facing review assistant. The main path is choosing a task, writing a
+question, and saving a request. The agent workflow explains how that request will
+be handled; it is secondary to the employee's task. Keep the navy/light/cobalt
+identity and the enlarged, readable type scale.
 
 ## Colors
 
@@ -43,9 +43,11 @@ Use monospace only for hashes, identifiers, and machine-readable values.
 ## Layout
 
 A 280px navigation rail, 76px contextual header, and a bounded content canvas.
-The home places a task brief beside a specialist workflow and inspector. Lower
-sections expose real case status and supporting research. On narrow screens the
-rail becomes an accessible drawer, the task precedes the plan, and details stack.
+The home places a guided request form beside a concise explanation of agent
+responsibilities. Detailed steps expand on demand. Saved requests are easy to
+resume; on narrow screens they appear before the agent explanation. Everyday
+navigation has six task-oriented destinations. Specialist and operational tools
+expand in a separate section, automatically open on their active routes.
 
 ## Elevation & Depth
 
@@ -59,10 +61,13 @@ Workflow connectors indicate actual step ordering, not animated execution.
 
 ## Components
 
-Task inputs have visible labels. Template controls fill editable objectives.
-Selecting a workflow step reveals its responsibility, inputs, outputs, and tools.
-Local drafts are explicitly identified and editable; no simulated run is presented
-as a live case. Missing data is an unavailable state, not an empty count.
+Task inputs use native radio controls, visible labels and an optional FDA link.
+An example fills only an empty question. Multiple local requests can be saved,
+reopened, updated, deleted with confirmation and downloaded as readable text;
+JSON is secondary. Previous single drafts migrate without losing their question.
+Every receipt identifies the request as unsubmitted and not analyzed. A compact
+availability notice and a getting-started guide explain the current limits.
+Missing data has plain-language recovery actions instead of technical errors.
 Keyboard focus is visible. Reduced motion removes optional transitions.
 
 ## Do's and Don'ts

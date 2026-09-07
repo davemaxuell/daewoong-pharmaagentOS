@@ -45,19 +45,22 @@ const navItems: Array<{
   href: string;
   icon: typeof MessageSquareText;
   requiredRole?: AppRole;
+  advanced?: boolean;
 }> = [
-  { en: "Agent workspace", ko: "에이전트 워크스페이스", href: "/dashboard", icon: GitBranch },
-  { en: "Agent team", ko: "에이전트 팀", href: "/agents", icon: Network },
-  { en: "Cases & runs", ko: "케이스 · 실행", href: "/cases", icon: BriefcaseBusiness },
-  { en: "Human review", ko: "사람의 검토", href: "/approvals", icon: ClipboardCheck },
-  { en: "Evaluations", ko: "에이전트 평가", href: "/evaluations", icon: ShieldCheck },
-  { en: "Operations", ko: "운영 현황", href: "/control-tower", icon: ChartNoAxesColumnIncreasing },
-  { en: "Research chat", ko: "리서치 대화", href: "/ask", icon: MessageSquareText },
-  { en: "FDA evidence", ko: "FDA 근거 자료", href: "/drug-letters", icon: FileText },
-  { en: "Saved research", ko: "저장한 조사", href: "/saved-views", icon: Bookmark },
-  { en: "Trends", ko: "규제 동향", href: "/trends", icon: ChartNoAxesColumnIncreasing },
-  { en: "Source review", ko: "원문 검토", href: "/review", icon: ClipboardCheck, requiredRole: "reviewer" },
-  { en: "Admin", ko: "관리", href: "/admin", icon: ShieldCheck, requiredRole: "admin" },
+  { en: "Start a review", ko: "검토 시작하기", href: "/dashboard", icon: GitBranch },
+  { en: "FDA letter library", ko: "FDA 경고서한 찾기", href: "/drug-letters", icon: FileText },
+  { en: "Ask about evidence", ko: "자료에 대해 질문하기", href: "/ask", icon: MessageSquareText },
+  { en: "Saved sources", ko: "저장한 자료", href: "/saved-views", icon: Bookmark },
+  { en: "Saved requests", ko: "저장한 검토 요청", href: "/dashboard#saved-requests", icon: BriefcaseBusiness },
+  { en: "Getting started", ko: "이용 방법", href: "/help", icon: CircleHelp },
+  { en: "Specialist agents", ko: "전문 에이전트", href: "/agents", icon: Network, advanced: true },
+  { en: "Team review records", ko: "팀 검토 기록", href: "/cases", icon: BriefcaseBusiness, advanced: true },
+  { en: "Review & approvals", ko: "검토 및 승인", href: "/approvals", icon: ClipboardCheck, advanced: true },
+  { en: "Regulatory trends", ko: "규제 동향", href: "/trends", icon: ChartNoAxesColumnIncreasing, advanced: true },
+  { en: "Agent evaluations", ko: "에이전트 평가", href: "/evaluations", icon: ShieldCheck, advanced: true },
+  { en: "Service operations", ko: "서비스 운영", href: "/control-tower", icon: ChartNoAxesColumnIncreasing, advanced: true },
+  { en: "Source review", ko: "원문 검토", href: "/review", icon: ClipboardCheck, requiredRole: "reviewer", advanced: true },
+  { en: "Admin", ko: "관리", href: "/admin", icon: ShieldCheck, requiredRole: "admin", advanced: true },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -306,7 +309,7 @@ export function PortalShell({
         </Link>
 
         <div className="portal-header__product" aria-label={text("Current service", "현재 서비스")}>
-          <span className="os-header-context">{text("Workspace", "워크스페이스")}<span>/</span><strong>{(() => { const item = visibleNav.find((entry) => isActive(pathname, entry.href)); return item ? text(item.en, item.ko) : text("Research", "리서치"); })()}</strong></span>
+          <span className="os-header-context"><strong>{(() => { const item = visibleNav.find((entry) => isActive(pathname, entry.href)); return item ? text(item.en, item.ko) : text("Research", "자료 조사"); })()}</strong></span>
         </div>
 
         <div className="portal-header__actions">
@@ -389,8 +392,8 @@ export function PortalShell({
             <div className="portal-service-guide__panel">
               <strong>PharmaAgent OS</strong>
               <p>{text(
-                "Prepare regulatory objectives, inspect specialist agent workflows, and review evidence-linked outputs with human oversight.",
-                "규제 검토 목표를 준비하고, 전문가별 에이전트 워크플로를 살펴보며, 근거에 연결된 결과를 사람의 감독 아래 검토합니다.",
+                "Prepare a question about FDA findings. Specialist agents support evidence review; the final decision belongs to your team.",
+                "FDA 지적 사항에 대한 검토 질문을 준비하세요. 전문 에이전트가 근거 검토를 돕고, 최종 판단은 담당자가 합니다.",
               )}</p>
             </div>
           </details>
@@ -407,7 +410,7 @@ export function PortalShell({
               aria-controls="portal-menu-section"
               onClick={() => setMenuSectionOpen((open) => !open)}
             >
-              <span>{text("Workspace", "워크스페이스")}</span>
+              <span>{text("Everyday work", "업무 메뉴")}</span>
               <ChevronDown size={15} aria-hidden="true" />
             </button>
             <div
@@ -419,12 +422,11 @@ export function PortalShell({
               <div id="portal-menu-section" className="portal-sidebar-section__content">
                 <nav className="portal-sidebar__nav" aria-label={text("Service menu", "서비스 메뉴")}>
                   <ul className="nav-list portal-nav">
-                    {visibleNav.map((item) => {
+                    {visibleNav.filter((item) => !item.advanced).map((item) => {
                       const Icon = item.icon;
                       const active = isActive(pathname, item.href);
                       return (
                         <li className="portal-nav__item" key={item.href}>
-                          {item.href === "/ask" ? <span className="os-nav-group">{text("Research library", "조사 자료실")}</span> : null}
                           <Link
                             className={`nav-link portal-nav__link${active ? " nav-link--active portal-nav__link--active" : ""}`}
                             href={item.href}
@@ -443,6 +445,17 @@ export function PortalShell({
               </div>
             </div>
           </section>
+
+          <details key={pathname} className="os-advanced-nav" open={visibleNav.some((item) => item.advanced && isActive(pathname, item.href))}>
+            <summary>{text("Specialists & operations", "전문 도구 및 운영")}<ChevronDown size={15} /></summary>
+            <nav aria-label={text("Specialist and operations tools", "전문 도구 및 운영 메뉴")}>
+              {visibleNav.filter((item) => item.advanced).map((item) => {
+                const Icon = item.icon;
+                const active = isActive(pathname, item.href);
+                return <Link key={item.href} className={`nav-link portal-nav__link${active ? " nav-link--active portal-nav__link--active" : ""}`} href={item.href} aria-current={active ? "page" : undefined} onClick={() => closeMenu()}><Icon size={20} aria-hidden="true" /><span>{text(item.en, item.ko)}</span></Link>;
+              })}
+            </nav>
+          </details>
 
           <section
             className="portal-sidebar-section portal-sidebar-section--history"

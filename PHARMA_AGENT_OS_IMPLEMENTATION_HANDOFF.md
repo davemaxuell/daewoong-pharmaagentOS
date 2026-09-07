@@ -1,6 +1,6 @@
 # PharmaAgent OS implementation handoff
 
-**Handoff date:** 2026-09-07
+**Handoff date:** 2026-09-08
 
 **Next engineer:** Start with [the transfer brief](NEXT_ENGINEER_HANDOFF.md) for
 the publication state, production blockers, verification and ordered
@@ -9,6 +9,44 @@ next steps. This file remains the authoritative implementation record.
 **Authoritative workspace:** `C:\Users\user\Desktop\PharmaAgentOS`  
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
+
+**2026-09-08 employee usability redesign:** Replaced the workflow-first home with
+a guided review request: select one of three plain-language tasks, write an
+editable question using an optional example, add an optional FDA HTTPS link,
+and save or download the request. Up to 30 browser drafts can be reopened,
+updated and deleted with confirmation. The earlier single-draft format migrates
+without losing content. Readable text export is primary; labeled JSON remains
+available in technical details. Browser storage failures retain editor contents
+and permit download; corrupt archives are not overwritten. Unsaved edits are
+guarded on page exit, internal navigation and request switching.
+
+Everyday navigation now exposes six employee tasks, including saved requests and
+a new bilingual `/help` guide. Specialists, review records, approvals, trends,
+evaluation and operations remain accessible in an expandable section. Three
+outcome-oriented stages explain the agents; the actual nine-step definition is
+available on demand. Errors explain recovery in plain language. Mobile layouts
+put saved work ahead of the agent explanation. The enlarged type scale remains.
+
+The interface explicitly identifies saved requests as local, unsubmitted and not
+analyzed. No database migration, live FDA ingestion, automated specialist execution,
+shared company storage or new access privilege is represented as complete.
+
+Verification: production build/TypeScript, lint and 26 frontend tests passed.
+Production-mode Edge checks passed task validation, FDA-link rejection, multiple
+draft save/restore/delete, readable export, advanced navigation, nine supporting
+routes, Korean/English reflow at 320/390/768/1024/1440px, and mobile Escape/focus.
+Separate browser checks passed legacy migration, guarded unsaved clearing, and
+download after a storage write failure. No browser JavaScript errors; UI detector
+returned no findings. Local evidence: `.artifacts/employee-ux-20260908/` (ignored).
+
+**2026-09-07 Supabase access verified:** The owner supplied project
+`wdaflyddglimtijvgazl`. Authenticated CLI project listing and schema queries work.
+The project is named `Daewoong FDA`; no application tables were found and the
+public schema contains zero tables. A publishable key does not provide backend
+runtime credentials. The destination choice (shared database or separate
+PharmaAgent OS project) was requested before migrations; no application schema,
+data, grants, buckets or Vercel configuration were changed. See
+[access verification](docs/assurance/supabase-access-20260907.md).
 
 **2026-09-07 larger interface:** Increased the shared typography scale by roughly
 18%, using rem units and a 13px floor for small metadata. Primary body text is

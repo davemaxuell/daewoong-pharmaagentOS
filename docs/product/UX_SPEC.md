@@ -2,9 +2,28 @@
 
 - Status: active
 - Owner: product team
-- Last updated: 2026-09-07
+- Last updated: 2026-09-08
 
-## Agent workspace redesign — current contract
+## Employee task flow — 2026-09-08
+
+This update supersedes the workflow-first home described below. The employee path
+is task selection, an editable question, an optional FDA source URL, and an explicit
+save/download action. Examples require a user click and do not replace entered
+questions. Requests are browser drafts, not submitted cases or agent outputs.
+Saved requests can be reopened, updated and deleted; older drafts migrate.
+The main export is readable text, with JSON available as a secondary action.
+
+Six everyday navigation destinations lead to review preparation, FDA letters,
+evidence questions, saved sources, saved requests and help. Advanced tools remain
+in a collapsible section. `/help` explains the first task, current availability,
+where drafts are stored and the human decision boundary in Korean and English.
+The home describes three agent outcomes; the detailed workflow is optional.
+
+All unavailable states should name the unavailable task and provide a working
+recovery action. Do not expose setup details in employee task flows or imply that
+this UX update has enabled backend data, company-wide sharing or agent execution.
+
+## Agent workspace redesign — previous contract
 
 At the service owner's request, the whole interface now emphasizes the agentic
 review workflow. This section supersedes the former chat-first home and global

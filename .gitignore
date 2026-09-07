@@ -20,6 +20,7 @@ out/
 *.tsbuildinfo
 .turbo/
 .vercel/
+supabase/.temp/
 test-results/
 playwright-report/
 

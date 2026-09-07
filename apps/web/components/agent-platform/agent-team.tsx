@@ -28,14 +28,14 @@ export function AgentTeam() {
         </div>
         <h1>
           {text(
-            "A clear role for every agent.",
-            "각 에이전트의 역할을 명확하게.",
+              "Meet your review specialists.",
+              "검토를 돕는 전문 에이전트입니다.",
           )}
         </h1>
         <p>
           {text(
-            "Explore the five versioned definitions behind regulatory impact review. These describe intended responsibilities; they do not indicate live execution readiness.",
-            "규제 영향 검토를 구성하는 다섯 에이전트의 버전별 정의입니다. 예정된 역할을 설명하며 실시간 실행 준비 상태를 나타내지는 않습니다.",
+            "Each agent has a specific role in the planned review. You do not need to select or configure them to prepare a request. Automated analysis is still being prepared.",
+            "각 에이전트가 정해진 역할로 검토를 돕도록 설계되어 있습니다. 요청을 작성할 때 직접 선택하거나 설정할 필요는 없습니다. 자동 분석 기능은 준비 중입니다.",
           )}
         </p>
       </header>
@@ -56,7 +56,7 @@ export function AgentTeam() {
           />
         </label>
         <span>
-          {agents.length} {text("definitions", "개 정의")}
+          {agents.length} {text("specialists", "개 에이전트")}
         </span>
       </div>
       <div className={styles.workspace}>
@@ -131,7 +131,7 @@ export function AgentTeam() {
               </p>
             </div>
             <Link href="/dashboard">
-              {text("Inspect the complete workflow", "전체 워크플로 살펴보기")}
+              {text("Prepare a review request", "검토 요청 작성하기")}
               <ArrowRight size={16} />
             </Link>
             <details>

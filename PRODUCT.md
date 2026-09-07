@@ -8,9 +8,10 @@ web
 
 ## Users
 
-Pharmaceutical regulatory and quality teams assessing FDA Drug warning letters.
-This audience is inferred from the authoritative implementation plan; the user
-has requested a complete interface redesign emphasizing the agentic service.
+Daewoong employees preparing questions about FDA findings, including staff who
+do not know agent terminology or regulatory software. Quality and regulatory
+specialists retain the formal review role. The user explicitly requested an
+interface that anyone in the company can understand and use.
 
 ## Product Purpose
 
@@ -45,7 +46,9 @@ functional baseline. Agent definitions exist under contracts/agents.
 
 ## Product Principles
 
-- Lead with the regulatory objective and the work required to address it.
+- Lead with an employee task and an editable question, with examples.
+- Keep specialist configuration and operational tools secondary.
+- Explain which actions work now, where work is saved, and what happens next.
 - Make agent responsibility, source evidence, and human decisions inspectable.
 - Distinguish planned, running, completed, unavailable, and restricted states.
 - Preserve FDA search and chat as supporting research tools.

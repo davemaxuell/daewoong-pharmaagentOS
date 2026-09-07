@@ -253,6 +253,13 @@ body {
   border-color: #3e4d64;
   color: #d4dfee;
 }
+.portal-shell .os-advanced-nav { margin: 12px 12px 6px; }
+.portal-shell .os-advanced-nav > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; min-height: 48px; color: #c3cfe1; font-size: .9375rem; cursor: pointer; list-style: none; }
+.portal-shell .os-advanced-nav > summary::-webkit-details-marker { display: none; }
+.portal-shell .os-advanced-nav[open] > summary > svg { transform: rotate(180deg); }
+.portal-shell .os-advanced-nav > nav { padding: 4px 0 10px; }
+.portal-shell .os-advanced-nav .portal-nav__link { font-size: .9375rem; }
+.portal-shell .os-advanced-nav summary:focus-visible { outline: 2px solid #a6c2ff; outline-offset: 2px; }
 .portal-shell .portal-history-search input,
 .portal-shell .portal-history-search input::placeholder {
   color: #b2c0d5;
