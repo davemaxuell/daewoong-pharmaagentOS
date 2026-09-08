@@ -15,11 +15,17 @@ the page renders, with private authenticated responses and retry without a page
 reload. Late history reads preserve locally created, edited and archived chats.
 A bounded SQL-paginated metadata catalog replaces five sequential collection
 requests for the current 440 visible letters. Document/history links avoid bulk
-prefetching. Vercel is configured for Sydney alongside the database. Local build,
-lint, 35 frontend tests, 55 focused API checks and contract validation passed.
+prefetching. Letter detail shares its request between metadata and rendering and
+uses the version/hash already returned with its content. Vercel is confirmed in
+Sydney alongside the database. Local build, lint, 38 frontend tests, 55 focused
+API checks, two OpenAPI checks and contract validation passed.
 A delayed-sidebar browser check rendered Home in 688 ms while the sidebar remained
 pending for three seconds; loading, failure/retry and history hydration passed.
-Hosted before/after evidence and deployment status are recorded in
+Revision `d7a08a6` passed all GitHub quality/security checks and hosted smoke: 440
+letters, a real AI answer with six citations, saved history after reload, session
+isolation and healthy database/storage. Initial repeat navigation improved Home
+3.855 → 0.458 s, chat 24.495 → 1.267 s and library 24.576 → 1.153 s. The detail-read
+follow-up awaits final hosted measurement. Before/after evidence is recorded in
 [performance evidence](docs/assurance/performance-20260908.md).
 
 **2026-09-08 beginner AI experience:** Home now leads to the working AI through

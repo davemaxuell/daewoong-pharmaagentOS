@@ -1020,21 +1020,8 @@ export async function getLetter(id: string): Promise<ApiResult<Letter | undefine
   const letter = normalizeLetter(unwrapOne(payload));
   if (!letter) throw new Error("API letter could not be normalized");
 
-  try {
-    const versionsPayload = await requestApi(`/api/v1/letters/${encodeURIComponent(id)}/versions`);
-    const versions = unwrapList(versionsPayload);
-    const latest = asRecord(versions[0]);
-    if (latest) {
-      letter.sourceVersion = asString(first(latest, "version", "version_number", "id"), letter.sourceVersion);
-      letter.sourceHash = asString(
-        first(latest, "canonical_hash", "raw_sha256", "content_hash", "sha256", "source_hash"),
-        letter.sourceHash,
-      );
-    }
-  } catch {
-    // The immutable FDA detail remains usable if the optional version-history call fails.
-  }
-
+  // The detail includes its exact current version and hash. A separate history
+  // read adds latency and may select a newer response/closeout document instead.
   return { data: letter, mode: "live" };
 }
 
