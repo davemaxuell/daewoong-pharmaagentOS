@@ -48,4 +48,15 @@ retry/source guidance and closed original-excerpt disclosure replace the immedia
 long raw-English response. Citations remain accessible and the underlying response
 is preserved. Three rendering regressions cover fallback disclosure, successful AI
 answers and the no-source case; all 29 frontend tests, build and focused lint pass.
-Final fallback deployment verification follows.
+Final application revision `d25d5cb` is deployed successfully. A real Korean
+document-specific question about Safrel Pharmaceuticals LLC completed with an
+AI-generated answer (`gpt-5-mini` shown in the response record), six cited sources
+and no browser JavaScript errors. The saved conversation remained readable after
+navigation. This successful generation is distinct from the earlier generic
+source-only fallback. Database and Storage readiness remained healthy.
+
+Final revision CI: code-security run `34218188041` passed. In quality run
+`34218187942`, frontend, contracts, schema, container, recovery, secret-scan and
+deployment-render jobs passed; the unchanged backend suite was still running when
+this record was written. No failed jobs were reported. The preceding full quality
+run for `81f3e9b` passed. No backend code or hosting credentials changed in this UX task.

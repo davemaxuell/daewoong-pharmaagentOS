@@ -4,6 +4,14 @@ Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **frontend, FDA library and grounded OpenAI chat hosted; full case-agent execution and production qualification incomplete**
 
+**Beginner UX deployed (2026-09-08):** Application revision `d25d5cb` leads from Home
+to live AI questions with editable examples and optional settings. Drafts remain
+at `/requests` with their existing storage. The guide reflects current data/AI
+availability. A hosted Korean document-specific AI answer completed with six
+sources. Source-only fallbacks now explain the situation and hide long excerpts
+until requested. All 29 frontend tests pass; see
+[verification details](docs/assurance/beginner-ux-20260908.md).
+
 **Hosted data verified (2026-09-08):** Revision `7956f26` and its GitHub quality/security
 checks passed. Production readiness is healthy; the library displays 440 active
 drug letters. Letter detail and a saved Korean OpenAI answer with six citations
@@ -314,4 +322,5 @@ the same stored drafts and a legacy saved-request bookmark redirect. Chat defaul
 remain automatic, advanced settings collapse, and the Korean/English guide explains
 source checking and current availability. Build, lint, all 26 frontend tests and
 26 browser checks passed. See the authoritative implementation handoff and ignored
-`.artifacts/beginner-ux-20260908/` evidence. Publishing this update is in progress.
+`.artifacts/beginner-ux-20260908/` evidence. The update is deployed; the fallback
+follow-up adds three passing regression tests (29 frontend tests total).

@@ -30,6 +30,10 @@ GitHub quality/security and all 26 hosted browser checks. A generic Korean examp
 returned six sources through the source-only fallback, not an AI explanation.
 The follow-up UX explains that state and keeps long raw excerpts closed until
 requested. Three regression checks bring the passing frontend total to 29.
+Final application revision `d25d5cb` is deployed. A hosted Korean document-specific
+question completed with a `gpt-5-mini` explanation and six cited sources; no browser
+errors. Database and Storage readiness remain healthy. See
+[beginner UX evidence](docs/assurance/beginner-ux-20260908.md).
 
 **2026-09-08 hosted data and AI verified:** Production revision `7956f26` passed
 GitHub quality/security checks. Both public health endpoints return 200; database
