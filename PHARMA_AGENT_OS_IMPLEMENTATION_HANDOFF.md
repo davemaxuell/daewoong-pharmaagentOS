@@ -18,6 +18,13 @@ Generated findings, citations, questions, exports and all runtime behavior remai
 intact. See [visual UX evidence](docs/assurance/visual-ux-20260909.md) for verification
 and current publication status. Preserve the user's root package files and `supabase/`.
 
+Application revision `2eec5f7` is hosted. The preceding UI release passed all GitHub
+jobs, 32 hosted bilingual/viewport checks and a real Korean research brief in 25.5
+seconds. Four recent actions expand to the full history; keyboard disclosure,
+citations, exports, saved-task reload and browser ownership checks pass. The final
+active-stage icon correction also passes its hosted browser state check. Current
+CI links and release evidence are maintained in the visual UX record.
+
 **2026-09-08 FDA Research Agent:** A bounded goal-driven research workflow is
 deployed at `/research`. OpenAI chooses native plan/search/read/submit tools;
 source integrity and a separate AI evidence check gate a saved human-review brief.

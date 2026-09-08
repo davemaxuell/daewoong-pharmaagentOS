@@ -9,6 +9,8 @@ labeled steps; research uses compact stage/action icons and expandable plans,
 full activity history and review notes. Repeated explanatory paragraphs are shorter,
 while findings, sources and exports remain complete. See
 [visual UX evidence](docs/assurance/visual-ux-20260909.md) for checks and publication.
+Application revision `2eec5f7` is hosted; the full UI release passed a real research
+brief and 32 hosted Korean/English layout checks. Final CI links are in the evidence.
 
 **FDA Research Agent (2026-09-08):** `/research` now implements goal-driven native
 OpenAI tools, source/evidence checking, Supabase task/event persistence and visible
