@@ -251,7 +251,7 @@ function ResearchWorkspaceInner({ runId }: { runId: string }) {
         const done = run.events.some((event) => event.kind === stage.done);
         const working = active && run.stage === stage.id;
         const StageIcon = stage.icon;
-        return <li key={stage.id} className={working ? styles.stageActive : done ? styles.stageDone : ""} aria-current={working ? "step" : undefined}><span className={styles.stageIcon}>{working ? <LoaderCircle className={styles.spin} size={24} /> : <StageIcon size={24} />}{done ? <Check className={styles.doneMark} size={13} aria-label={text("Completed", "완료")} /> : null}</span><span>{text(stage.en, stage.ko)}</span><ChevronRight className={styles.connector} size={17} /></li>;
+        return <li key={stage.id} className={working ? styles.stageActive : done ? styles.stageDone : ""} aria-current={working ? "step" : undefined}><span className={styles.stageIcon}>{working ? <LoaderCircle className={styles.spin} size={24} /> : <StageIcon size={24} />}{done && !working ? <Check className={styles.doneMark} size={13} aria-label={text("Completed", "완료")} /> : null}</span><span>{text(stage.en, stage.ko)}</span><ChevronRight className={styles.connector} size={17} /></li>;
       })}</ol>
 
       {run.status === "stopped" ? <p className={styles.scope}>{text("Work retained. Resume whenever you are ready.", "진행 내용을 보관했습니다. 준비되면 이어서 진행하세요.")}</p> : null}
