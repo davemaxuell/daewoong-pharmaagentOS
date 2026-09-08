@@ -43,6 +43,10 @@ and required Storage settings). Do not copy Vercel system metadata onto a local
 machine to bypass the production provider check. These one-off process settings
 must not replace the Vercel production environment.
 
+Supabase may install pgcrypto in `extensions`. Include `public, extensions` in
+the migration and runtime login search paths, and grant the runtime logins USAGE
+on `extensions`; this keeps the migration's unqualified digest calls resolvable.
+
 Apply `supabase-data-api-boundary.sql` after those migrations. It revokes browser
 role access and enables RLS on all 57 current application tables. Runtime policies
 permit the existing backend roles to exercise their existing grants; API code
@@ -92,7 +96,11 @@ visitors. Models and workers remain disabled until qualified.
 Set `ALLOWED_HOSTS` to exact public, internal API and worker/probe hosts observed
 in the target deployment. Binding reachability does not replace OIDC checks.
 Hosted Host/proxy behavior must be tested; do not solve routing failures by enabling
-wildcard host admission. Configure an actual HTTPS telemetry collector and alarms.
+wildcard host admission. Choose `TELEMETRY_BACKEND=vercel_logs` for bounded metadata
+in managed Vercel runtime logs, or retain `otlp` with an actual HTTPS collector.
+Vercel log mode requires platform metadata and the Vercel secret provider; it does
+not claim external trace collection or long-term audit retention. Configure alarms
+and retention separately for the intended operational requirements.
 
 ## Bounded workers and scheduling
 

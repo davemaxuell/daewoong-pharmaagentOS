@@ -10,6 +10,25 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 dataset copy completed:** The owner approved destination
+`wdaflyddglimtijvgazl`. All source application records were copied transactionally;
+884 letters and 4,298 chunks match the dump. All 444 raw source files passed
+source/destination SHA-256 verification. The destination now has all 57 current
+tables, the full migration sequence, RLS boundary and separate runtime logins.
+Production Vercel credentials/settings are provisioned. An explicit managed
+Vercel request-logging mode supports this hosting configuration without a dummy
+OTLP endpoint. See [copy evidence](docs/assurance/dataset-copy-20260908.md).
+Hosted end-to-end verification remains the next step for this revision.
+
+**2026-09-08 populated dataset located:** The owner supplied `data.sql`, a data-only
+export with 884 letters (444 in-scope drug letters), 4,298 passages and 444 Storage
+object metadata rows. Read-only queries against the now-linked Supabase project
+`uwgzvobkblrnmqwroegh` (`supabase-daewoong`) matched those counts. Earlier empty
+results concerned two different projects. Existing exported table columns match;
+36 Agent OS tables are absent. Database destination selection is pending before
+cloud changes. See [dataset evidence](docs/assurance/dataset-discovery-20260908.md).
+The dump is preserved and Git-ignored; it includes historical chat records.
+
 **2026-09-08 OpenAI activation:** Added a server-only Responses provider with
 shared citation/language checks, structured analysis and Korean translation.
 The supplied key passed real adapter calls using synthetic evidence. Production

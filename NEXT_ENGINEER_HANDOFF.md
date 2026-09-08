@@ -4,6 +4,21 @@ Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
 
+**Dataset copy approved and completed (2026-09-08):** The owner selected copying
+into `wdaflyddglimtijvgazl`. All 21 source application tables and 444 private raw
+files are copied and verified; all 57 current tables and runtime roles are present.
+Production Vercel database/Storage settings are provisioned. See
+[copy evidence](docs/assurance/dataset-copy-20260908.md). This supersedes the pending
+destination and empty-target notes below. Hosted verification follows deployment.
+
+**Dataset located (2026-09-08):** `data.sql` contains 884 letters, including 444
+in-scope drug letters, and 4,298 searchable passages. Live counts match the now-linked
+`uwgzvobkblrnmqwroegh` project (`supabase-daewoong`). The source data exists;
+the hosted PharmaAgent OS connection is still pending. The user has been asked
+whether to use that project or copy into `wdaflyddglimtijvgazl`. No import or cloud
+configuration was performed. See [dataset evidence](docs/assurance/dataset-discovery-20260908.md).
+Preserve the Git-ignored dump and the user's untracked package/Supabase setup files.
+
 **OpenAI update (2026-09-08):** The server now supports OpenAI Responses, and
 Production/Preview have a Secret key and `gpt-5-mini` generation settings. Real
 adapter checks passed chat, scope classification, Korean translation and document

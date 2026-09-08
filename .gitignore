@@ -25,6 +25,8 @@ test-results/
 playwright-report/
 
 # Local runtime data
+# Owner-provided database export; may include chat history and private records.
+/data.sql
 .data/
 data/
 *.db

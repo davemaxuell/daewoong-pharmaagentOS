@@ -33,6 +33,22 @@ def production_values() -> dict:
     }
 
 
+def test_managed_vercel_request_logs_can_replace_external_otlp():
+    values = production_values()
+    values.update(
+        secret_provider="vercel",
+        telemetry_backend="vercel_logs",
+        vercel="1",
+        vercel_env="production",
+        vercel_project_id="test-project",
+        otel_exporter_otlp_endpoint=None,
+    )
+    assert Settings(_env_file=None, **values).telemetry_backend == "vercel_logs"
+    values["database_url"] = "sqlite+aiosqlite:///local.db"
+    with pytest.raises(ValidationError, match="DATABASE_URL"):
+        Settings(_env_file=None, **values)
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [

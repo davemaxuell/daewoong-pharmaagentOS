@@ -232,6 +232,13 @@ async function requestApi(path: string, init?: RequestInit): Promise<unknown> {
   });
 
   if (!response.ok) {
+    if (response.status === 400) {
+      console.warn(JSON.stringify({
+        event: "backend_request_rejected",
+        backendHost: new URL(API_BASE_URL).hostname,
+        status: response.status,
+      }));
+    }
     let requestId: string | undefined;
     try {
       const problem = asRecord(await response.json());

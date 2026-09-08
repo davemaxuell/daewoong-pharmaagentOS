@@ -189,6 +189,7 @@ class Settings(BaseSettings):
     # Central telemetry is opt-in locally. Production exports OTLP to the private
     # collector endpoint and does not include prompt/document bodies in spans.
     otel_service_name: str = "pharma-agent-api"
+    telemetry_backend: Literal["otlp", "vercel_logs"] = "otlp"
     otel_exporter_otlp_endpoint: str | None = None
 
     # Environment secrets support local development only; Kubernetes/production
@@ -291,6 +292,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_posture(self) -> Settings:
+        if self.telemetry_backend == "vercel_logs" and not (
+            self.secret_provider == "vercel"
+            and self.vercel == "1"
+            and self.vercel_env in {"production", "preview"}
+            and self.vercel_project_id
+        ):
+            raise ValueError(
+                "TELEMETRY_BACKEND=vercel_logs requires managed Vercel runtime metadata"
+            )
         if self.llm_provider == "openai":
             if not self.openai_api_key:
                 raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
@@ -409,7 +419,7 @@ class Settings(BaseSettings):
                     raise ValueError(f"Production {name} requires exact HTTPS origins")
             if self.oidc_algorithms != ["RS256"]:
                 raise ValueError("Production OIDC_ALGORITHMS must be RS256")
-            if not self.otel_exporter_otlp_endpoint:
+            if self.telemetry_backend == "otlp" and not self.otel_exporter_otlp_endpoint:
                 raise ValueError("OTEL_EXPORTER_OTLP_ENDPOINT is required in production")
             for name, endpoint_value in (
                 ("OIDC_JWKS_URL", self.oidc_jwks_url),
