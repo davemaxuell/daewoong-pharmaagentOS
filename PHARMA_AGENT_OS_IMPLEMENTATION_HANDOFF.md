@@ -25,7 +25,11 @@ operational routes retain their access guards. Production build/TypeScript, lint
 320/390/768/1440px, example prefill without auto-send, advanced controls, keyboard
 focus and draft recovery. No JavaScript errors or horizontal overflow. The design
 detector found only existing rules in legacy global CSS, none in new UI code.
-Evidence: `.artifacts/beginner-ux-20260908/`. Publication verification follows.
+Evidence: `.artifacts/beginner-ux-20260908/`. Revision `81f3e9b` deployed and passed
+GitHub quality/security and all 26 hosted browser checks. A generic Korean example
+returned six sources through the source-only fallback, not an AI explanation.
+The follow-up UX explains that state and keeps long raw excerpts closed until
+requested. Three regression checks bring the passing frontend total to 29.
 
 **2026-09-08 hosted data and AI verified:** Production revision `7956f26` passed
 GitHub quality/security checks. Both public health endpoints return 200; database

@@ -9584,3 +9584,7 @@ body {
 .chat-page .chat-send-button { display: inline-flex; align-items: center; justify-content: center; width: auto; height: auto; min-width: 44px; min-height: 46px; padding: 10px 16px; gap: 8px; border-radius: 8px; font-size: 1rem; white-space: nowrap; }
 .chat-page .chat-composer__controls { flex-wrap: wrap; }
 .chat-page:not(.chat-page--active) .chat-page__conversation { overflow-y: auto; }
+.chat-fallback-guide { padding: 20px 0; line-height: 1.8; }
+.chat-fallback-guide h3 { margin: 0 0 10px; font-size: 1.1875rem; }
+.chat-fallback-guide p { max-width: 72ch; margin: 0 0 16px; color: var(--os-muted); }
+.chat-fallback-guide summary { color: var(--os-primary); cursor: pointer; padding: 10px 0; }

@@ -824,7 +824,7 @@ export function ChatWorkspace({
     metadata: text("Letter metadata lookup", "경고서한 메타데이터 조회"),
     letter: text("Current-letter evidence", "현재 경고서한 근거 검색"),
     multi_letter: text("Selected-letter comparison", "선택 경고서한 비교 검색"),
-    corpus: text("Authorized corpus search", "승인 코퍼스 검색"),
+    corpus: text("FDA source search", "FDA 자료 검색"),
   })[strategy];
 
   const streamPhaseLabel = (phase?: RagStreamPhase) => ({
@@ -1109,7 +1109,7 @@ export function ChatWorkspace({
         )));
         setSourcesOpen((current) => ({
           ...current,
-          [turnId]: Boolean(verifiedAnswer.citations.length),
+          [turnId]: verifiedAnswer.generationUsed && Boolean(verifiedAnswer.citations.length),
         }));
         const returnedThreadId = verifiedAnswer.threadId;
         if (returnedThreadId) {
@@ -1527,8 +1527,8 @@ export function ChatWorkspace({
                               "모델 응답 사용 불가 · 문서 검색 안 함",
                             )
                           : text(
-                              "Source-only fallback · AI output not used",
-                              "근거 기반 대체 응답 · AI 출력 미사용",
+                              "Source excerpts · AI explanation unavailable",
+                              "원문 발췌 · AI 설명 미완료",
                             )
                         : text("No model used", "규칙 기반 응답 · 모델 미사용")}
                     </span>
@@ -1555,11 +1555,20 @@ export function ChatWorkspace({
                     )}
                   </div>
 
-                  <MarkdownCitationText
+                  {!turn.answer.generationUsed && turn.answer.attemptedModelId && turn.answer.citations.length > 0 ? (
+                    <div className="chat-fallback-guide" role="status">
+                      <h3>{text("We found sources, but could not finish the AI explanation.", "자료는 찾았지만 AI 설명을 완성하지 못했어요.")}</h3>
+                      <p>{text("You can retry below, or open a source and ask about that letter. The original excerpts are available if you want to read them yourself.", "아래에서 다시 답변을 요청하거나, 출처의 경고서한을 열어 해당 문서에 대해 질문해보세요. 직접 읽어볼 수 있도록 원문 발췌도 보관했습니다.")}</p>
+                      <details>
+                        <summary>{text("Read the original source excerpts", "원문 발췌 읽기")}</summary>
+                        <MarkdownCitationText text={turn.answer.answer} citations={turn.answer.citations} onSelect={(index) => selectCitation(turn.id, index)} />
+                      </details>
+                    </div>
+                  ) : <MarkdownCitationText
                     text={turn.answer.answer}
                     citations={turn.answer.citations}
                     onSelect={(index) => selectCitation(turn.id, index)}
-                  />
+                  />}
 
                   {turn.answer.retrievalStrategy !== "none"
                   && turn.answer.evidenceSufficiency !== "sufficient" ? (
