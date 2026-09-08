@@ -1383,8 +1383,8 @@ export function ChatWorkspace({
               initialLetterId ? "이 경고서한을 함께 살펴볼까요?" : "어떤 내용이 궁금하신가요?",
             )}</h2>
             <p>{text(
-              initialLetterId ? "A summary question is ready below. Edit it or send it to begin." : "Write a question below, or choose an example and make it your own. No AI settings needed.",
-              initialLetterId ? "아래에 요약 질문을 준비했어요. 내용을 바꾸거나 바로 보내세요." : "아래에 질문을 적거나 예시를 골라 바꿔보세요. AI 설정은 필요하지 않습니다.",
+              initialLetterId ? "Edit the prepared question, then send." : "Write a question or choose an example.",
+              initialLetterId ? "준비된 질문을 확인하고 보내세요." : "질문을 적거나 예시를 선택하세요.",
             )}</p>
             <div className="chat-suggestions">
               {!initialLetterId && beginnerPrompts.map((prompt) => (
@@ -1558,7 +1558,7 @@ export function ChatWorkspace({
                   {!turn.answer.generationUsed && turn.answer.attemptedModelId && turn.answer.citations.length > 0 ? (
                     <div className="chat-fallback-guide" role="status">
                       <h3>{text("We found sources, but could not finish the AI explanation.", "자료는 찾았지만 AI 설명을 완성하지 못했어요.")}</h3>
-                      <p>{text("You can retry below, or open a source and ask about that letter. The original excerpts are available if you want to read them yourself.", "아래에서 다시 답변을 요청하거나, 출처의 경고서한을 열어 해당 문서에 대해 질문해보세요. 직접 읽어볼 수 있도록 원문 발췌도 보관했습니다.")}</p>
+                      <p>{text("Retry the answer or open a source below.", "답변을 다시 요청하거나 아래 원문을 확인하세요.")}</p>
                       <details>
                         <summary>{text("Read the original source excerpts", "원문 발췌 읽기")}</summary>
                         <MarkdownCitationText text={turn.answer.answer} citations={turn.answer.citations} onSelect={(index) => selectCitation(turn.id, index)} />
@@ -1921,8 +1921,8 @@ export function ChatWorkspace({
         </div>
         <p className="chat-composer-note">
           {text(
-            "AI can make mistakes. Confirm critical details in the cited FDA source. Enter to send · Shift + Enter for a new line.",
-            "AI 답변에는 오류가 있을 수 있습니다. 중요 정보는 인용된 FDA 원문에서 확인하세요. Enter 전송 · Shift + Enter 줄바꿈.",
+            "Check AI answers against FDA sources. Enter to send · Shift + Enter for a new line.",
+            "AI 답변은 FDA 원문과 대조하세요. Enter 전송 · Shift + Enter 줄바꿈.",
           )}
         </p>
       </div>

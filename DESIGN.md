@@ -45,7 +45,9 @@ Use monospace only for hashes, identifiers, and machine-readable values.
 
 A 280px navigation rail, 76px contextual header, and a bounded content canvas.
 The home has one primary research entry, three quick-chat example rows and a short
-explanation of goal setting, agent work and brief review. Personal review drafts remain at
+visual sequence: You set the goal → Research agent finds and checks → You review
+the brief. Use the shared journey on Home and Help, and its compact variant above
+the research goal field. Personal review drafts remain at
 `/requests`; legacy saved-request bookmarks redirect there. Everyday navigation
 has six destinations. Specialist tools, drafts and operational tools
 expand in a separate section, automatically open on their active routes.
@@ -70,6 +72,12 @@ the checked draft and copy/download controls. State clearly that tasks are saved
 on the service and accessed through the same browser session. Completed briefs
 remain drafts for human review. Keep the two-column activity/evidence view readable
 as a single column on narrow screens.
+
+Prefer short verb labels and labeled icons to repeated instructional paragraphs.
+Show the latest four recorded actions first, with an explicit full-history toggle.
+Plans, scope/storage details and review notes expand on demand with native keyboard
+controls. Keep source scope and human-review status visible. Never shorten the
+generated findings, source excerpts or exported brief to reduce interface copy.
 
 Chat has a labeled question field and a text send button. Model and retrieval
 controls expand on demand, with automatic defaults. Example IDs prefill questions

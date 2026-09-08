@@ -1,6 +1,6 @@
 # PharmaAgent OS implementation handoff
 
-**Handoff date:** 2026-09-08
+**Handoff date:** 2026-09-09
 
 **Next engineer:** Start with [the transfer brief](NEXT_ENGINEER_HANDOFF.md) for
 the publication state, production blockers, verification and ordered
@@ -9,6 +9,14 @@ next steps. This file remains the authoritative implementation record.
 **Authoritative workspace:** `C:\Users\user\Desktop\PharmaAgentOS`  
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
+
+**2026-09-09 visual simplification:** Home and Help use a shared three-step visual
+journey, short task rows and expandable scope/storage notes. Research has a compact
+journey, stage/action icons, the latest four actions with full-history disclosure,
+and collapsed plans/review notes. Chat and sidebar introductory copy is shorter.
+Generated findings, citations, questions, exports and all runtime behavior remain
+intact. See [visual UX evidence](docs/assurance/visual-ux-20260909.md) for verification
+and current publication status. Preserve the user's root package files and `supabase/`.
 
 **2026-09-08 FDA Research Agent:** A bounded goal-driven research workflow is
 deployed at `/research`. OpenAI chooses native plan/search/read/submit tools;

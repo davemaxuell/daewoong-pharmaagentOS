@@ -1,8 +1,14 @@
 # PharmaAgent OS — next engineer handoff
 
-Prepared: **2026-09-08**
+Prepared: **2026-09-09**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **FDA library, grounded OpenAI chat and durable FDA Research Agent hosted; full internal case-agent qualification incomplete**
+
+**Visual simplification (2026-09-09):** Home/Help now explain the workflow with three
+labeled steps; research uses compact stage/action icons and expandable plans,
+full activity history and review notes. Repeated explanatory paragraphs are shorter,
+while findings, sources and exports remain complete. See
+[visual UX evidence](docs/assurance/visual-ux-20260909.md) for checks and publication.
 
 **FDA Research Agent (2026-09-08):** `/research` now implements goal-driven native
 OpenAI tools, source/evidence checking, Supabase task/event persistence and visible

@@ -397,8 +397,8 @@ export function PortalShell({
             <div className="portal-service-guide__panel">
               <strong>PharmaAgent OS</strong>
               <p>{text(
-                "Ask about FDA findings. AI searches the saved sources and explains the evidence. Your team makes the final decision.",
-                "FDA 지적 사항에 대해 질문하세요. AI가 저장된 자료를 찾아 근거와 함께 설명합니다. 최종 판단은 담당자가 합니다.",
+                "Your goal → Agent research → Your review. Saved FDA sources; final decisions stay with your team.",
+                "목표 입력 → 에이전트 조사 → 담당자 검토. 저장된 FDA 자료를 사용하며 최종 판단은 담당자가 합니다.",
               )}</p>
             </div>
           </details>

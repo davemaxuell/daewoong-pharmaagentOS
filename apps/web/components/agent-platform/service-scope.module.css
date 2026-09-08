@@ -1,0 +1,13 @@
+.scope { margin: 20px 0; color: var(--os-muted); font-size: .875rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 12px 24px; list-style: none; padding: 0; margin: 0; }
+.facts li { display: inline-flex; align-items: center; gap: 8px; line-height: 1.6; }
+.facts svg { flex-shrink: 0; }
+.details { margin-top: 6px; }
+.details summary { display: flex; gap: 7px; align-items: center; width: fit-content; min-height: 44px; color: var(--os-primary); cursor: pointer; list-style: none; }
+.details summary::-webkit-details-marker { display: none; }
+.details[open] summary > svg:last-child { transform: rotate(180deg); }
+.details dl { margin: 4px 0 0; padding: 0; max-width: 76ch; border-top: 1px solid var(--os-rule); }
+.details dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--os-rule); line-height: 1.75; }
+.details dt { color: var(--os-ink); font-weight: 600; }
+.details dd { margin: 0; }
+@media (max-width: 600px) { .details dl > div { grid-template-columns: 1fr; gap: 4px; } }
