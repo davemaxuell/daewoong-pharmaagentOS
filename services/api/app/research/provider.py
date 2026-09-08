@@ -143,8 +143,12 @@ claims of exhaustive coverage, claims about Daewoong's compliance, or regulated 
 Review questions must be questions for human consideration, not orders to alter controlled
 processes. Check that user-facing prose uses the requested language. Return supported=true
 only if ALL findings pass. This is an AI evidence check, not a regulatory approval.
-Give concise actionable issues; do not include private reasoning.""",
-                "input": json.dumps({"language": language, "brief": brief, "evidence": evidence}),
+Return at most four concise issues in the requested language, each naming the finding and
+the precise correction needed. Do not invent claims that are not in the draft. Do not
+include private reasoning, self-commentary or references outside the supplied sources.""",
+                "input": json.dumps(
+                    {"language": language, "brief": brief, "evidence": evidence}, ensure_ascii=False
+                ),
                 "max_output_tokens": 1_500,
                 "text": {
                     "format": {

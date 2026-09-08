@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -70,7 +70,7 @@ class NoEvidence(Strict):
 
 class EvidenceCheck(Strict):
     supported: bool
-    issues: list[str] = Field(max_length=8)
+    issues: list[Annotated[str, Field(min_length=1, max_length=500)]] = Field(max_length=8)
 
 
 TOOL_MODELS = {

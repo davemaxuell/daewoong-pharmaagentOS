@@ -85,3 +85,35 @@ async def test_incomplete_response_cannot_be_used_as_a_tool_action(settings):
     )
     with pytest.raises(AiGenerationError):
         await model.propose([], 5)
+
+
+@pytest.mark.asyncio
+async def test_evidence_check_receives_readable_korean_and_bounds_feedback(settings):
+    from pydantic import SecretStr
+
+    settings.openai_api_key = SecretStr("fixture-key")
+
+    def transport(request):
+        body = json.loads(request.content)
+        assert "세척 밸리데이션" in body["input"]
+        assert "\\u" not in body["input"]
+        assert body["text"]["format"]["schema"]["properties"]["issues"]["items"]["maxLength"] == 500
+        return httpx.Response(
+            200,
+            json={
+                "status": "completed",
+                "usage": {"total_tokens": 100},
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {"type": "output_text", "text": '{"supported":true,"issues":[]}'}
+                        ],
+                    }
+                ],
+            },
+        )
+
+    model = OpenAIResearchModel(settings, transport=httpx.MockTransport(transport))
+    checked, tokens = await model.verify({"title": "세척 밸리데이션"}, [], "ko")
+    assert checked.supported and tokens == 100
