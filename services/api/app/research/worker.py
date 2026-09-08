@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import re
 from datetime import timedelta
 
 from pydantic import ValidationError
@@ -139,6 +140,11 @@ async def execute_tool(database, model, run, state, proposal):
     if name == "plan_research":
         if state.get("plan"):
             return {"error": "plan_already_saved"}, None
+        if run.language == "ko" and any(not re.search(r"[가-힣]", step) for step in args.steps):
+            return {
+                "error": "plan_language_mismatch",
+                "instruction": "Call plan_research again with every action step written in Korean.",
+            }, None
         state["plan"] = args.steps
         await event(database, run, "plan_saved", stage="planning", data={"steps": args.steps})
         return {"saved": True, "next": "Search the saved sources."}, None

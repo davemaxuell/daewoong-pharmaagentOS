@@ -11,7 +11,7 @@ from app.models import DocumentChunk, ResearchRun, utcnow
 from app.research.provider import ToolProposal
 from app.research.schemas import MAX_MODEL_CALLS, EvidenceCheck
 from app.research.tools import evidence_is_current, read_sources, search_sources
-from app.research.worker import LeaseLost, claim, mutate, run_research_slice
+from app.research.worker import LeaseLost, claim, execute_tool, mutate, run_research_slice
 
 
 def proposal(name, args):
@@ -55,8 +55,14 @@ class ScriptedModel:
             if item.get("type") == "function_call_output"
         ]
         if not outputs:
+            korean = json.loads(conversation[0]["content"]).get("language") == "ko"
             return proposal(
-                "plan_research", {"steps": ["Search FDA passages", "Read and cite findings"]}
+                "plan_research",
+                {
+                    "steps": ["FDA 근거 검색", "원문 확인과 근거 인용"]
+                    if korean
+                    else ["Search FDA passages", "Read and cite findings"]
+                },
             )
         if len(outputs) == 1:
             return proposal("search_sources", {"query": "validation"})
@@ -120,6 +126,28 @@ def test_disabled_model_blocks_resume_but_allows_stop(research, monkeypatch):
     assert client.post(path + "/stop", headers=headers).status_code == 200
     assert client.post(path + "/resume", headers=headers).status_code == 503
     assert client.get(path, headers=headers).json()["status"] == "stopped"
+
+
+def test_korean_plan_is_checked_before_it_is_displayed(research):
+    client, headers, database = research
+    run, _ = create(research, language="ko")
+
+    async def check():
+        claimed = await claim(database)
+        state = {}
+        result, terminal = await execute_tool(
+            database,
+            ScriptedModel(),
+            claimed,
+            state,
+            proposal("plan_research", {"steps": ["Search FDA sources", "Review source evidence"]}),
+        )
+        assert result["error"] == "plan_language_mismatch" and terminal is None
+        assert "plan" not in state
+
+    client.portal.call(check)
+    visible = client.get(f"/api/v1/research/runs/{run['id']}", headers=headers).json()
+    assert "plan_saved" not in [event["kind"] for event in visible["events"]]
 
 
 def get(research, run_id, after=0):
