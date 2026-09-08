@@ -56,15 +56,35 @@ Vercel's private API hostname was observed in request logs and explicitly admitt
 `api.5152766237785039716d674a6c30346545716449486431477a686538.services.vercel-infra.com`.
 Private letter-list, chat-list and saved-view requests returned 200. The library
 page's earlier 3.5-second timeout expired before a successful 6.5-second hosted
-response; the general read deadline is now 15 seconds. The final browser rerun
-follows deployment of that timeout fix.
+response; the general read deadline is now 15 seconds.
+
+Final hosted verification on revision `7956f26` passed:
+
+- The live library displayed 440 active drug letters and opened the Safrel letter
+  with its original text and findings. The other four in-scope records are already
+  marked `retired_illustrative_fixture` in the source and remain excluded.
+- The browser submitted a Korean question scoped to that letter. The stored
+  assistant response completed with 838 characters and six citations; metadata
+  confirmed OpenAI `gpt-5-mini`, `generation_used=true`, and no model fallback.
+  The rendered answer and source panel were captured. This created verification
+  chat records under isolated anonymous browser sessions after the baseline copy.
+- GitHub quality and code-security workflows passed for the final code revision.
+- `/health/live` and `/health/ready` returned 200; readiness confirmed both database
+  and object-store access. A separate local ASGI read check also returned 200 for
+  letter listing and detail using the real target runtime account.
+
+The home review-request form still saves local drafts. Copying this dataset does
+not implement the unfinished specialist execution adapters or enable scheduled
+FDA ingestion, automatic notification delivery, or full case-agent execution.
 
 ## Evidence and handling
 
 Ignored evidence under `.artifacts/database-import-20260908/` includes the database
 copy counts, per-file hashes, runtime-account verification, boundary results and
 Vercel provisioning results. The raw dump and cached source files remain local.
-Temporary credential files must be removed after completing hosted verification.
+Temporary credential files were removed after hosted verification. An exact-value
+scan found no copied API key, runtime password or database URL in tracked or
+unignored files. Credentials remain in the approved hosted secret stores.
 
 References: [Vercel runtime logs](https://vercel.com/docs/logs/runtime),
 [structured application logging](https://vercel.com/kb/guide/add-structured-application-logs-to-vercel-functions).

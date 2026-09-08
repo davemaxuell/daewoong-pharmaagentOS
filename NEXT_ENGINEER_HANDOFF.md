@@ -2,14 +2,21 @@
 
 Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
-Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
+Current status: **frontend, FDA library and grounded OpenAI chat hosted; full case-agent execution and production qualification incomplete**
+
+**Hosted data verified (2026-09-08):** Revision `7956f26` and its GitHub quality/security
+checks passed. Production readiness is healthy; the library displays 440 active
+drug letters. Letter detail and a saved Korean OpenAI answer with six citations
+were verified through the browser. The target is `wdaflyddglimtijvgazl`, with
+private `pharma-evidence` Storage. Temporary credentials were removed. The workspace
+Supabase CLI link now points to that target. See the copy evidence below.
 
 **Dataset copy approved and completed (2026-09-08):** The owner selected copying
 into `wdaflyddglimtijvgazl`. All 21 source application tables and 444 private raw
 files are copied and verified; all 57 current tables and runtime roles are present.
 Production Vercel database/Storage settings are provisioned. See
 [copy evidence](docs/assurance/dataset-copy-20260908.md). This supersedes the pending
-destination and empty-target notes below. Hosted verification follows deployment.
+destination and empty-target notes below. Hosted verification is complete as recorded above.
 
 **Dataset located (2026-09-08):** `data.sql` contains 884 letters, including 444
 in-scope drug letters, and 4,298 searchable passages. Live counts match the now-linked

@@ -10,6 +10,17 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 hosted data and AI verified:** Production revision `7956f26` passed
+GitHub quality/security checks. Both public health endpoints return 200; database
+and Storage checks are healthy. A live browser displayed 440 active drug letters,
+opened the source detail and completed a Korean OpenAI answer with six citations.
+Four additional drug-scope rows are retired illustrative fixtures and stay hidden.
+The explicit private Vercel API hostname is admitted, and general backend reads
+now allow 15 seconds instead of 3.5 seconds. Temporary provisioning credentials
+were removed; the copied data and original source export remain preserved.
+This supersedes earlier missing-database notices. Full specialist execution,
+scheduled ingestion and the home page's local-draft workflow remain separate work.
+
 **2026-09-08 dataset copy completed:** The owner approved destination
 `wdaflyddglimtijvgazl`. All source application records were copied transactionally;
 884 letters and 4,298 chunks match the dump. All 444 raw source files passed
@@ -18,7 +29,7 @@ tables, the full migration sequence, RLS boundary and separate runtime logins.
 Production Vercel credentials/settings are provisioned. An explicit managed
 Vercel request-logging mode supports this hosting configuration without a dummy
 OTLP endpoint. See [copy evidence](docs/assurance/dataset-copy-20260908.md).
-Hosted end-to-end verification remains the next step for this revision.
+Hosted end-to-end verification is complete as recorded above.
 
 **2026-09-08 populated dataset located:** The owner supplied `data.sql`, a data-only
 export with 884 letters (444 in-scope drug letters), 4,298 passages and 444 Storage
