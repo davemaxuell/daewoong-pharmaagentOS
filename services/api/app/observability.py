@@ -28,9 +28,9 @@ class VercelRequestLogMiddleware:
             nonlocal status, completed
             if message["type"] == "http.response.start":
                 status = message["status"]
+            await send(message)
             if message["type"] == "http.response.body" and not message.get("more_body", False):
                 completed = True
-            await send(message)
 
         try:
             await self.app(scope, receive, observe)

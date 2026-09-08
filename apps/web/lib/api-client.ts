@@ -216,7 +216,8 @@ async function requestApi(path: string, init?: RequestInit): Promise<unknown> {
       ? 50_000
       : path.includes("/ai-artifacts/")
         ? 360_000
-        : 3_500,
+        // Hosted cold starts and managed-database connections can exceed 3.5 seconds.
+        : 15_000,
   );
   const signal = init?.signal
     ? AbortSignal.any([init.signal, timeoutSignal])
@@ -232,13 +233,6 @@ async function requestApi(path: string, init?: RequestInit): Promise<unknown> {
   });
 
   if (!response.ok) {
-    if (response.status === 400) {
-      console.warn(JSON.stringify({
-        event: "backend_request_rejected",
-        backendHost: new URL(API_BASE_URL).hostname,
-        status: response.status,
-      }));
-    }
     let requestId: string | undefined;
     try {
       const problem = asRecord(await response.json());

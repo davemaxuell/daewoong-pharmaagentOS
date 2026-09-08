@@ -48,8 +48,16 @@ strings and exception contents. Default OTLP behavior and non-Vercel production
 requirements remain intact. This provides platform request logging, not a claim
 of separately configured OTLP tracing or long-term audit retention.
 
-Configuration/observability/deployment tests: 41 passed. Ruff passed. Hosted
-website checks are the next verification step after deploying this revision.
+Configuration/observability/deployment tests: 41 passed. Ruff and frontend lint
+passed. GitHub quality/security workflows passed for application revision `5f10d96`.
+
+Hosted readiness now returns HTTP 200 with both database and object store `ok`.
+Vercel's private API hostname was observed in request logs and explicitly admitted:
+`api.5152766237785039716d674a6c30346545716449486431477a686538.services.vercel-infra.com`.
+Private letter-list, chat-list and saved-view requests returned 200. The library
+page's earlier 3.5-second timeout expired before a successful 6.5-second hosted
+response; the general read deadline is now 15 seconds. The final browser rerun
+follows deployment of that timeout fix.
 
 ## Evidence and handling
 
