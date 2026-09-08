@@ -44,23 +44,38 @@ statistical latency guarantee.
 
 | Route | Before (seconds) | After (seconds) |
 | --- | ---: | ---: |
-| Home | 4.116 | 3.479 |
-| New AI chat | 23.986 | 2.433 |
-| FDA library | 23.535 | 2.818 |
-| Letter detail | 10.645 | 8.667 |
-| Trends | 22.875 | 1.777 |
-| Saved sources | 22.976 | 0.902 |
-| Control tower | 13.310 | 1.214 |
+| Home | 4.116 | 3.644 |
+| New AI chat | 23.986 | 2.592 |
+| FDA library | 23.535 | 1.661 |
+| Letter detail | 10.645 | 2.336 |
+| Help | 4.000 | 0.967 |
+| Trends | 22.875 | 0.845 |
+| Saved sources | 22.976 | 0.748 |
+| Review drafts | 3.853 | 0.757 |
+| Specialists | 3.897 | 0.704 |
+| Cases | 3.859 | 0.710 |
+| Approvals | 4.380 | 0.966 |
+| Evaluations | 3.895 | 0.809 |
+| Control tower | 13.310 | 0.735 |
 
-Repeated navigation at the end of the same run: Home 3.855 → 0.458 seconds;
-chat 24.495 → 1.267 seconds; library 24.576 → 1.153 seconds. First Home navigation
-occurred immediately after deployment and includes initial runtime/browser costs.
+Repeated navigation at the end of the same run: Home 3.855 → 0.600 seconds;
+chat 24.495 → 0.711 seconds; library 24.576 → 0.848 seconds. First Home navigation
+occurred immediately after deployment with a fresh browser context; it includes
+initial browser/asset loading and may include runtime cold-start costs. All 16
+navigations returned 200 with no browser JavaScript errors.
 
-These initial results are for `d7a08a6`, deployment
-`dpl_HESwkALUCxPETqAiMvLVDua9TL72`. Vercel reports the API and web functions in
+Final results are for application revision `489214b`, deployment
+`dpl_AsEM9y81Ac7xVmcd4Y2x9H1c4ZEJ`. Vercel reports the API and web functions in
 `syd1`; production response headers changed from `iad1` to `syd1`. All GitHub
-quality/security jobs passed: [run 34229848288](https://github.com/davemaxuell/daewoong-pharmaagentOS/actions/runs/34229848288).
-The subsequent detail-read optimization will be measured after publication.
+quality/security jobs passed: [run 34230400069](https://github.com/davemaxuell/daewoong-pharmaagentOS/actions/runs/34230400069).
+CodeQL also passed: [run 34230400072](https://github.com/davemaxuell/daewoong-pharmaagentOS/actions/runs/34230400072).
+The backend suite passed 535 tests with seven environment-gated skips; separate
+PostgreSQL jobs passed the five schema and two RLS tests. Temporal recovery,
+container scans, secret scan, frontend, contracts and deployment rendering passed.
+
+The first performance release, `d7a08a6`, also passed CI and all 26 hosted beginner
+UX checks. Its detail load was 8.667 seconds; eliminating duplicate detail/version
+reads reduced that to the final 2.336-second observation.
 
 Hosted functional smoke: 440 visible letters, working detail, a real AI answer
 (no source-only fallback) with six citations in 14.552 seconds, history persistence
@@ -69,3 +84,11 @@ private/no-store. Database and object storage readiness passed. No browser error
 
 Raw timings and browser evidence remain in ignored `.artifacts/performance-20260908/`;
 no session cookies or secrets are included in the committed report.
+
+## Limits
+
+These changes reduce page and database-read latency. The observed AI answer time
+is a separate functional check, not a before/after generation benchmark. Model
+latency, cold starts, network conditions and larger future corpora remain variable.
+No repeated benchmarking or broader architectural changes are needed to qualify
+this bounded loading optimization; revisit catalog pagination if the corpus grows.

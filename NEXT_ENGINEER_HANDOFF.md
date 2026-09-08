@@ -4,6 +4,18 @@ Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **frontend, FDA library and grounded OpenAI chat hosted; full case-agent execution and production qualification incomplete**
 
+**Loading optimized (2026-09-08):** Application revision `489214b` is deployed and
+passed all GitHub quality/security checks. Web/API functions now execute beside
+the Sydney database. Sidebar reads run after rendering; the letter catalog uses
+one bounded request for 440 records; duplicate detail/version reads are removed.
+Measured initial chat/library/detail loads improved 24.0/23.5/10.6 seconds to
+2.6/1.7/2.3 seconds. Repeat Home/chat/library visits were under one second. All
+38 frontend tests and 26 hosted beginner UX checks passed; real cited AI, history
+persistence and browser-session isolation were verified. See
+[performance evidence](docs/assurance/performance-20260908.md), including cold-load
+limits and complete timings. Preserve the user's untracked root package files and
+`supabase/`, along with ignored data and artifacts.
+
 **Beginner UX deployed (2026-09-08):** Application revision `d25d5cb` leads from Home
 to live AI questions with editable examples and optional settings. Drafts remain
 at `/requests` with their existing storage. The guide reflects current data/AI

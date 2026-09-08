@@ -21,11 +21,13 @@ Sydney alongside the database. Local build, lint, 38 frontend tests, 55 focused
 API checks, two OpenAPI checks and contract validation passed.
 A delayed-sidebar browser check rendered Home in 688 ms while the sidebar remained
 pending for three seconds; loading, failure/retry and history hydration passed.
-Revision `d7a08a6` passed all GitHub quality/security checks and hosted smoke: 440
+Final application revision `489214b` passed all GitHub quality/security checks.
+The preceding performance release passed hosted smoke: 440
 letters, a real AI answer with six citations, saved history after reload, session
-isolation and healthy database/storage. Initial repeat navigation improved Home
-3.855 → 0.458 s, chat 24.495 → 1.267 s and library 24.576 → 1.153 s. The detail-read
-follow-up awaits final hosted measurement. Before/after evidence is recorded in
+isolation and healthy database/storage. Final repeat navigation improved Home
+3.855 → 0.600 s, chat 24.495 → 0.711 s and library 24.576 → 0.848 s. Letter detail
+improved 10.645 → 2.336 s. All 16 final hosted navigations returned 200 without
+browser errors. Before/after evidence is recorded in
 [performance evidence](docs/assurance/performance-20260908.md).
 
 **2026-09-08 beginner AI experience:** Home now leads to the working AI through
