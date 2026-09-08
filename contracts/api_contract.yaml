@@ -2629,7 +2629,7 @@ components:
         scope_rule_version: { type: string }
         taxonomy_version: { type: string }
         chunker_version: { type: string }
-        ai_provider: { enum: [none, gemini] }
+        ai_provider: { enum: [none, gemini, openai] }
         ai_model_id: { type: string }
         ai_prompt_version: { type: string }
         ai_configured: { type: boolean }

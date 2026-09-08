@@ -73,7 +73,8 @@ async def runtime_configuration(
         ai_provider=settings.llm_provider,
         ai_model_id=settings.llm_model_id,
         ai_prompt_version=settings.llm_prompt_version,
-        ai_configured=settings.llm_provider == "gemini" and bool(settings.gemini_api_key),
+        ai_configured=(settings.llm_provider == "gemini" and bool(settings.gemini_api_key))
+        or (settings.llm_provider == "openai" and bool(settings.openai_api_key)),
         embedding_enabled=settings.embedding_enabled and bool(settings.gemini_api_key),
         embedding_provider=GEMINI_EMBEDDING_PROVIDER,
         embedding_model_id=settings.embedding_model_id,
@@ -305,9 +306,7 @@ async def reprocess_letter(
         letter = await session.get(WarningLetter, str(UUID(normalized_identifier)))
     except ValueError:
         letter = await session.scalar(
-            select(WarningLetter).where(
-                WarningLetter.marcs_cms_number == normalized_identifier
-            )
+            select(WarningLetter).where(WarningLetter.marcs_cms_number == normalized_identifier)
         )
     if not letter:
         raise HTTPException(status_code=404, detail="Warning letter not found")

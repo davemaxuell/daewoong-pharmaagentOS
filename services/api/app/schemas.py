@@ -501,7 +501,7 @@ class RuntimeConfigurationResponse(StrictModel):
     scope_rule_version: str
     taxonomy_version: str
     chunker_version: str
-    ai_provider: Literal["none", "gemini"]
+    ai_provider: Literal["none", "gemini", "openai"]
     ai_model_id: str
     ai_prompt_version: str
     ai_configured: bool

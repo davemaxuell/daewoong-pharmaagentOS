@@ -123,7 +123,8 @@ class Settings(BaseSettings):
     # AI generation is opt-in. The API key is loaded only from the server-side
     # environment/.env file and is represented as SecretStr to prevent accidental
     # disclosure through settings repr/logging.
-    llm_provider: Literal["none", "gemini"] = "none"
+    llm_provider: Literal["none", "gemini", "openai"] = "none"
+    openai_api_key: SecretStr | None = None
     llm_model_id: str = "gemini-3.1-flash-lite"
     # Chat clients select a profile, never an arbitrary provider model ID. Auto routing maps
     # each request to one of these server-controlled allowlist entries.
@@ -290,6 +291,25 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_posture(self) -> Settings:
+        if self.llm_provider == "openai":
+            if not self.openai_api_key:
+                raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
+            for field in (
+                "llm_model_id",
+                "chat_fast_model_id",
+                "chat_balanced_model_id",
+                "chat_deep_model_id",
+                "document_ai_model_id",
+                "document_translation_model_id",
+            ):
+                if field not in self.model_fields_set:
+                    setattr(self, field, "gpt-5-mini")
+            for field in (
+                "document_ai_fallback_model_ids",
+                "document_translation_fallback_model_ids",
+            ):
+                if field not in self.model_fields_set:
+                    setattr(self, field, [])
         if self.object_store_backend == "s3":
             required_s3_values = {
                 "OBJECT_STORE_S3_ENDPOINT": self.object_store_s3_endpoint,

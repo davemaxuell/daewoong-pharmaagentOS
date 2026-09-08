@@ -10,6 +10,16 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 OpenAI activation:** Added a server-only Responses provider with
+shared citation/language checks, structured analysis and Korean translation.
+The supplied key passed real adapter calls using synthetic evidence. Production
+and Preview now hold `OPENAI_API_KEY` as a Vercel Secret and select `gpt-5-mini`
+for generation, with empty document fallback lists. Embeddings remain disabled.
+The temporary key file was removed; no repository secret matches were found.
+See [activation evidence](docs/assurance/openai-activation-20260908.md) for test
+scope. Database, storage, corpus and full agent-workflow activation remain pending;
+the home request form still saves local drafts.
+
 **2026-09-08 employee usability redesign:** Replaced the workflow-first home with
 a guided review request: select one of three plain-language tasks, write an
 editable question using an optional example, add an optional FDA HTTPS link,

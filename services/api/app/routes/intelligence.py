@@ -31,8 +31,8 @@ from app.ai import (
     ConversationTurn,
     DocumentAiGenerator,
     DocumentSourceSection,
-    GeminiGenerator,
     GroundedPassage,
+    ValidatedChatGenerator,
     build_document_ai_generator,
     protected_token_multiset,
 )
@@ -1710,7 +1710,7 @@ def _chat_generator_candidates(
 ) -> list[AiGenerator]:
     if generator is None:
         return []
-    if not isinstance(generator, GeminiGenerator):
+    if not isinstance(generator, ValidatedChatGenerator):
         return [generator]
 
     fallback_profiles: dict[str, tuple[Literal["fast", "balanced", "deep"], ...]] = {

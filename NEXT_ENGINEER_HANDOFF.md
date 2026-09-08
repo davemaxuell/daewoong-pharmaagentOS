@@ -4,6 +4,13 @@ Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **source pushed; frontend hosted; backend setup and production qualification incomplete**
 
+**OpenAI update (2026-09-08):** The server now supports OpenAI Responses, and
+Production/Preview have a Secret key and `gpt-5-mini` generation settings. Real
+adapter checks passed chat, scope classification, Korean translation and document
+analysis using synthetic evidence. See [activation evidence](docs/assurance/openai-activation-20260908.md).
+This does not resolve the missing database/storage/corpus setup or activate the
+home page's full agent workflow. Keep the key out of browser code and source.
+
 **Employee UX update (2026-09-08):** Home now guides staff through choosing a task,
 writing a question, and saving/downloading a review request. Multiple browser
 drafts, legacy migration, readable export, unsaved-work protection, plain-language
