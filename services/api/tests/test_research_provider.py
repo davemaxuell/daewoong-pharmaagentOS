@@ -106,6 +106,8 @@ async def test_evidence_check_receives_readable_korean_and_bounds_feedback(setti
                 "output": [
                     {
                         "type": "message",
+                        "role": "assistant",
+                        "status": "completed",
                         "content": [
                             {"type": "output_text", "text": '{"supported":true,"issues":[]}'}
                         ],
