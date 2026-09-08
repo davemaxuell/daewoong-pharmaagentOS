@@ -285,14 +285,14 @@ export function AgentHome({
           </p>
           <h1>
             {text(
-              "What would you like to review?",
-              "어떤 검토를 도와드릴까요?",
+              "My review drafts",
+              "내 검토 초안",
             )}
           </h1>
           <p>
             {text(
-              "Prepare a review of FDA findings, one question at a time.",
-              "FDA 지적 사항부터 우리 업무 영향까지, 검토할 질문을 정리해보세요.",
+              "Prepare notes for a colleague or continue a request saved in this browser.",
+              "담당자에게 전달할 내용을 정리하거나 이 브라우저에 저장한 요청을 이어서 작성하세요.",
             )}
           </p>
         </div>
@@ -307,19 +307,19 @@ export function AgentHome({
         <div>
           <strong>
             {text(
-              "Request drafts are available",
-              "지금은 검토 요청을 준비할 수 있어요",
+              "Want an AI answer now?",
+              "AI 답변이 필요하신가요?",
             )}
           </strong>
           <p>
             {text(
-              "Save and download your request now. Automated analysis and company-wide sharing are not available yet.",
-              "요청을 작성하고 저장·다운로드할 수 있습니다. 자동 분석과 사내 공유 기능은 아직 준비 중입니다.",
+              "Use Ask the AI for FDA evidence answers. This page keeps local notes; saving here does not send a question to the AI.",
+              "‘AI에게 질문하기’에서 FDA 근거 기반 답변을 받을 수 있습니다. 이 화면은 개인 초안 보관용이며, 저장해도 AI에게 질문이 전송되지 않습니다.",
             )}
           </p>
         </div>
-        <Link href="/help#availability">
-          {text("What’s available", "이용 가능 기능")}
+        <Link href="/ask">
+          {text("Ask the AI", "AI에게 질문하기")}
           <ArrowRight size={16} />
         </Link>
       </div>

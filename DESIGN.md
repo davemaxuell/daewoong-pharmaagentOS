@@ -20,9 +20,9 @@ spacing:
 
 ## Overview
 
-An employee-facing review assistant. The main path is choosing a task, writing a
-question, and saving a request. The agent workflow explains how that request will
-be handled; it is secondary to the employee's task. Keep the navy/light/cobalt
+An employee-facing review assistant. The main path is asking a question, reading
+the AI answer and checking its source references. Editable examples help beginners
+start without model configuration. Keep the navy/light/cobalt
 identity and the enlarged, readable type scale.
 
 ## Colors
@@ -43,10 +43,10 @@ Use monospace only for hashes, identifiers, and machine-readable values.
 ## Layout
 
 A 280px navigation rail, 76px contextual header, and a bounded content canvas.
-The home places a guided request form beside a concise explanation of agent
-responsibilities. Detailed steps expand on demand. Saved requests are easy to
-resume; on narrow screens they appear before the agent explanation. Everyday
-navigation has six task-oriented destinations. Specialist and operational tools
+The home has one primary AI entry, three example task rows and a short explanation
+of asking, AI research and source checking. Personal review drafts remain at
+`/requests`; legacy saved-request bookmarks redirect there. Everyday navigation
+has five destinations. Specialist tools, drafts and operational tools
 expand in a separate section, automatically open on their active routes.
 
 ## Elevation & Depth
@@ -61,7 +61,10 @@ Workflow connectors indicate actual step ordering, not animated execution.
 
 ## Components
 
-Task inputs use native radio controls, visible labels and an optional FDA link.
+Chat has a labeled question field and a text send button. Model and retrieval
+controls expand on demand, with automatic defaults. Example IDs prefill questions
+without automatically sending them. Saved-source scope remains visible.
+Draft inputs use native radio controls, visible labels and an optional FDA link.
 An example fills only an empty question. Multiple local requests can be saved,
 reopened, updated, deleted with confirmation and downloaded as readable text;
 JSON is secondary. Previous single drafts migrate without losing their question.

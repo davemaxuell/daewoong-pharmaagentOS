@@ -10,6 +10,23 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 beginner AI experience:** Home now leads to the working AI through
+one primary action and three editable example tasks. Chat uses automatic defaults,
+a visible question label and text send/stop buttons; model, scope and filters are
+optional. Progress/errors and the help guide use plain Korean/English. The guide
+accurately distinguishes saved FDA data and cited AI answers from future ingestion
+and specialist/internal-document execution.
+
+The complete existing draft workflow moved to `/requests`, retaining storage keys
+and redirecting old `/dashboard#saved-requests` bookmarks. Navigation has five
+everyday destinations, with drafts also linked directly from Home. Specialist and
+operational routes retain their access guards. Production build/TypeScript, lint,
+26 frontend tests and 26 browser checks passed, covering both languages at
+320/390/768/1440px, example prefill without auto-send, advanced controls, keyboard
+focus and draft recovery. No JavaScript errors or horizontal overflow. The design
+detector found only existing rules in legacy global CSS, none in new UI code.
+Evidence: `.artifacts/beginner-ux-20260908/`. Publication verification follows.
+
 **2026-09-08 hosted data and AI verified:** Production revision `7956f26` passed
 GitHub quality/security checks. Both public health endpoints return 200; database
 and Storage checks are healthy. A live browser displayed 440 active drug letters,

@@ -4,7 +4,24 @@
 - Owner: product team
 - Last updated: 2026-09-08
 
-## Employee task flow — 2026-09-08
+## Beginner AI flow — 2026-09-08
+
+This supersedes the draft-first home below now that hosted FDA data and AI answers
+work. `/dashboard` leads to `/ask` with a single primary action, three editable
+example tasks, and a short question → AI research → source check explanation.
+Examples use fixed IDs in URLs and never send requests automatically. The five
+everyday destinations are Home, Ask the AI, FDA letters, saved sources and help.
+Chat defaults to automatic settings; advanced search/model choices expand on demand.
+The question field and send/stop buttons have visible labels. Loading and failure
+copy describes progress and recovery in plain Korean/English.
+
+`/requests` retains the complete local draft workflow and the same storage keys.
+Old `/dashboard#saved-requests` bookmarks redirect there. Drafts remain unsubmitted.
+Specialist tools remain under the expandable menu. Help reflects the connected
+source library and cited answers while distinguishing scheduled ingestion and
+internal/specialist analysis, which remain unavailable.
+
+## Employee task flow — previous contract, 2026-09-08
 
 This update supersedes the workflow-first home described below. The employee path
 is task selection, an editable question, an optional FDA source URL, and an explicit

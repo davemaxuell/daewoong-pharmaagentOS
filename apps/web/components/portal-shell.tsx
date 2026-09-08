@@ -47,11 +47,11 @@ const navItems: Array<{
   requiredRole?: AppRole;
   advanced?: boolean;
 }> = [
-  { en: "Start a review", ko: "검토 시작하기", href: "/dashboard", icon: GitBranch },
+  { en: "Home", ko: "홈", href: "/dashboard", icon: GitBranch },
+  { en: "Ask the AI", ko: "AI에게 질문하기", href: "/ask", icon: MessageSquareText },
   { en: "FDA letter library", ko: "FDA 경고서한 찾기", href: "/drug-letters", icon: FileText },
-  { en: "Ask about evidence", ko: "자료에 대해 질문하기", href: "/ask", icon: MessageSquareText },
   { en: "Saved sources", ko: "저장한 자료", href: "/saved-views", icon: Bookmark },
-  { en: "Saved requests", ko: "저장한 검토 요청", href: "/dashboard#saved-requests", icon: BriefcaseBusiness },
+  { en: "My review drafts", ko: "내 검토 초안", href: "/requests", icon: BriefcaseBusiness, advanced: true },
   { en: "Getting started", ko: "이용 방법", href: "/help", icon: CircleHelp },
   { en: "Specialist agents", ko: "전문 에이전트", href: "/agents", icon: Network, advanced: true },
   { en: "Team review records", ko: "팀 검토 기록", href: "/cases", icon: BriefcaseBusiness, advanced: true },
@@ -392,8 +392,8 @@ export function PortalShell({
             <div className="portal-service-guide__panel">
               <strong>PharmaAgent OS</strong>
               <p>{text(
-                "Prepare a question about FDA findings. Specialist agents support evidence review; the final decision belongs to your team.",
-                "FDA 지적 사항에 대한 검토 질문을 준비하세요. 전문 에이전트가 근거 검토를 돕고, 최종 판단은 담당자가 합니다.",
+                "Ask about FDA findings. AI searches the saved sources and explains the evidence. Your team makes the final decision.",
+                "FDA 지적 사항에 대해 질문하세요. AI가 저장된 자료를 찾아 근거와 함께 설명합니다. 최종 판단은 담당자가 합니다.",
               )}</p>
             </div>
           </details>

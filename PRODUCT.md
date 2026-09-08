@@ -27,8 +27,9 @@ human approvals, and execution oversight. Korean and English are supported.
 
 The user explicitly removed all account login. Public visitors remain viewers.
 Existing API authorization, source-version ownership, and review gates remain.
-The API/database and ingestion are not live; specialist execution and independent
-evaluation qualification are incomplete. The interface must never invent runs,
+The hosted database, FDA source library and cited AI answers are connected.
+Automatic FDA ingestion, specialist execution and independent evaluation
+qualification are incomplete. The interface must never invent runs,
 FDA records, completion statistics, or successful agent execution. A locally
 prepared objective is a draft, not an executed or server-saved case.
 
@@ -51,4 +52,4 @@ functional baseline. Agent definitions exist under contracts/agents.
 - Explain which actions work now, where work is saved, and what happens next.
 - Make agent responsibility, source evidence, and human decisions inspectable.
 - Distinguish planned, running, completed, unavailable, and restricted states.
-- Preserve FDA search and chat as supporting research tools.
+- Lead beginners to working FDA search and AI answers; keep draft preparation secondary.

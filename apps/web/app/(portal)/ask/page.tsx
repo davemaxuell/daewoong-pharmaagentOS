@@ -7,6 +7,7 @@ type SearchParams = {
   letter?: string | string[];
   company?: string | string[];
   new?: string | string[];
+  starter?: string | string[];
 };
 
 function firstValue(value: string | string[] | undefined) {
@@ -21,12 +22,14 @@ export default async function AskPage({
   const query = await searchParams;
   const initialLetterId = firstValue(query.letter);
   const initialCompany = firstValue(query.company);
+  const initialStarter = firstValue(query.starter);
   const landingSeed = firstValue(query.new)?.slice(0, 128);
 
   if (!landingSeed) {
     const destination = new URLSearchParams();
     if (initialLetterId) destination.set("letter", initialLetterId);
     if (initialCompany) destination.set("company", initialCompany);
+    if (initialStarter) destination.set("starter", initialStarter);
     destination.set("new", randomUUID());
     redirect(`/ask?${destination.toString()}`);
   }
@@ -48,6 +51,7 @@ export default async function AskPage({
       dataMode={letterResult.mode}
       initialLetterId={initialLetterId}
       initialCompany={initialCompany}
+      initialStarter={initialStarter}
       landingSeed={landingSeed}
     />
   );

@@ -9577,3 +9577,10 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* Beginner chat: one visible action, optional configuration on demand. */
+.chat-question-label { display: block; padding: 4px 4px 8px; font-size: 1rem; font-weight: 600; color: var(--os-ink); }
+.chat-additional-options:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex-basis: 100%; order: 3; padding-top: 8px; }
+.chat-additional-options[hidden] { display: none; }
+.chat-page .chat-send-button { display: inline-flex; align-items: center; justify-content: center; width: auto; height: auto; min-width: 44px; min-height: 46px; padding: 10px 16px; gap: 8px; border-radius: 8px; font-size: 1rem; white-space: nowrap; }
+.chat-page .chat-composer__controls { flex-wrap: wrap; }
+.chat-page:not(.chat-page--active) .chat-page__conversation { overflow-y: auto; }

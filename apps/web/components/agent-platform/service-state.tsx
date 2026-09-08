@@ -70,12 +70,12 @@ export function ServiceState({
                 "로그인 없이 검토 요청을 준비할 수 있습니다. 승인과 정식 검토는 권한이 있는 담당자가 진행합니다.",
               )
             : text(
-                "The review service is currently unavailable. You can still write, save, and download a request from the home page.",
-                "현재 검토 기록 서비스에 연결할 수 없습니다. 홈에서 요청을 작성하고 저장하거나 다운로드할 수 있습니다.",
+                "The review service is currently unavailable. You can still write, save, and download a review draft.",
+                "현재 검토 기록 서비스에 연결할 수 없습니다. 검토 초안은 작성하고 저장하거나 다운로드할 수 있습니다.",
               )}
         </p>
         <div className="os-service-state__actions">
-          <Link className="button button--primary" href="/dashboard">
+          <Link className="button button--primary" href="/requests">
             {text("Prepare a request", "검토 요청 작성하기")}
             <ArrowRight size={16} />
           </Link>

@@ -46,7 +46,7 @@ import {
 } from "@/app/(portal)/ask/actions";
 import { useChatHistory } from "@/components/chat-history-context";
 import { PageGuide } from "@/components/page-guide";
-import { selectChatLandingContent } from "@/lib/chat-landing-content";
+import { beginnerPrompts } from "@/lib/beginner-prompts";
 import { useI18n } from "@/lib/i18n";
 import {
   normalizeRagStreamEvent,
@@ -628,6 +628,7 @@ export function ChatWorkspace({
   dataMode = "live",
   initialLetterId = "",
   initialCompany = "",
+  initialStarter,
   initialThread,
   landingSeed = "default",
 }: {
@@ -635,6 +636,7 @@ export function ChatWorkspace({
   dataMode?: DataMode;
   initialLetterId?: string;
   initialCompany?: string;
+  initialStarter?: string;
   initialThread?: ChatThread;
   landingSeed?: string;
 }) {
@@ -654,7 +656,7 @@ export function ChatWorkspace({
         `Summarize the principal FDA findings and requested actions for ${initialLetter.company}.`,
         `${initialLetter.company}에 대한 FDA의 주요 지적 사항과 요청 조치를 요약해 주세요.`,
       )
-    : "");
+    : beginnerPrompts.find((prompt) => prompt.id === initialStarter)?.prompt[locale] ?? "");
   const [filters, setFilters] = useState<RagFilter>(() =>
     initialLetterId
       ? {}
@@ -664,6 +666,7 @@ export function ChatWorkspace({
   );
   const [maxSources, setMaxSources] = useState(6);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState(initialThread?.id);
   const [threadTitle, setThreadTitle] = useState(initialThread?.title ?? "");
   const [activeLetterIds, setActiveLetterIds] = useState<string[]>(() => (
@@ -703,11 +706,6 @@ export function ChatWorkspace({
   const requestIdentityRef = useRef<{ threadId?: string; clientMessageId?: string }>({});
   const focusMutationRef = useRef(false);
   const preferenceMutationRef = useRef(false);
-
-  const landingContent = useMemo(
-    () => selectChatLandingContent(activeLandingSeed, 4),
-    [activeLandingSeed],
-  );
 
   useEffect(() => {
     setHistoryActiveThreadId(activeThreadId);
@@ -830,9 +828,9 @@ export function ChatWorkspace({
   })[strategy];
 
   const streamPhaseLabel = (phase?: RagStreamPhase) => ({
-    retrieving: text("Retrieving authorized evidence", "승인된 근거를 검색하는 중"),
-    generating: text("Drafting the response", "답변 초안을 작성하는 중"),
-    validating: text("Validating answer and citations", "답변과 인용을 검증하는 중"),
+    retrieving: text("Finding relevant FDA sources", "관련 FDA 자료를 찾고 있어요"),
+    generating: text("Writing your answer", "답변을 정리하고 있어요"),
+    validating: text("Checking the answer against its sources", "답변과 원문 근거를 확인하고 있어요"),
   })[phase ?? "retrieving"];
 
   const newChatHref = (seed: string) => {
@@ -1150,27 +1148,27 @@ export function ChatWorkspace({
         const requestWasStopped = requestController.signal.aborted;
         const failureMessage = requestWasStopped
           ? text(
-              "Display of this request was stopped. The provisional draft was discarded. If the server had already committed a verified answer, it may appear in this conversation after refresh.",
-              "요청 표시를 중지했고 검증 전 초안은 폐기했습니다. 서버가 검증된 답변을 이미 저장한 경우 새로고침 후 이 대화에 표시될 수 있습니다.",
+              "You stopped this answer. If it was already finished, it may appear when you reload this conversation.",
+              "답변 요청을 중지했습니다. 이미 완성된 답변이 있다면 대화를 새로고침했을 때 표시될 수 있습니다.",
             )
           : error instanceof ChatStreamFailure && error.kind === "incomplete"
             ? text(
-                "The stream disconnected before the verified completion event. The provisional draft was discarded. Refresh this saved conversation to check whether the server completed it.",
-                "검증 완료 이벤트 전에 스트림 연결이 끊어져 검증 전 초안을 폐기했습니다. 서버 처리가 완료되었는지 저장된 대화를 새로고침해 확인하세요.",
+                "The connection ended before the answer was ready. Reload this conversation to check for a completed answer, or try again.",
+                "답변이 완성되기 전에 연결이 끊어졌어요. 대화를 새로고침해 완성된 답변이 있는지 확인하거나 다시 시도하세요.",
               )
             : error instanceof ChatStreamFailure && error.kind === "protocol"
               ? text(
-                  "The response stream could not be verified because its format was invalid. No provisional text was accepted as an answer.",
-                  "응답 스트림 형식이 올바르지 않아 검증할 수 없습니다. 검증 전 텍스트는 답변으로 채택하지 않았습니다.",
+                  "We could not check this answer, so it has not been shown as a completed response. Please try again.",
+                  "답변을 확인하는 데 문제가 있어 완성된 답변으로 표시하지 않았어요. 다시 시도해주세요.",
                 )
               : error instanceof ChatStreamFailure && error.kind === "server"
                 ? text(
-                    `The service ended this request before a verified answer was committed${error.code ? ` (${error.code})` : ""}.`,
-                    `검증된 답변이 저장되기 전에 서비스가 요청을 종료했습니다${error.code ? ` (${error.code})` : ""}.`,
+                    "The AI could not finish this answer. Please try again. If it keeps failing, contact your service administrator.",
+                    "AI가 답변을 완성하지 못했어요. 다시 시도하고, 문제가 계속되면 서비스 담당자에게 알려주세요.",
                   )
                 : text(
-                    "The stream could not be completed because the connection or service became unavailable. The provisional draft was discarded; try again, then contact an administrator if it persists.",
-                    "연결 또는 서비스 문제로 스트림을 완료하지 못해 검증 전 초안을 폐기했습니다. 다시 시도하고 문제가 지속되면 관리자에게 문의하세요.",
+                    "We could not connect to the answer service. Your question is shown above; try again when the connection is available.",
+                    "답변 서비스에 연결하지 못했어요. 질문은 위에 남아 있으니 연결이 복구되면 다시 시도하세요.",
                   );
         setTurns((current) => current.map((item) => (
           item.id === turnId
@@ -1327,11 +1325,11 @@ export function ChatWorkspace({
       <div className="chat-page__surface">
         <PageGuide
           className="chat-page__guide"
-          title={{ ko: "FDA 근거 리서치", en: "FDA evidence research" }}
-          context={{ ko: "FDA 의약품 인텔리전스", en: "FDA Drug Intelligence" }}
+          title={{ ko: "AI에게 질문하기", en: "Ask the AI" }}
+          context={{ ko: "FDA 업무 도우미", en: "FDA research assistant" }}
           description={{
-            ko: "질문 유형에 따라 대화 문맥, 특정 경고서한 원문 또는 전체 FDA 의약품 코퍼스를 자동으로 선택하고, 근거가 필요한 답변은 공식 FDA 인용으로 확인할 수 있습니다.",
-            en: "The assistant automatically chooses conversation context, a specific warning letter, or the FDA Drug corpus and links evidence-based answers to official FDA citations.",
+            ko: "궁금한 내용을 적으면 저장된 FDA 자료에서 근거를 찾아 설명해드립니다. 답변의 출처 번호를 눌러 원문을 확인하세요.",
+            en: "Ask a question to find and understand evidence in the saved FDA collection. Open the numbered references to check the original source.",
           }}
           actions={(
             <div className="chat-header-actions">
@@ -1354,10 +1352,10 @@ export function ChatWorkspace({
         {dataMode !== "live" ? (
           <div className="chat-service-notice" role="status">
             <CircleAlert size={16} aria-hidden="true" />
-            <p><strong>{text("FDA sources are not connected yet.", "FDA 자료를 아직 조회할 수 없어요.")}</strong> {text(
-              "Answers about source evidence require the data service. You can prepare and save your review question on the home page.",
-              "원문 근거를 확인하는 답변에는 자료 서비스 연결이 필요합니다. 홈에서 검토 질문을 작성하고 저장할 수 있습니다.",
-            )}</p>
+            <p><strong>{text("FDA sources could not be loaded.", "FDA 자료를 불러오지 못했어요.")}</strong> {text(
+              "Reload this page to try again. You can also keep your question as a review draft.",
+              "페이지를 새로고침해 다시 시도하세요. 질문을 검토 초안으로 보관할 수도 있습니다.",
+            )} <Link href="/requests">{text("Save a draft", "초안 작성하기")}</Link></p>
           </div>
         ) : null}
 
@@ -1375,23 +1373,21 @@ export function ChatWorkspace({
         {!turns.length ? (
           <section className="chat-welcome" key={activeLandingSeed}>
             <div
-              className={`chat-welcome__mark chat-welcome__mark--${landingContent.hero.kind}`}
+              className="chat-welcome__mark"
               aria-hidden="true"
             >
-              {landingContent.hero.kind === "fact"
-                ? <Sparkles size={22} />
-                : <FileSearch size={22} />}
+              <FileSearch size={22} />
             </div>
             <h2>{text(
-              landingContent.hero.title.en,
-              landingContent.hero.title.ko,
+              initialLetterId ? "Let's read this letter together." : "What would you like to understand?",
+              initialLetterId ? "이 경고서한을 함께 살펴볼까요?" : "어떤 내용이 궁금하신가요?",
             )}</h2>
             <p>{text(
-              landingContent.hero.description.en,
-              landingContent.hero.description.ko,
+              initialLetterId ? "A summary question is ready below. Edit it or send it to begin." : "Write a question below, or choose an example and make it your own. No AI settings needed.",
+              initialLetterId ? "아래에 요약 질문을 준비했어요. 내용을 바꾸거나 바로 보내세요." : "아래에 질문을 적거나 예시를 골라 바꿔보세요. AI 설정은 필요하지 않습니다.",
             )}</p>
             <div className="chat-suggestions">
-              {landingContent.questions.map((prompt) => (
+              {!initialLetterId && beginnerPrompts.map((prompt) => (
                 <button
                   type="button"
                   key={prompt.id}
@@ -1401,14 +1397,9 @@ export function ChatWorkspace({
                   }}
                 >
                   <Search size={15} aria-hidden="true" />
-                  <span>{text(prompt.prompt.en, prompt.prompt.ko)}</span>
+                  <span>{text(prompt.title.en, prompt.title.ko)}</span>
                 </button>
               ))}
-            </div>
-            <div className="chat-capabilities" aria-label={text("Available tools", "사용 가능한 도구")}>
-              <span><FileSearch size={14} />{text("Search letters", "경고서한 검색")}</span>
-              <span><SlidersHorizontal size={14} />{text("Filter evidence", "근거 필터링")}</span>
-              <span><FileText size={14} />{text("Trace citations", "인용 추적")}</span>
             </div>
           </section>
         ) : null}
@@ -1844,17 +1835,25 @@ export function ChatWorkspace({
         ) : null}
 
         <div className="chat-composer">
+          <label className="chat-question-label" htmlFor="ai-question">{text("Your question", "궁금한 내용")}</label>
           <textarea
+            id="ai-question"
             ref={composerRef}
             value={question}
-            rows={1}
+            rows={2}
             maxLength={2000}
             aria-label={text("Ask about FDA warning letters", "FDA 경고서한에 대해 질문하기")}
-            placeholder={text("Ask about FDA warning letters…", "FDA 경고서한에 대해 질문하세요…")}
+            placeholder={text("e.g. Explain FDA findings about cleaning validation in simple terms.", "예: 세척 밸리데이션 관련 FDA 지적 사항을 쉽게 설명해주세요.")}
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={handleComposerKeyDown}
           />
           <div className="chat-composer__controls">
+            <button className="chat-tool-button" type="button" aria-expanded={optionsOpen} aria-controls="chat-additional-options" onClick={() => { setOptionsOpen((open) => !open); setFiltersOpen(false); }}>
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              {text("Search & answer options", "검색·답변 설정")}
+              <ChevronDown size={14} aria-hidden="true" />
+            </button>
+            <div id="chat-additional-options" className="chat-additional-options" hidden={!optionsOpen}>
             <button
               className={`chat-tool-button${filtersOpen ? " is-active" : ""}`}
               type="button"
@@ -1883,9 +1882,6 @@ export function ChatWorkspace({
               onChange={changeRetrievalMode}
               disabled={focusPending || preferencesPending}
             />
-            <div className="chat-composer__scope">
-              <LockKeyhole size={13} />
-              {text("FDA Product: Drugs", "FDA 제품: 의약품")}
             </div>
             {activeRequestTurnId ? (
               <button
@@ -1895,6 +1891,7 @@ export function ChatWorkspace({
                 onClick={stopActiveRequest}
               >
                 <Square size={13} fill="currentColor" aria-hidden="true" />
+                <span>{text("Stop", "중지")}</span>
               </button>
             ) : (
               <button
@@ -1910,6 +1907,7 @@ export function ChatWorkspace({
                 onClick={() => runQuery(question)}
               >
                 <ArrowUp size={17} strokeWidth={2.2} />
+                <span>{text("Ask AI", "질문 보내기")}</span>
               </button>
             )}
           </div>

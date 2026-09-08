@@ -307,3 +307,11 @@ for cases. Preserve checkpoints and audit evidence during investigation.
 Stop admission on an authorization leak, approval bypass, missing evidence binding,
 duplicate committed effect or lost audit trail. Do not declare launch readiness
 until the blocker table above and release evidence are complete.
+# Beginner AI UX update — 2026-09-08
+
+Home now leads to live AI research; the local draft editor is at `/requests` with
+the same stored drafts and a legacy saved-request bookmark redirect. Chat defaults
+remain automatic, advanced settings collapse, and the Korean/English guide explains
+source checking and current availability. Build, lint, all 26 frontend tests and
+26 browser checks passed. See the authoritative implementation handoff and ignored
+`.artifacts/beginner-ux-20260908/` evidence. Publishing this update is in progress.
