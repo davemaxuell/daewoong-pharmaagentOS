@@ -24,7 +24,7 @@ from app.models import (
     WarningLetter,
     utcnow,
 )
-from app.pagination import InvalidCursor, decode_cursor, page_window
+from app.pagination import InvalidCursor, decode_cursor, encode_cursor, page_window
 from app.schemas import (
     ChangePage,
     CursorPage,
@@ -134,6 +134,54 @@ async def _letter_context(
             ).all():
                 findings[finding.document_version_id].append(finding)
     return by_letter, summaries, findings
+
+
+@router.get("/letters/catalog", response_model=CursorPage, tags=["Letters"])
+async def letter_catalog(
+    cursor: str | None = Query(default=None, max_length=2_048),
+    limit: int = Query(default=1_000, ge=1, le=1_000),
+    _principal: Principal = Depends(view_principal),
+    session: AsyncSession = Depends(session_dependency),
+) -> CursorPage:
+    """Bounded metadata batches for the portal's local search and facet controls.
+
+    Paginate in SQL before loading document/summary context. Unlike full document
+    reads, this returns only the existing list-item contract, with the same scope
+    boundary and stable ordering as /letters. Nothing is cached across principals.
+    """
+    try:
+        offset = decode_cursor(cursor)
+    except InvalidCursor as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    query = (
+        select(WarningLetter)
+        .where(
+            WarningLetter.current_in_scope.is_(True),
+            WarningLetter.scope_status == ScopeStatus.IN_SCOPE_DRUGS.value,
+        )
+        .order_by(
+            WarningLetter.posted_date.desc(), WarningLetter.last_seen_at.desc(), WarningLetter.id
+        )
+        .offset(offset)
+        .limit(limit + 1)
+    )
+    rows = list((await session.scalars(query)).all())
+    has_more = len(rows) > limit
+    letters = rows[:limit]
+    docs, summaries, findings = await _letter_context(session, letters)
+    return CursorPage(
+        items=[
+            letter_item(
+                letter,
+                documents=docs.get(letter.id, []),
+                summary=summaries.get(letter.current_version_id or ""),
+                findings=findings.get(letter.current_version_id or "", []),
+            )
+            for letter in letters
+        ],
+        has_more=has_more,
+        next_cursor=encode_cursor(offset + limit) if has_more else None,
+    )
 
 
 @router.get("/letters", response_model=CursorPage, tags=["Letters"])

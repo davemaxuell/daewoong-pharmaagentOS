@@ -10,6 +10,18 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 loading performance:** Sidebar history/notifications now load after
+the page renders, with private authenticated responses and retry without a page
+reload. Late history reads preserve locally created, edited and archived chats.
+A bounded SQL-paginated metadata catalog replaces five sequential collection
+requests for the current 440 visible letters. Document/history links avoid bulk
+prefetching. Vercel is configured for Sydney alongside the database. Local build,
+lint, 35 frontend tests, 55 focused API checks and contract validation passed.
+A delayed-sidebar browser check rendered Home in 688 ms while the sidebar remained
+pending for three seconds; loading, failure/retry and history hydration passed.
+Hosted before/after evidence and deployment status are recorded in
+[performance evidence](docs/assurance/performance-20260908.md).
+
 **2026-09-08 beginner AI experience:** Home now leads to the working AI through
 one primary action and three editable example tasks. Chat uses automatic defaults,
 a visible question label and text send/stop buttons; model, scope and filters are

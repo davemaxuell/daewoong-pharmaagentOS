@@ -122,6 +122,32 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
+  /letters/catalog:
+    get:
+      tags: [Letters]
+      operationId: getLetterCatalog
+      summary: Load a bounded batch of current in-scope Drug letter metadata
+      description: SQL pagination precedes metadata enrichment; original document sections are excluded.
+      x-required-roles: [viewer, regulatory_analyst, reviewer, system_administrator, security_auditor]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 1000 }
+      responses:
+        "200":
+          description: Cursor page of authorized Drug letter metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LetterPage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422":
+          description: Invalid pagination parameters
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
   /letters/{letter_id}:
     parameters:
       - $ref: "#/components/parameters/LetterId"

@@ -70,7 +70,7 @@ function isActive(pathname: string, href: string) {
 export function PortalShell({
   children,
   roles,
-  newLetterNotification,
+  newLetterNotification: initialNotification,
 }: {
   children: React.ReactNode;
   roles: AppRole[];
@@ -102,7 +102,10 @@ export function PortalShell({
     activeThreadId,
     setActiveThreadId,
     removeThread,
+    reloadHistory,
+    notification,
   } = useChatHistory();
+  const newLetterNotification = notification ?? initialNotification;
   const notificationStorageKey = "pharmaagent-os:new-letter-seen";
 
   const visibleNav = navItems.filter((item) => !item.requiredRole || roles.includes(item.requiredRole));
@@ -117,6 +120,7 @@ export function PortalShell({
     : threads;
   const historyIsPreview = historyLoadState === "preview";
   const historyUnavailable = historyLoadState === "unavailable";
+  const historyLoading = historyLoadState === "loading";
 
   useEffect(() => {
     let shouldShow = false;
@@ -452,7 +456,7 @@ export function PortalShell({
               {visibleNav.filter((item) => item.advanced).map((item) => {
                 const Icon = item.icon;
                 const active = isActive(pathname, item.href);
-                return <Link key={item.href} className={`nav-link portal-nav__link${active ? " nav-link--active portal-nav__link--active" : ""}`} href={item.href} aria-current={active ? "page" : undefined} onClick={() => closeMenu()}><Icon size={20} aria-hidden="true" /><span>{text(item.en, item.ko)}</span></Link>;
+                return <Link key={item.href} prefetch={false} className={`nav-link portal-nav__link${active ? " nav-link--active portal-nav__link--active" : ""}`} href={item.href} aria-current={active ? "page" : undefined} onClick={() => closeMenu()}><Icon size={20} aria-hidden="true" /><span>{text(item.en, item.ko)}</span></Link>;
               })}
             </nav>
           </details>
@@ -510,7 +514,7 @@ export function PortalShell({
                   />
                   {historySearching ? <LoaderCircle className="spin" size={13} aria-hidden="true" /> : null}
                 </label>
-                {historyLoadState !== "ready" ? (
+                {historyUnavailable || historyIsPreview ? (
                   <div className="portal-history-notice" role={historyIsPreview ? "status" : "alert"}>
                     <p>{historyIsPreview
                       ? text(
@@ -522,7 +526,7 @@ export function PortalShell({
                         "대화 기록을 불러오지 못했습니다. 기존 대화는 변경되지 않았습니다.",
                       )}</p>
                     {!historyIsPreview ? (
-                      <button type="button" onClick={() => router.refresh()}>
+                      <button type="button" onClick={reloadHistory}>
                         {text("Try again", "다시 시도")}
                       </button>
                     ) : null}
@@ -545,6 +549,7 @@ export function PortalShell({
                   </div>
                 ) : null}
                 <nav className="portal-history-list" aria-label={text("Saved chats", "저장된 대화")}>
+                  {historyLoading ? <p className="portal-history-empty" role="status">{text("Loading your conversations…", "대화 기록을 불러오고 있어요…")}</p> : null}
                   {visibleThreads.length ? visibleThreads.map((thread) => {
                     const active = thread.id === activeThreadId || pathname === `/chat/${thread.id}`;
                     return (
@@ -554,6 +559,7 @@ export function PortalShell({
                       >
                         <Link
                           href={`/chat/${thread.id}`}
+                          prefetch={false}
                           scroll={false}
                           tabIndex={historySectionOpen ? undefined : -1}
                           onClick={() => {
@@ -579,7 +585,7 @@ export function PortalShell({
                         </button>
                       </div>
                     );
-                  }) : historyUnavailable || historyIsPreview ? null : (
+                  }) : historyUnavailable || historyIsPreview || historyLoading ? null : (
                     <p className="portal-history-empty">{normalizedHistoryQuery
                       ? text("No conversations match those keywords.", "해당 키워드와 일치하는 대화가 없습니다.")
                       : text("Saved conversations will appear here.", "저장된 대화가 여기에 표시됩니다.")}</p>

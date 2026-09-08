@@ -595,20 +595,18 @@ async function liveLetters(query = ""): Promise<Letter[]> {
   return unwrapList(payload).map(normalizeLetter).filter((entry): entry is Letter => Boolean(entry));
 }
 
-async function liveAllLetters(query = ""): Promise<Letter[]> {
+async function liveAllLetters(): Promise<Letter[]> {
   const letters: Letter[] = [];
   const seenLetterIds = new Set<string>();
   const seenCursors = new Set<string>();
   let cursor: string | undefined;
 
-  for (let pageNumber = 0; pageNumber < 100; pageNumber += 1) {
-    const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
-    params.set("limit", "100");
-    params.delete("page_size");
+  for (let pageNumber = 0; pageNumber < 10; pageNumber += 1) {
+    const params = new URLSearchParams({ limit: "1000" });
     if (cursor) params.set("cursor", cursor);
     else params.delete("cursor");
 
-    const payload = await requestApi(`/api/v1/letters?${params.toString()}`);
+    const payload = await requestApi(`/api/v1/letters/catalog?${params.toString()}`);
     const page = unwrapList(payload)
       .map(normalizeLetter)
       .filter((entry): entry is Letter => Boolean(entry));
@@ -1069,7 +1067,7 @@ export async function getChanges(): Promise<ApiResult<ChangeEvent[]>> {
   return { data: changes, mode: "live" };
 }
 
-export async function getNewLetterChanges(): Promise<ApiResult<ChangeEvent[]>> {
+export async function getNewLetterChanges(limit = 100): Promise<ApiResult<ChangeEvent[]>> {
   if (!API_BASE_URL) {
     return {
       data: seedChanges.filter((change) => change.eventType === "NEW"),
@@ -1077,7 +1075,8 @@ export async function getNewLetterChanges(): Promise<ApiResult<ChangeEvent[]>> {
       detail: "API_BASE_URL is not configured; showing the isolated local preview dataset.",
     };
   }
-  const payload = await requestApi("/api/v1/changes?event_type=NEW&limit=100");
+  const boundedLimit = Math.min(100, Math.max(1, Math.round(limit)));
+  const payload = await requestApi(`/api/v1/changes?event_type=NEW&limit=${boundedLimit}`);
   const changes = unwrapList(payload)
     .map(normalizeChange)
     .filter((entry): entry is ChangeEvent => Boolean(entry));

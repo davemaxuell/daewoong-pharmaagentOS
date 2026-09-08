@@ -414,7 +414,7 @@ export function LettersExplorer({
                 </div>
                 <div className="letter-row__identity">
                   <div className="letter-row__titleline">
-                    <Link href={`/drug-letters/${letter.id}`} lang="en">{letter.company}</Link>
+                    <Link href={`/drug-letters/${letter.id}`} prefetch={false} lang="en">{letter.company}</Link>
                     {isNewLetter(primaryDate) ? (
                       <span className="new-letter-mark" title={text("Posted within the last 7 days", "최근 7일 이내 게시됨")}>
                         NEW
