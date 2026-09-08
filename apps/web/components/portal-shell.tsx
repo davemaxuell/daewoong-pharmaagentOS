@@ -48,6 +48,7 @@ const navItems: Array<{
   advanced?: boolean;
 }> = [
   { en: "Home", ko: "홈", href: "/dashboard", icon: GitBranch },
+  { en: "Research agent", ko: "리서치 에이전트", href: "/research", icon: Network },
   { en: "Ask the AI", ko: "AI에게 질문하기", href: "/ask", icon: MessageSquareText },
   { en: "FDA letter library", ko: "FDA 경고서한 찾기", href: "/drug-letters", icon: FileText },
   { en: "Saved sources", ko: "저장한 자료", href: "/saved-views", icon: Bookmark },

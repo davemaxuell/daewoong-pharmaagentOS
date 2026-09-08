@@ -27,6 +27,8 @@ from app.middleware import InMemoryRateLimiter, RequestContextMiddleware
 from app.models import WarningLetter, utcnow
 from app.notifications import ensure_default_email_subscription
 from app.observability import configure_telemetry
+from app.research.provider import build_research_model
+from app.research.router import router as research_router
 from app.retention import retire_expired_letters
 from app.routes.admin import router as admin_router
 from app.routes.chat import router as chat_router
@@ -120,6 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.object_store = object_store
     app.state.rate_limiter = InMemoryRateLimiter()
     app.state.ai_generator = build_ai_generator(resolved)
+    app.state.research_model = build_research_model(resolved)
     app.state.embedding_generator = build_embedding_generator(resolved)
     app.state.secret_provider = build_secret_provider(resolved)
     configure_telemetry(app, resolved)
@@ -183,6 +186,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(core_router, prefix="/api/v1")
     app.include_router(intelligence_router, prefix="/api/v1")
     app.include_router(chat_router, prefix="/api/v1")
+    app.include_router(research_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
     app.include_router(cases_router, prefix="/api/v1")
     app.include_router(approvals_router, prefix="/api/v1")

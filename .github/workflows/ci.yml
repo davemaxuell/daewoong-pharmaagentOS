@@ -92,7 +92,11 @@ jobs:
       - name: Validate least-privilege runtime grants
         run: |
           psql --set ON_ERROR_STOP=1 --file ../../infra/policies/postgres-runtime-roles.sql
+      - name: Apply FDA research persistence boundary
+        run: psql --set ON_ERROR_STOP=1 --file ../../infra/migrations/20260908_fda_research_agent.sql
       - run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_agent_platform_postgres.py
+      - name: Verify concurrent research admission, worker claims, and stop fencing
+        run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_research_postgres.py
       - name: Verify Supabase browser denial and runtime RLS visibility
         run: AGENT_OS_SUPABASE_TEST=1 pytest tests/test_supabase_boundary.py
       - name: Seed restore canary and create isolated target

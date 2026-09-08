@@ -71,6 +71,10 @@ REVOKE SELECT ON
   public.a2a_exchanges
 FROM fda_readonly_runtime;
 
+REVOKE SELECT ON public.research_runs, public.research_events FROM fda_readonly_runtime;
+GRANT SELECT, INSERT, UPDATE ON public.research_runs TO fda_api_runtime, fda_worker_runtime;
+GRANT SELECT, INSERT ON public.research_events TO fda_api_runtime, fda_worker_runtime;
+
 GRANT INSERT ON
   public.ai_summaries,
   public.document_translations,

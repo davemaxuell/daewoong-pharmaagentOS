@@ -14,6 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.config import Settings, get_settings
 from app.database import Database
 from app.observability import configure_telemetry
+from app.research.worker import run_research_slice
 from app.worker import process_next_job, recover_stale_worker_jobs
 
 LANES = {
@@ -89,14 +90,15 @@ def create_worker_app(settings: Settings | None = None) -> FastAPI:
 
     @worker_app.post("/internal/worker/{lane}")
     async def tick(lane: str, request: Request):
-        if not settings.serverless_worker_enabled:
+        research_lane = lane == "research" and settings.research_agent_enabled
+        if not settings.serverless_worker_enabled and not research_lane:
             raise HTTPException(status_code=503, detail="Worker activation is disabled")
         secret = settings.worker_trigger_secret
         expected = f"Bearer {secret.get_secret_value()}" if secret else ""
         supplied = request.headers.get("authorization", "")
         if not expected or not hmac.compare_digest(supplied.encode(), expected.encode()):
             raise HTTPException(status_code=401, detail="Worker authentication required")
-        if lane not in LANES:
+        if lane not in LANES and not research_lane:
             raise HTTPException(status_code=404, detail="Unknown worker lane")
         body = await request.body()
         try:
@@ -105,7 +107,8 @@ def create_worker_app(settings: Settings | None = None) -> FastAPI:
             empty_body = False
         if request.query_params or not empty_body:
             raise HTTPException(status_code=400, detail="Worker triggers take no caller payload")
-        result = await run_slice(database, settings, lane)
+        result = (await run_research_slice(database, settings) if research_lane
+                  else await run_slice(database, settings, lane))
         return JSONResponse(result, headers={"Cache-Control": "no-store"})
 
     return worker_app

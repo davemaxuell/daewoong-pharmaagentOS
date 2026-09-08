@@ -20,8 +20,9 @@ spacing:
 
 ## Overview
 
-An employee-facing review assistant. The main path is asking a question, reading
-the AI answer and checking its source references. Editable examples help beginners
+An employee-facing review assistant. The main path is giving the FDA Research Agent
+a goal, following its saved actions and reviewing a cited brief. Quick AI chat
+remains available for short questions. Editable examples help beginners
 start without model configuration. Keep the navy/light/cobalt
 identity and the enlarged, readable type scale.
 
@@ -43,10 +44,10 @@ Use monospace only for hashes, identifiers, and machine-readable values.
 ## Layout
 
 A 280px navigation rail, 76px contextual header, and a bounded content canvas.
-The home has one primary AI entry, three example task rows and a short explanation
-of asking, AI research and source checking. Personal review drafts remain at
+The home has one primary research entry, three quick-chat example rows and a short
+explanation of goal setting, agent work and brief review. Personal review drafts remain at
 `/requests`; legacy saved-request bookmarks redirect there. Everyday navigation
-has five destinations. Specialist tools, drafts and operational tools
+has six destinations. Specialist tools, drafts and operational tools
 expand in a separate section, automatically open on their active routes.
 
 ## Elevation & Depth
@@ -60,6 +61,15 @@ Eight-pixel controls and fourteen-pixel panels. Small status badges may be pills
 Workflow connectors indicate actual step ordering, not animated execution.
 
 ## Components
+
+Research starts with a labeled goal and editable examples. Actual persisted events
+drive the stage indicator and activity feed; show no simulated progress or hidden
+reasoning. Source rows disclose the exact retained passages. Stop revokes ongoing
+work, Resume continues saved progress, and a prominent View brief action leads to
+the checked draft and copy/download controls. State clearly that tasks are saved
+on the service and accessed through the same browser session. Completed briefs
+remain drafts for human review. Keep the two-column activity/evidence view readable
+as a single column on narrow screens.
 
 Chat has a labeled question field and a text send button. Model and retrieval
 controls expand on demand, with automatic defaults. Example IDs prefill questions

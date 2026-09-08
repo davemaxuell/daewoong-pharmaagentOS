@@ -55,6 +55,30 @@ def test_worker_disabled_by_default(settings, monkeypatch):
     execute.assert_not_awaited()
 
 
+def test_research_lane_is_independent_and_requires_fixed_authenticated_trigger(
+    settings, monkeypatch
+):
+    settings.research_agent_enabled = True
+    settings.worker_trigger_secret = SecretStr(SECRET)
+    execute = AsyncMock(return_value={"processed": 1})
+    monkeypatch.setattr("app.serverless_worker.run_research_slice", execute)
+    with TestClient(create_worker_app(settings)) as client:
+        headers = {"Authorization": f"Bearer {SECRET}"}
+        assert client.post("/internal/worker/research").status_code == 401
+        assert (
+            client.post(
+                "/internal/worker/research", headers=headers, json={"run_id": "any"}
+            ).status_code
+            == 400
+        )
+        assert (
+            client.post("/internal/worker/ingestion", headers=headers, json={}).status_code == 503
+        )
+        assert client.post("/internal/worker/cases", headers=headers, json={}).status_code == 503
+        assert client.post("/internal/worker/research", headers=headers, json={}).status_code == 200
+    execute.assert_awaited_once()
+
+
 @pytest.mark.asyncio
 async def test_claim_lane_cannot_take_another_lanes_job(settings):
     database = Database(settings.database_url)

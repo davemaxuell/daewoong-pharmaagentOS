@@ -11,6 +11,12 @@
           "service": "api",
           "format": "url",
           "env": "API_BASE_URL"
+        },
+        {
+          "type": "service",
+          "service": "worker",
+          "format": "url",
+          "env": "RESEARCH_WORKER_URL"
         }
       ]
     },
@@ -40,6 +46,10 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/internal/worker/research",
+      "destination": {"service": "worker"}
+    },
     {
       "source": "/internal/worker/cases",
       "destination": {"service": "worker"}

@@ -18,7 +18,7 @@ DECLARE
     'integration_outbox', 'internal_asset_acl', 'internal_asset_versions',
     'internal_assets', 'notification_deliveries', 'platform_controls',
     'policy_decisions', 'processing_jobs', 'production_feedback', 'rag_queries',
-    'relation_evidence', 'release_approvals', 'reviews', 'run_events',
+    'relation_evidence', 'release_approvals', 'research_runs', 'research_events', 'reviews', 'run_events',
     'scope_decisions', 'skill_versions', 'subscriptions', 'tool_invocations',
     'tool_versions', 'verification_reports', 'violations', 'warning_letters',
     'workflow_template_versions'

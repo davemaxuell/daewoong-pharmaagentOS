@@ -2448,6 +2448,52 @@ class IntegrationOutbox(Base):
     )
 
 
+class ResearchRun(TimestampMixin, Base):
+    """Session-owned, draft-only FDA research with a fenced worker checkpoint."""
+
+    __tablename__ = "research_runs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    owner_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    client_request_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    objective: Mapped[str] = mapped_column(Text, nullable=False)
+    language: Mapped[str] = mapped_column(String(2), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False, index=True)
+    stage: Mapped[str] = mapped_column(String(32), default="planning", nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    checkpoint: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    model_calls: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    resumes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    lease_id: Mapped[str | None] = mapped_column(String(36))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        UniqueConstraint("owner_id", "client_request_id", name="uq_research_owner_request"),
+        CheckConstraint("status IN ('queued','running','completed','stopped','failed',"
+                        "'limit_reached','insufficient_evidence')", name="research_status"),
+        CheckConstraint("language IN ('en','ko')", name="research_language"),
+        CheckConstraint("model_calls >= 0 AND total_tokens >= 0", name="research_usage"),
+        Index("ix_research_queue", "status", "lease_expires_at", "created_at"),
+    )
+
+
+class ResearchEvent(Base):
+    __tablename__ = "research_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("research_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (UniqueConstraint("run_id", "sequence", name="uq_research_event_sequence"),)
+
+
 class A2AExchange(Base):
     """Immutable answer-only exchange; it cannot delegate work or invoke tools."""
 

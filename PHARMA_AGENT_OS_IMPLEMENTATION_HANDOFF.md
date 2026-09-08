@@ -10,6 +10,18 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-08 FDA Research Agent:** A bounded goal-driven research workflow is
+implemented at `/research`. OpenAI chooses native plan/search/read/submit tools;
+source integrity and a separate AI evidence check gate a saved human-review brief.
+Supabase persists browser-owned tasks, private checkpoints and public execution
+events. The interface shows actual live actions, plan and source passages, with
+Stop/Resume, View brief and export. Research has a separately enabled background
+worker lane and conditional one-minute recovery schedule. New tables deny browser
+and general read-only database roles. Existing internal specialist/approval and
+FDA ingestion execution remain unqualified/disabled. See
+[research qualification](docs/assurance/research-agent-20260908.md) for local and
+hosted evidence. Preserve the user's untracked root package files and `supabase/`.
+
 **2026-09-08 loading performance:** Sidebar history/notifications now load after
 the page renders, with private authenticated responses and retry without a page
 reload. Late history reads preserve locally created, edited and archived chats.

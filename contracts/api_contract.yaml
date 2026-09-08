@@ -13,6 +13,8 @@ servers:
   - url: /api/v1
     description: Same-origin API base
 tags:
+  - name: Research
+    description: Durable browser-owned FDA research with bounded tools and visible execution events.
   - name: Letters
     description: Authorized Drug-only warning-letter browsing and immutable source history.
   - name: Cases
@@ -33,6 +35,136 @@ tags:
     description: Orchestrator liveness and dependency-readiness probes.
 
 paths:
+  /research/runs:
+    get:
+      tags:
+      - Research
+      operationId: listResearch
+      summary: List the current browser owner’s 30 most recently updated research tasks
+      responses:
+        '200':
+          description: Owner-scoped task summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResearchSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+      - Research
+      operationId: createResearch
+      summary: Save an idempotent FDA research objective for background execution
+      description: Viewer-accessible, owner-scoped research over saved current FDA Drug sources only. Two active and
+        ten daily tasks per owner; 100 daily tasks globally. Each run retains a 12-model-call and 90,000-token budget
+        across retries. Same client_request_id and payload returns the original task; changed payload conflicts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResearchCreate'
+      responses:
+        '201':
+          description: 'Private browser-owner-scoped research data. Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /research/runs/{run_id}:
+    parameters:
+    - name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Research
+      operationId: getResearch
+      summary: Read a task, pinned sources, checked result and incremental execution events
+      parameters:
+      - name: after
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 0
+      responses:
+        '200':
+          description: 'Private browser-owner-scoped research data. Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /research/runs/{run_id}/{action}:
+    parameters:
+    - name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: action
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - stop
+        - resume
+    post:
+      tags:
+      - Research
+      operationId: controlResearch
+      summary: Stop or resume an owned research task
+      description: Stop revokes the worker lease so late writes cannot overwrite it. Resume accepts stopped/failed
+        tasks with remaining budget and at most three resumes. Budgets are not reset.
+      responses:
+        '200':
+          description: 'Private browser-owner-scoped research data. Cache-Control: no-store.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /health/live:
     get:
       tags: [Health]
@@ -1199,8 +1331,8 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: >-
-        A short-lived RS256 web-session assertion. Google OAuth provider tokens remain in
-        Auth.js and are never forwarded to this API.
+        A short-lived RS256 server-to-server assertion. Anonymous browser sessions receive
+        viewer authority only; account login is not required.
 
   parameters:
     Cursor:
@@ -1348,6 +1480,268 @@ components:
           schema: { $ref: "#/components/schemas/Problem" }
 
   schemas:
+    ResearchCreate:
+      additionalProperties: false
+      properties:
+        objective:
+          maxLength: 2000
+          minLength: 8
+          title: Objective
+          type: string
+        language:
+          default: ko
+          enum:
+          - en
+          - ko
+          title: Language
+          type: string
+        client_request_id:
+          format: uuid
+          title: Client Request Id
+          type: string
+      required:
+      - objective
+      - client_request_id
+      title: CreateResearch
+      type: object
+    ResearchSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - objective
+      - language
+      - status
+      - stage
+      - revision
+      - created_at
+      - updated_at
+      - started_at
+      - finished_at
+      - model_calls
+      - max_model_calls
+      - error_code
+      - can_resume
+      properties:
+        id:
+          type: string
+          format: uuid
+        objective:
+          type: string
+        language:
+          type: string
+          enum:
+          - en
+          - ko
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - stopped
+          - failed
+          - limit_reached
+          - insufficient_evidence
+        stage:
+          type: string
+        revision:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        started_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        finished_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        model_calls:
+          type: integer
+          minimum: 0
+        max_model_calls:
+          type: integer
+          minimum: 0
+        error_code:
+          type:
+          - string
+          - 'null'
+        can_resume:
+          type: boolean
+    ResearchSource:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - chunk_id
+      - letter_id
+      - company
+      - source_url
+      - anchor
+      - version_id
+      - source_hash
+      - chunk_hash
+      - excerpt
+      - version
+      - posted_date
+      properties:
+        id:
+          type: string
+        chunk_id:
+          type: string
+        letter_id:
+          type: string
+        company:
+          type: string
+        source_url:
+          type: string
+        anchor:
+          type: string
+        version_id:
+          type: string
+        source_hash:
+          type: string
+        chunk_hash:
+          type: string
+        excerpt:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        posted_date:
+          type:
+          - string
+          - 'null'
+          format: date
+    ResearchEvent:
+      type: object
+      additionalProperties: false
+      required:
+      - sequence
+      - kind
+      - stage
+      - created_at
+      - data
+      properties:
+        sequence:
+          type: integer
+          minimum: 0
+        kind:
+          type: string
+        stage:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        data:
+          type: object
+          description: 'Public action metadata only: query, counts, plan steps, source identifiers, or concise check
+            feedback. Private model conversation and reasoning are excluded.'
+    ResearchRun:
+      allOf:
+      - type: object
+        required:
+        - id
+        - objective
+        - language
+        - status
+        - stage
+        - revision
+        - created_at
+        - updated_at
+        - started_at
+        - finished_at
+        - model_calls
+        - max_model_calls
+        - error_code
+        - can_resume
+        properties:
+          id:
+            type: string
+            format: uuid
+          objective:
+            type: string
+          language:
+            type: string
+            enum:
+            - en
+            - ko
+          status:
+            type: string
+            enum:
+            - queued
+            - running
+            - completed
+            - stopped
+            - failed
+            - limit_reached
+            - insufficient_evidence
+          stage:
+            type: string
+          revision:
+            type: integer
+            minimum: 0
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+          started_at:
+            type:
+            - string
+            - 'null'
+            format: date-time
+          finished_at:
+            type:
+            - string
+            - 'null'
+            format: date-time
+          model_calls:
+            type: integer
+            minimum: 0
+          max_model_calls:
+            type: integer
+            minimum: 0
+          error_code:
+            type:
+            - string
+            - 'null'
+          can_resume:
+            type: boolean
+      - type: object
+        required:
+        - plan
+        - sources
+        - events
+        - result
+        properties:
+          plan:
+            type: array
+            items:
+              type: string
+          sources:
+            type: array
+            items:
+              $ref: '#/components/schemas/ResearchSource'
+          events:
+            type: array
+            items:
+              $ref: '#/components/schemas/ResearchEvent'
+          result:
+            type:
+            - object
+            - 'null'
+            description: Checked human-review draft with title, cited findings, review questions, limitations and pinned
+              sources; or an insufficient-evidence explanation. Never a compliance approval.
     HealthStatus:
       type: object
       additionalProperties: false

@@ -18,19 +18,19 @@ export function BeginnerHome() {
     <div className={styles.home}>
       <header className={styles.intro}>
         <p className={styles.byline}>{text("Daewoong · FDA research assistant", "대웅 · FDA 업무 도우미")}</p>
-        <h1>{text("FDA questions, made easier.", "FDA 자료, 혼자 읽지 마세요.")}</h1>
-        <p>{text("Ask in your own words. The AI finds relevant warning letters and explains the evidence, so you can prepare your next review.", "평소 쓰는 말로 질문하세요. AI가 관련 경고서한을 찾아 근거와 함께 설명하고, 다음 검토를 준비하도록 도와드립니다.")}</p>
-        <Link href="/ask" className={`button button--primary ${styles.start}`}>
+        <h1>{text("Give your FDA research a goal.", "FDA 리서치, 목표만 알려 주세요.")}</h1>
+        <p>{text("Your research agent plans the work, reads FDA sources, checks its findings, and prepares a review brief. Follow each action as it happens.", "리서치 에이전트가 계획을 세우고 FDA 원문을 읽어 근거를 검토한 뒤 브리핑을 준비합니다. 작업 과정을 실시간으로 확인하세요.")}</p>
+        <Link href="/research" className={`button button--primary ${styles.start}`}>
           <MessageSquareText size={21} aria-hidden="true" />
-          {text("Ask the AI", "AI에게 질문하기")}
+          {text("Start agent research", "에이전트 리서치 시작")}
           <ArrowRight size={20} aria-hidden="true" />
         </Link>
-        <span className={styles.hint}>{text("No setup needed. Korean or English is fine.", "설정 없이 바로 시작 · 한국어로 편하게 질문하세요")}</span>
+        <span className={styles.hint}>{text("No setup needed. Korean or English is fine.", "설정 없이 바로 시작 · 한국어로 편하게 요청하세요")} <Link href="/ask">{text("Ask a quick question", "간단한 질문하기")}</Link></span>
       </header>
 
       <section className={styles.examples} aria-labelledby="examples-heading">
-        <h2 id="examples-heading">{text("Not sure what to ask? Start here.", "무엇을 물어볼지 고민된다면")}</h2>
-        <p>{text("Choose an example, edit the question, then send it.", "예시를 선택하고, 질문을 원하는 대로 바꾼 뒤 보내세요.")}</p>
+        <h2 id="examples-heading">{text("Just need a quick answer?", "간단한 답변이 필요하신가요?")}</h2>
+        <p>{text("These examples open quick chat. For a full research brief, start agent research above.", "이 예시는 빠른 질문 화면으로 이동합니다. 전체 조사 브리핑이 필요하면 위의 에이전트 리서치를 시작하세요.")}</p>
         <div className={styles.tasks}>
           {beginnerPrompts.map((task) => (
             <Link key={task.id} href={`/ask?starter=${task.id}`}>
@@ -42,11 +42,11 @@ export function BeginnerHome() {
       </section>
 
       <section className={styles.how} aria-labelledby="how-heading">
-        <h2 id="how-heading">{text("From question to evidence", "질문하면 이렇게 도와드려요")}</h2>
+        <h2 id="how-heading">{text("From a goal to a review brief", "목표에서 검토 브리핑까지")}</h2>
         <ol>
-          <li><strong>{text("You ask", "질문하기")}</strong><p>{text("Name a topic or open a letter you want to understand.", "궁금한 주제를 적거나 살펴볼 경고서한을 선택하세요.")}</p></li>
-          <li><strong>{text("AI finds and explains", "AI가 찾아 설명하기")}</strong><p>{text("It searches the saved FDA sources and prepares an answer with references.", "저장된 FDA 자료를 찾아 원문 근거와 함께 답변을 정리합니다.")}</p></li>
-          <li><strong>{text("You check the source", "원문 확인하기")}</strong><p>{text("Open the numbered references, then ask a follow-up question. Your team makes the final decision.", "답변의 출처 번호로 원문을 확인하고 이어서 질문하세요. 최종 판단은 담당자가 합니다.")}</p></li>
+          <li><strong>{text("Set the goal", "목표 알려주기")}</strong><p>{text("Describe the briefing or comparison your team needs.", "팀에 필요한 브리핑이나 비교 내용을 적어 주세요.")}</p></li>
+          <li><strong>{text("Follow the agent’s work", "에이전트 작업 확인하기")}</strong><p>{text("See its plan, searches, source passages, and evidence checks as it works.", "조사 계획과 검색, 원문 확인, 근거 검토 과정을 실시간으로 살펴보세요.")}</p></li>
+          <li><strong>{text("Review the saved brief", "저장된 브리핑 검토하기")}</strong><p>{text("Open citations and review the draft with your team. The final decision stays with you.", "출처를 열어 초안을 대조하고 팀과 검토하세요. 최종 판단은 담당자가 합니다.")}</p></li>
         </ol>
       </section>
 

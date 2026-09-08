@@ -28,6 +28,10 @@ human approvals, and execution oversight. Korean and English are supported.
 The user explicitly removed all account login. Public visitors remain viewers.
 Existing API authorization, source-version ownership, and review gates remain.
 The hosted database, FDA source library and cited AI answers are connected.
+The FDA Research Agent accepts an employee goal, chooses bounded search/read tools,
+checks cited findings and saves a review brief. Its plan, tool events and evidence
+are visible during execution. Tasks persist on the service with browser-session
+ownership, stop/resume controls and bounded background execution.
 Automatic FDA ingestion, specialist execution and independent evaluation
 qualification are incomplete. The interface must never invent runs,
 FDA records, completion statistics, or successful agent execution. A locally
@@ -52,4 +56,4 @@ functional baseline. Agent definitions exist under contracts/agents.
 - Explain which actions work now, where work is saved, and what happens next.
 - Make agent responsibility, source evidence, and human decisions inspectable.
 - Distinguish planned, running, completed, unavailable, and restricted states.
-- Lead beginners to working FDA search and AI answers; keep draft preparation secondary.
+- Lead beginners to FDA agent research; keep quick chat accessible and local draft preparation secondary.
