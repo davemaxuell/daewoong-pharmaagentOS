@@ -1842,7 +1842,6 @@ export function ChatWorkspace({
             value={question}
             rows={2}
             maxLength={2000}
-            aria-label={text("Ask about FDA warning letters", "FDA 경고서한에 대해 질문하기")}
             placeholder={text("e.g. Explain FDA findings about cleaning validation in simple terms.", "예: 세척 밸리데이션 관련 FDA 지적 사항을 쉽게 설명해주세요.")}
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={handleComposerKeyDown}
@@ -1903,7 +1902,6 @@ export function ChatWorkspace({
                   || preferencesPending
                   || question.trim().length < 3
                 }
-                aria-label={text("Send message", "메시지 보내기")}
                 onClick={() => runQuery(question)}
               >
                 <ArrowUp size={17} strokeWidth={2.2} />
