@@ -11,16 +11,23 @@ next steps. This file remains the authoritative implementation record.
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
 **2026-09-08 FDA Research Agent:** A bounded goal-driven research workflow is
-implemented at `/research`. OpenAI chooses native plan/search/read/submit tools;
+deployed at `/research`. OpenAI chooses native plan/search/read/submit tools;
 source integrity and a separate AI evidence check gate a saved human-review brief.
 Supabase persists browser-owned tasks, private checkpoints and public execution
 events. The interface shows actual live actions, plan and source passages, with
 Stop/Resume, View brief and export. Research has a separately enabled background
-worker lane and conditional one-minute recovery schedule. New tables deny browser
+worker lane and active conditional one-minute recovery schedule. Real Korean and
+English OpenAI briefs, live progress, browser isolation, and Stop/Resume completing
+after all browser pages close are verified. New tables deny browser
 and general read-only database roles. Existing internal specialist/approval and
 FDA ingestion execution remain unqualified/disabled. See
 [research qualification](docs/assurance/research-agent-20260908.md) for local and
 hosted evidence. Preserve the user's untracked root package files and `supabase/`.
+
+Release `e0f8c28` is deployed and all GitHub checks pass: 551 backend tests,
+46 frontend tests, PostgreSQL/RLS/concurrency, Temporal and container/security
+checks. The final Korean hosted brief completed in 23.1 seconds with two sources;
+the complete browser journey and background Stop/Resume passed without errors.
 
 **2026-09-08 loading performance:** Sidebar history/notifications now load after
 the page renders, with private authenticated responses and retry without a page

@@ -2,7 +2,7 @@
 
 Prepared: **2026-09-08**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
-Current status: **frontend, FDA library and grounded OpenAI chat hosted; full case-agent execution and production qualification incomplete**
+Current status: **FDA library, grounded OpenAI chat and durable FDA Research Agent hosted; full internal case-agent qualification incomplete**
 
 **FDA Research Agent (2026-09-08):** `/research` now implements goal-driven native
 OpenAI tools, source/evidence checking, Supabase task/event persistence and visible
@@ -10,7 +10,10 @@ live progress. Stop/Resume preserve bounded checkpoints; completed briefs expose
 citations and exports. This public-FDA workflow is separate from the still-disabled
 internal case/ingestion lanes. Additive research tables and Vault/worker settings
 are provisioned. See [release evidence](docs/assurance/research-agent-20260908.md)
-for exact verification and deployment status; the implementation handoff remains
+for exact verification and deployment status. Release `e0f8c28` is deployed with
+all GitHub checks passing (551 backend tests, 46 frontend tests and the separate
+PostgreSQL/Temporal/security jobs). The real hosted Korean research and complete
+Stop/Resume browser journey pass. The implementation handoff remains
 authoritative. Do not stage the user's root package files or `supabase/`.
 
 **Loading optimized (2026-09-08):** Application revision `489214b` is deployed and
