@@ -1,4 +1,5 @@
 import "server-only";
+import { backendOrigin } from "@/lib/backend-origin";
 
 import { getBackendBearerAssertion } from "@/lib/backend-auth";
 import {
@@ -74,7 +75,7 @@ export type CreateCasePlanInput = {
   assignedReviewerId?: string;
 };
 
-const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = backendOrigin();
 
 /**
  * Event history is loaded in bounded pages so the case workspace never presents

@@ -9,7 +9,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.config import Settings
 
 
-class VercelRequestLogMiddleware:
+class ManagedRequestLogMiddleware:
     """Emit bounded request metadata to managed runtime logs, including streamed failures."""
 
     def __init__(self, app: ASGIApp, *, service_name: str) -> None:
@@ -54,11 +54,15 @@ class VercelRequestLogMiddleware:
             )
 
 
+# Retain the import used by existing integrations and their regression checks.
+VercelRequestLogMiddleware = ManagedRequestLogMiddleware
+
+
 def configure_telemetry(app: FastAPI, settings: Settings) -> None:
     """Configure metadata-only OTLP tracing; regulated payloads stay in governed stores."""
 
-    if settings.telemetry_backend == "vercel_logs":
-        app.add_middleware(VercelRequestLogMiddleware, service_name=settings.otel_service_name)
+    if settings.telemetry_backend in {"vercel_logs", "railway_logs"}:
+        app.add_middleware(ManagedRequestLogMiddleware, service_name=settings.otel_service_name)
         return
     if not settings.otel_exporter_otlp_endpoint:
         return

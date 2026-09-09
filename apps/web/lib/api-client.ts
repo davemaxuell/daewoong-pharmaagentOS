@@ -1,4 +1,5 @@
 import "server-only";
+import { backendOrigin } from "@/lib/backend-origin";
 
 import {
   seedAdmin,
@@ -54,7 +55,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = backendOrigin();
 
 function isLocalApi(url: string) {
   try {

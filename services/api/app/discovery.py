@@ -126,6 +126,8 @@ class ListingRepresentation:
     candidates: list[ListingCandidate]
     export_url: str | None = None
     warnings: list[str] = field(default_factory=list)
+    row_count: int | None = None
+    total_items: int | None = None
 
 
 @dataclass(frozen=True)
@@ -423,11 +425,14 @@ def parse_datatables_page(
     data = payload.get("data") if isinstance(payload, dict) else None
     if not isinstance(data, list):
         raise ListingDiscoveryError("FDA DataTables response omitted its data rows")
+    total = payload.get("recordsFiltered", payload.get("recordsTotal"))
+    if total is not None and (type(total) is not int or total < 0):
+        raise ListingDiscoveryError("FDA DataTables response has an invalid record count")
 
     rows: list[dict[str, Any]] = []
     for values in data:
         if not isinstance(values, list):
-            continue
+            raise ListingDiscoveryError("FDA DataTables response has a malformed row")
         mapped: dict[str, Any] = {}
         for index, column in enumerate(columns):
             if index >= len(values):
@@ -452,6 +457,8 @@ def parse_datatables_page(
         raise ListingDiscoveryError(
             "FDA DataTables response contained rows but no valid warning-letter URLs"
         )
+    if len(candidates) != len(rows):
+        raise ListingDiscoveryError("FDA DataTables response has missing or duplicate letter URLs")
     final = canonicalize_fda_url(source_url, allowed_hosts)
     fingerprint = hashlib.sha256(
         json.dumps(canonical_columns, separators=(",", ":")).encode("utf-8")
@@ -466,6 +473,8 @@ def parse_datatables_page(
         schema_fingerprint=fingerprint,
         candidates=candidates,
         warnings=warnings,
+        row_count=len(data),
+        total_items=total,
     )
 
 

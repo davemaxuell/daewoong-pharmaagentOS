@@ -189,22 +189,32 @@ class Settings(BaseSettings):
     # Central telemetry is opt-in locally. Production exports OTLP to the private
     # collector endpoint and does not include prompt/document bodies in spans.
     otel_service_name: str = "pharma-agent-api"
-    telemetry_backend: Literal["otlp", "vercel_logs"] = "otlp"
+    telemetry_backend: Literal["otlp", "vercel_logs", "railway_logs"] = "otlp"
     otel_exporter_otlp_endpoint: str | None = None
 
     # Environment secrets support local development only; Kubernetes/production
     # should use workload identity plus the configured external provider.
-    secret_provider: Literal["environment", "aws", "vercel"] = "environment"
+    secret_provider: Literal["environment", "aws", "vercel", "railway"] = "environment"
     secrets_aws_region: str | None = None
     secrets_aws_prefix: str = "pharma-agent-os/"
     vercel: str | None = None
     vercel_env: str | None = None
     vercel_project_id: str | None = None
+    railway_project_id: str | None = None
+    railway_environment_id: str | None = None
+    railway_service_id: str | None = None
+    railway_public_domain: str | None = None
+    railway_private_domain: str | None = None
     serverless_worker_enabled: bool = False
     research_agent_enabled: bool = False
     worker_database_url: SecretStr | None = None
     worker_trigger_secret: SecretStr | None = None
     worker_slice_seconds: int = Field(default=210, ge=10, le=240)
+    ingestion_worker_enabled: bool = False
+    ingestion_schedule_enabled: bool = False
+    ingestion_schedule_hours: int = Field(default=24, ge=1, le=168)
+    ingestion_refresh_days: int = Field(default=14, ge=1, le=365)
+    background_poll_seconds: float = Field(default=2.0, ge=0.1, le=60)
 
     @field_validator(
         "allowed_origins",
@@ -293,6 +303,28 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_posture(self) -> Settings:
+        if self.secret_provider == "railway":
+            if not (self.railway_project_id and self.railway_environment_id
+                    and self.railway_service_id):
+                raise ValueError("SECRET_PROVIDER=railway requires Railway runtime metadata")
+            if self.app_env == "production" and self.object_store_backend == "local":
+                raise ValueError("Railway production requires persistent remote object storage")
+            runtime_hosts = ["healthcheck.railway.app"]
+            for domain in (self.railway_public_domain, self.railway_private_domain):
+                if domain:
+                    if not all(part and all(c.isalnum() or c == "-" for c in part)
+                               for part in domain.split(".")):
+                        raise ValueError("Railway domain metadata must contain an exact hostname")
+                    runtime_hosts.append(domain.lower())
+            self.allowed_hosts = list(dict.fromkeys([*self.allowed_hosts, *runtime_hosts]))
+        if self.telemetry_backend == "railway_logs" and self.secret_provider != "railway":
+            raise ValueError("TELEMETRY_BACKEND=railway_logs requires managed Railway settings")
+        if self.ingestion_schedule_enabled and not self.ingestion_worker_enabled:
+            raise ValueError("Scheduled ingestion requires INGESTION_WORKER_ENABLED=true")
+        if self.ingestion_worker_enabled and (
+            self.embedded_worker_enabled or self.temporal_enabled
+        ):
+            raise ValueError("The ingestion worker requires separate database-queue execution")
         if self.telemetry_backend == "vercel_logs" and not (
             self.secret_provider == "vercel"
             and self.vercel == "1"

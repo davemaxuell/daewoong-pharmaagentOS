@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -77,6 +77,9 @@ _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _DISCOVERY_JOB_TYPES = frozenset(
     {"discovery", "reconcile", "lifecycle_sweep", "backfill", "lifecycle"}
 )
+INGESTION_JOB_TYPES = (*sorted(_DISCOVERY_JOB_TYPES), "reprocess", "embed", "integrity_sample")
+# Short transaction lock; safe with Supabase's transaction pooler. Never held over HTTP work.
+INGESTION_CLAIM_LOCK = 74219183
 # ``available_at`` doubles as a lease deadline while a job is RUNNING. This keeps
 # the durable queue portable (no database-specific lease column) and lets another
 # standalone worker recover a job after a process or pod disappears. The
@@ -275,7 +278,8 @@ async def recover_interrupted_local_jobs(session: AsyncSession) -> int:
 
 
 def _claim_job_statement(
-    *, claimed_at: datetime, dialect_name: str, job_types: tuple[str, ...] | None = None
+    *, claimed_at: datetime, dialect_name: str, job_types: tuple[str, ...] | None = None,
+    single_active: bool = False,
 ):
     """Build one atomic queue claim, using SKIP LOCKED on PostgreSQL."""
 
@@ -290,6 +294,13 @@ def _claim_job_statement(
     )
     if job_types is not None:
         candidate = candidate.where(ProcessingJob.job_type.in_(job_types))
+    if single_active:
+        running = select(ProcessingJob.id).where(
+            ProcessingJob.status == JobStatus.RUNNING.value,
+            ProcessingJob.available_at > claimed_at,
+            ProcessingJob.job_type.in_(job_types or INGESTION_JOB_TYPES),
+        ).correlate(None).exists()
+        candidate = candidate.where(~running)
     if dialect_name == "postgresql":
         candidate = candidate.with_for_update(skip_locked=True)
     candidate_id = candidate.scalar_subquery()
@@ -317,17 +328,21 @@ def _claim_job_statement(
 
 
 async def _claim_next_job(
-    database: Database, *, job_types: tuple[str, ...] | None = None
+    database: Database, *, job_types: tuple[str, ...] | None = None,
+    single_active: bool = False,
 ) -> _JobClaim | None:
     """Atomically move the oldest available job from PENDING to RUNNING."""
 
     claimed_at = utcnow()
     async with database.session_factory() as session:
         dialect_name = session.get_bind().dialect.name
+        if single_active and dialect_name == "postgresql":
+            await session.execute(select(func.pg_advisory_xact_lock(INGESTION_CLAIM_LOCK)))
         row = (
             await session.execute(
                 _claim_job_statement(
-                    claimed_at=claimed_at, dialect_name=dialect_name, job_types=job_types
+                    claimed_at=claimed_at, dialect_name=dialect_name, job_types=job_types,
+                    single_active=single_active,
                 )
             )
         ).one_or_none()
@@ -352,6 +367,7 @@ async def recover_stale_worker_jobs(
     database: Database,
     *,
     recovered_at: datetime | None = None,
+    job_types: tuple[str, ...] | None = None,
 ) -> int:
     """Recover a bounded batch of RUNNING jobs whose heartbeat lease expired.
 
@@ -376,6 +392,8 @@ async def recover_stale_worker_jobs(
             .order_by(ProcessingJob.available_at, ProcessingJob.id)
             .limit(_STALE_JOB_RECOVERY_LIMIT)
         )
+        if job_types is not None:
+            statement = statement.where(ProcessingJob.job_type.in_(job_types))
         if session.get_bind().dialect.name == "postgresql":
             statement = statement.with_for_update(skip_locked=True)
         rows = (await session.execute(statement)).all()
@@ -663,6 +681,47 @@ async def _fixture_discovery(
     return metrics
 
 
+async def _recent_candidate_urls(
+    session: AsyncSession, candidates: list[ListingCandidate], refresh_before: str | None,
+) -> set[str]:
+    """Daily scheduling revisits new/changed/stale sources without a daily full refetch."""
+    if not refresh_before or not candidates:
+        return set()
+    cutoff = datetime.fromisoformat(refresh_before)
+    if cutoff.tzinfo is None:
+        raise ValueError("Scheduled refresh cutoff must include its timezone")
+    rows = (await session.execute(
+        select(WarningLetter, DocumentVersion.http_provenance)
+        .join(DocumentVersion, DocumentVersion.id == WarningLetter.current_version_id)
+        .where(WarningLetter.canonical_url.in_([item.canonical_url for item in candidates]))
+    )).all()
+    known = {letter.canonical_url: (letter, provenance or {}) for letter, provenance in rows}
+    recent = set()
+    for candidate in candidates:
+        stored = known.get(candidate.canonical_url)
+        if not stored:
+            continue
+        letter, provenance = stored
+        last_seen = letter.last_seen_at
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=UTC)
+        metadata_same = all(
+            value is None or value == getattr(letter, field)
+            for field, value in (
+                ("posted_date", candidate.posted_date), ("issue_date", candidate.issue_date),
+                ("company_name", candidate.company_name), ("subject", candidate.subject),
+            )
+        ) and (
+            not candidate.issuing_office or candidate.issuing_office in letter.issuing_offices
+        ) and all(
+            getattr(candidate, field) == provenance.get(field)
+            for field in ("response_url", "closeout_url")
+        )
+        if last_seen >= cutoff and metadata_same:
+            recent.add(candidate.canonical_url)
+    return recent
+
+
 async def _live_discovery(
     session: AsyncSession,
     settings: Settings,
@@ -720,7 +779,11 @@ async def _live_discovery(
         listing_total = datatables.total_items
         seen_urls: set[str] = set()
         page_size = 1000
-        for draw, start in enumerate(range(0, datatables.total_items, page_size), start=1):
+        start, draw = 0, 0
+        while start < listing_total:
+            draw += 1
+            if draw > 100 or len(candidates) > _MAX_CHECKPOINT_HASHES:
+                raise ListingDiscoveryError("FDA listing exceeded the bounded discovery window")
             page_url = datatables.page_url(
                 start=start,
                 length=page_size,
@@ -747,12 +810,20 @@ async def _live_discovery(
                 last_modified=page_fetch.headers.get("last-modified"),
             )
             await session.commit()
+            if page_representation.total_items is not None:
+                listing_total = page_representation.total_items
+            if not page_representation.candidates:
+                if start >= listing_total and candidates:
+                    break
+                raise ListingDiscoveryError("FDA listing ended before all advertised rows arrived")
+            previous_count = len(seen_urls)
             for candidate in page_representation.candidates:
                 if candidate.canonical_url not in seen_urls:
                     candidates.append(candidate)
                     seen_urls.add(candidate.canonical_url)
-            if not page_representation.candidates:
-                break
+            if len(seen_urls) == previous_count:
+                raise ListingDiscoveryError("FDA listing repeated a page instead of advancing")
+            start += page_representation.row_count or len(page_representation.candidates)
             # FDA sorts the table by posted date descending. Once a whole page
             # predates the rolling window, every subsequent page is older too.
             if all(
@@ -841,9 +912,17 @@ async def _live_discovery(
     )
     run.metrics = dict(metrics)
     await session.commit()
+    recent_urls = await _recent_candidate_urls(
+        session, eligible_candidates, job.payload.get("refresh_before"),
+    )
+    metrics["skipped_recent"] = 0
+    await session.commit()
     for candidate in eligible_candidates:
         candidate_hash = _candidate_digest(candidate.canonical_url)
         if candidate_hash in completed_hashes:
+            continue
+        if candidate.canonical_url in recent_urls:
+            metrics["skipped_recent"] += 1
             continue
         try:
             detail = await client.fetch(candidate.canonical_url)
@@ -1047,9 +1126,10 @@ async def process_next_job(
     reference_date: date | None = None,
     job_types: tuple[str, ...] | None = None,
     continuation_on_cancel: bool = False,
+    single_active: bool = False,
 ) -> WorkerResult | None:
     effective_reference_date = reference_date or utcnow().date()
-    claim = await _claim_next_job(database, job_types=job_types)
+    claim = await _claim_next_job(database, job_types=job_types, single_active=single_active)
     if claim is None:
         return None
     job_id = claim.job_id

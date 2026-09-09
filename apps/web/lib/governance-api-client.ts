@@ -1,4 +1,5 @@
 import "server-only";
+import { backendOrigin } from "@/lib/backend-origin";
 
 import { getBackendBearerAssertion } from "@/lib/backend-auth";
 
@@ -88,7 +89,7 @@ export class GovernanceApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = backendOrigin();
 
 function record(value: unknown, label: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

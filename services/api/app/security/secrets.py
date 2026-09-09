@@ -57,7 +57,17 @@ class VercelSecretProvider(EnvironmentSecretProvider):
     """
 
 
+class RailwaySecretProvider(EnvironmentSecretProvider):
+    """Resolve Railway's injected service variables; seal credentials in Railway.
+
+    Runtime metadata prevents accidental local selection, not remote attestation.
+    No Railway account token is needed by the application.
+    """
+
+
 def build_secret_provider(settings: Settings) -> SecretProvider:
+    if settings.secret_provider == "railway":
+        return RailwaySecretProvider()
     if settings.secret_provider == "vercel":
         return VercelSecretProvider()
     if settings.secret_provider == "aws":

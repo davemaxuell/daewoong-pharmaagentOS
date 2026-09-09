@@ -4,6 +4,11 @@ The selected production target is now **Vercel + Supabase**. Follow the
 [production runbook](vercel/README.md) and its architecture decision for that
 target. The Kubernetes/AWS material below remains an alternative reference.
 
+For the requested Railway backend with the existing Vercel website and Supabase
+data, follow [RAILWAY_SETUP.md](../../RAILWAY_SETUP.md). That preparation adds a
+separate API and durable ingestion/research worker; target deployment and website
+cutover remain the user's next steps.
+
 This directory contains a platform-neutral configuration shape and an example hardened Kubernetes base. It is a starting template, not authorization to deploy to production. Final ingress/WAF, workload identity, secret manager, private managed data services, egress enforcement, certificates, SIEM, backup/PITR, and HA settings depend on Daewoong's approved platform.
 
 ## Container builds

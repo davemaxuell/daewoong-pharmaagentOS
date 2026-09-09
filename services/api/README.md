@@ -8,6 +8,12 @@ requires migration alignment before production rollout.
 
 ## Local start
 
+For GitHub-to-Railway hosting with the existing Vercel website and Supabase data,
+use [RAILWAY_SETUP.md](../../RAILWAY_SETUP.md). Run the API with
+`python -m app.serve` and its separate ingestion/research worker with
+`python -m app.background_worker`. A read-only source check is available as
+`python -m app.fda_probe --pages 2 --details 2`.
+
 ```powershell
 cd services/api
 python -m venv .venv

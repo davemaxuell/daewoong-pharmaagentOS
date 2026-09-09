@@ -1,5 +1,11 @@
 # Ingestion, parser, and Product-scope runbook
 
+The [Railway backend profile](../../RAILWAY_SETUP.md) runs
+`python -m app.background_worker` with a durable daily discovery schedule and
+incremental refresh. Its shipped `app.fda_probe` command checks actual FDA access
+without database writes. Keep other ingestion consumers disabled when using this
+profile; research uses its own leased queue.
+
 ## Discovery failure
 
 1. Confirm the last successful run, queue age, source status, and whether the failure is isolated or system-wide.
@@ -39,4 +45,3 @@
 2. Require repeatable confirmation before `SOURCE_UNAVAILABLE`; do not create it for one transient failure.
 3. Emit `RESTORED` when the source returns. Never silently replace historical URLs or retrieval dates.
 4. Revalidate Product and canonical content on any new destination before publication.
-

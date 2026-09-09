@@ -97,6 +97,8 @@ jobs:
       - run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_agent_platform_postgres.py
       - name: Verify concurrent research admission, worker claims, and stop fencing
         run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_research_postgres.py
+      - name: Verify scheduled ingestion and single active scraper on PostgreSQL
+        run: AGENT_OS_POSTGRES_TEST=1 pytest tests/test_background_worker_postgres.py
       - name: Verify Supabase browser denial and runtime RLS visibility
         run: AGENT_OS_SUPABASE_TEST=1 pytest tests/test_supabase_boundary.py
       - name: Seed restore canary and create isolated target

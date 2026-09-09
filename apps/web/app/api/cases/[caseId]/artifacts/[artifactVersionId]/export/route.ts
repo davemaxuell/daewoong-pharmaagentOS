@@ -1,4 +1,5 @@
 import { getPortalIdentity, getBackendBearerAssertion } from "@/lib/backend-auth";
+import { backendOrigin } from "@/lib/backend-origin";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export async function GET(
   if (!UUID_PATTERN.test(caseId) || !UUID_PATTERN.test(artifactVersionId)) {
     return Response.json({ error: "Artifact reference is invalid." }, { status: 422 });
   }
-  const origin = process.env.API_BASE_URL?.replace(/\/$/, "");
+  const origin = backendOrigin();
   if (!origin) return Response.json({ error: "The case service is not configured." }, { status: 503 });
   const assertion = await getBackendBearerAssertion();
   const upstream = await fetch(

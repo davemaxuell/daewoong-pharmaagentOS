@@ -1,4 +1,5 @@
 import "server-only";
+import { backendOrigin } from "@/lib/backend-origin";
 import { getBackendBearerAssertion } from "@/lib/backend-auth";
 
 export class ResearchApiError extends Error {
@@ -6,7 +7,7 @@ export class ResearchApiError extends Error {
 }
 
 export async function researchApi(path = "", init?: RequestInit) {
-  const base = process.env.API_BASE_URL?.replace(/\/$/, "");
+  const base = backendOrigin();
   if (!base) throw new ResearchApiError(503);
   const token = await getBackendBearerAssertion();
   const headers = new Headers({ Accept: "application/json" });
@@ -24,6 +25,7 @@ export async function researchApi(path = "", init?: RequestInit) {
 }
 
 export async function wakeResearchWorker() {
+  if (process.env.RESEARCH_WORKER_MODE === "poll") return;
   const base = process.env.RESEARCH_WORKER_URL?.replace(/\/$/, "");
   const secret = process.env.WORKER_TRIGGER_SECRET;
   if (!base || !secret) return; // A durable queue is also serviced by the recovery schedule.

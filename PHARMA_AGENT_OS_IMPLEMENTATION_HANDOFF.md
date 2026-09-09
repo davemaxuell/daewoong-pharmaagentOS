@@ -10,6 +10,16 @@ next steps. This file remains the authoritative implementation record.
 **Source plan:** `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`  
 **Implementation state:** Milestones 0–8 have reference implementations; production qualification is incomplete.
 
+**2026-09-09 Railway backend preparation:** The backend now supports Railway API
+and persistent ingestion/research worker services using the existing Supabase
+database and storage. Daily incremental FDA collection, checkpoint recovery,
+single active ingestion claims, strict pagination checks and a read-only live
+FDA diagnostic are implemented. The Vercel website has an optional external API
+origin and polling-worker setting. Follow [RAILWAY_SETUP.md](RAILWAY_SETUP.md)
+and [qualification evidence](docs/assurance/railway-20260909.md). The user will
+deploy Railway from GitHub; Railway resources, production routing and existing
+Supabase schedules are unchanged. Preserve root package files and `supabase/`.
+
 **2026-09-09 visual simplification:** Home and Help use a shared three-step visual
 journey, short task rows and expandable scope/storage notes. Research has a compact
 journey, stage/action icons, the latest four actions with full-history disclosure,

@@ -4,6 +4,14 @@ Prepared: **2026-09-09**
 Requested outcome: **launch-ready production on Vercel and Supabase**  
 Current status: **FDA library, grounded OpenAI chat and durable FDA Research Agent hosted; full internal case-agent qualification incomplete**
 
+**Railway backend preparation (2026-09-09):** The user will deploy from GitHub.
+Use [RAILWAY_SETUP.md](RAILWAY_SETUP.md) for two service settings and credential
+templates, then the Vercel website cutover. Durable scheduled FDA ingestion,
+restart recovery and live source pagination/detail checks are implemented.
+The database/storage remain on the current Supabase project; no production
+cutover or Railway deployment has been performed. Verification and publication
+state: [Railway evidence](docs/assurance/railway-20260909.md).
+
 **Visual simplification (2026-09-09):** Home/Help now explain the workflow with three
 labeled steps; research uses compact stage/action icons and expandable plans,
 full activity history and review notes. Repeated explanatory paragraphs are shorter,
