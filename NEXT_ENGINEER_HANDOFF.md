@@ -11,6 +11,9 @@ restart recovery and live source pagination/detail checks are implemented.
 The database/storage remain on the current Supabase project; no production
 cutover or Railway deployment has been performed. Verification and publication
 state: [Railway evidence](docs/assurance/railway-20260909.md).
+Application revision `386d753` is pushed, all GitHub checks pass, and the existing
+Vercel site/library remain healthy. Railway deployment and routing cutover are
+still pending the user's action.
 
 **Visual simplification (2026-09-09):** Home/Help now explain the workflow with three
 labeled steps; research uses compact stage/action icons and expandable plans,

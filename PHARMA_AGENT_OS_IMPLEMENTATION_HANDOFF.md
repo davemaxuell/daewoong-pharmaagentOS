@@ -20,6 +20,13 @@ and [qualification evidence](docs/assurance/railway-20260909.md). The user will
 deploy Railway from GitHub; Railway resources, production routing and existing
 Supabase schedules are unchanged. Preserve root package files and `supabase/`.
 
+Application revision `386d753` is pushed and its Vercel deployment is healthy.
+All GitHub quality/security jobs pass, including PostgreSQL scheduling/claim
+concurrency and both containers. Local verification passed 574 backend tests,
+50 frontend tests, production build and live FDA pagination/detail ingestion.
+The remaining step is the user's Railway deployment and subsequent website
+cutover using the prepared guide.
+
 **2026-09-09 visual simplification:** Home and Help use a shared three-step visual
 journey, short task rows and expandable scope/storage notes. Research has a compact
 journey, stage/action icons, the latest four actions with full-history disclosure,
