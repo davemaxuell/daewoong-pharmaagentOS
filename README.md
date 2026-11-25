@@ -1,111 +1,133 @@
 # PharmaAgent OS
 
-An evidence-first research and review workspace. Home starts with an employee's
-objective; the FDA Research Agent produces a cited brief, while Ask AI supports
-quick questions. Saved conversations, research tasks and personal drafts can be
-resumed from Home. Public browsing requires no account. Formal team decisions
-remain version-bound and require authorized reviewers.
+**An evidence-first FDA Drug Warning Letter Intelligence & Agentic Regulatory Review Workspace.**
 
-An evidence-first internal service for monitoring U.S. FDA warning letters whose
-canonical FDA metadata contains the exact product class `Drugs`. The platform
-keeps official source evidence authoritative, versions every source and derived
-artifact, and prevents unverified or non-Drug records from entering search or RAG.
+Built with **Next.js 16 (React 19)**, **FastAPI**, **PostgreSQL + pgvector**, **LangGraph**, **Temporal**, and **MCP (Model Context Protocol)** — designed so both regulatory specialists and non-technical employees can explore official U.S. FDA `Product: Drugs` warning letters, run cited AI research, compare bilingual translations side by side against authoritative FDA originals, and govern human-reviewed cases with full provenance.
 
-This repository implements the production handover in
-`FDA_Drug_Warning_Letter_Intelligence_Platform_Industrial_Handover_v2.md`.
-The consolidated product experience and release acceptance contract lives in
-`docs/product/UX_SPEC.md`; it is the source of truth for current interface behavior.
-The complete feature, interface, backend-pipeline, operations, and current-state
-handoff is maintained in [`HANDOFF.md`](HANDOFF.md).
+---
 
-The additive PharmaAgent OS implementation baseline is defined by
-[`docs/product/PHARMA_AGENT_OS_SPEC.md`](docs/product/PHARMA_AGENT_OS_SPEC.md),
-with its intended-use boundary and staged architecture under `docs/assurance/`
-and `docs/architecture/agent-platform.md`. The complete implementation inventory,
-verification evidence, migration order, and operations handoff are in
-[`PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md`](PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md).
+## Key Highlights for Reviewers
 
-Deployment status and the remaining launch blockers are recorded in
-the [2026-09-06 readiness audit](docs/assurance/launch-readiness-20260906.md).
-Passing local tests does not constitute production release approval.
+- **Evidence-First & Deterministic Scope Control:** AI never decides corpus admission. A deterministic scope gate admits only verified FDA warning letters with canonical metadata `Product: Drugs`, retaining raw bytes and immutable source versions separately from derived summaries and embeddings.
+- **Agentic RAG & Bounded Research Agent:** Adaptive retrieval routing skips corpus search for greetings, routes structured queries (dates, counts, links) to catalog metadata, locks dossier follow-ups to pinned letters, and supports `Fast / Balanced / Deep / Auto` model profiles.
+- **Governed Multi-Agent Architecture (Milestones 0–8):** 5 versioned specialist agents, 10 skills, and 16 deny-by-default tools across 3 private MCP bundles (`regulatory`, `knowledge`, `workflow`), orchestrated via bounded LangGraph execution inside an optional Temporal outer workflow.
+- **Warm Porcelain Neumorphic UI (EN / 한국어):** Full English & Korean interface powered by local Pretendard typography, tactile neumorphic surfaces, reduced-motion & forced-colors accessibility, and section-by-section Korean translation comparison against exact FDA source passages.
+- **Production-Grade Verification & CI:** 63 backend `pytest` test modules, 29 frontend unit/component test files, cross-browser Playwright E2E suite (Chromium, Firefox, WebKit), `pgvector` PostgreSQL schema CI, OpenAPI 3.1 / JSON Schema contract validation, and CodeQL scanning.
 
-## What is implemented
+---
 
-- FastAPI service with deterministic Product scope decisions, immutable source
-  versions, lifecycle events, evidence anchors, review state, audit events, and
-  authorization-aware retrieval.
-- FDA acquisition controls including host and IP validation, redirect limits,
-  response bounds, `robots.txt`, crawl-delay enforcement, and FDA's server-side
-  DataTables JSON/HTML listing discovery. Discovery/backfill uses a configurable
-  three-year window, while an
-  auditable five-year soft-retirement gate keeps aged letters out of active search
-  and RAG without deleting retained source evidence.
-- Automatic, idempotent NEW/UPDATED email outbox delivery with an admin-editable
-  target. SMTP is disabled locally until an approved provider is explicitly
-  configured, so tests and fixture ingestion cannot send real mail.
-- Next.js portal with a research-first Home, source-grounded chat, a server-paginated
-  Drug Letter Explorer, evidence detail, trends, saved views,
-  review, and operations administration. Each detail view can persist a validated
-  Korean full-letter translation, structured findings, and a practical summary
-  against the exact retained FDA source version, then open a letter-constrained
-  chat with those saved artifacts available as non-authoritative context. The
-  entire application chrome and workflow UI can be switched between English and
-  Korean; official FDA source text remains authoritative.
-- Account-free public browsing with isolated anonymous browser sessions and
-  owner-scoped persistent chat history. Public visitors have viewer permissions;
-  privileged review and administration remain protected.
-- Agentic retrieval routing that skips document search for greetings/help, uses
-  structured metadata for dates/links/counts, locks dossier questions and
-  follow-ups to selected-letter chunks, and reserves corpus search for broad
-  discovery. Users can select Fast/Balanced/Deep or let Auto choose an approved
-  model profile for the request.
-- Versioned chunk embeddings suitable for managed PostgreSQL + pgvector, with
-  lexical fallback and a resumable existing-corpus embedding backfill.
-- Daewoong Pharmaceutical visual identity using the current official logo,
-  navy/cobalt palette with a restrained orange brand accent, and locally hosted Pretendard variable font. The font
-  license is retained beside the asset in `apps/web/app/fonts`.
-- PostgreSQL/pgvector reference schema, strict AI summary JSON Schema, versioned
-  pharmaceutical taxonomy, and OpenAPI 3.1 contract.
-- PharmaAgent OS Milestones 0–8: governed cases and plans; 5 versioned agents,
-  10 skills, and 16 deny-by-default tools across 3 private MCP bundles; bounded
-  LangGraph execution inside an optional Temporal outer workflow; ACL-first
-  synthetic internal knowledge and impact hypotheses; independent verification,
-  immutable QA-reviewed artifacts, and export; multi-trial evaluation and release
-  gates; Control Tower telemetry and kill switches; and draft/read-only Email,
-  Slack/Teams, Notion/task, document-metadata, and answer-only A2A integration.
-- Local infrastructure definitions, security policies, threat model, runbooks,
-  and CI quality/security gates.
+## UI Showcase
 
-## Repository map
+### 1. RAG Chat & Citation Flow (Desktop · English)
+*Grounded Q&A landing experience with `FDA sources → Cited answers → Your review` workflow, quick task choices, source selector, and model profile controls.*
 
-```text
-apps/web/             Next.js internal portal
-services/api/         FastAPI API, ingestion, retrieval, worker, and tests
-contracts/            SQL, OpenAPI, AI output schema, and taxonomy
-fixtures/              Clearly labeled fictional development/evaluation data
-infra/                Local and production-oriented infrastructure templates
-docs/                 Architecture, threat model, and runbooks
-tests/fixtures/        Shared source fixtures and negative scope examples
+![RAG Chat Desktop](docs/assets/ui/rag-chat-desktop.png)
+
+### 2. FDA Research Agent & Live Source Explorer
+| Research Agent Workspace | FDA Sources Explorer (`Product: Drugs`) |
+| :---: | :---: |
+| ![Research Agent](docs/assets/ui/research-agent-desktop.png) | ![FDA Sources Explorer](docs/assets/ui/fda-sources-explorer.png) |
+| *Goal-driven brief generation with topic starters, passage scoping, and history.* | *Server-paginated explorer over 767 retained FDA Drug warning letters with deterministic scope lock.* |
+
+### 3. Bilingual Source Translation & GMP Trends
+| Korean Full-Letter Translation & Original Diff | Regulatory Signal Board (GMP Trends) |
+| :---: | :---: |
+| ![Bilingual Translation](docs/assets/ui/bilingual-translation.png) | ![GMP Trends](docs/assets/ui/trends-gmp-themes.png) |
+| *Section-by-section Korean translation paired with `Compare original` and JSON export.* | *Period-over-period GMP control themes (Laboratory Controls, Quality Unit Oversight, Data Integrity, Investigations).* |
+
+### 4. Versioned Specialist Agents & Responsive Korean Mobile UI
+| Specialist Agent Registry & Plans | Mobile RAG Chatbot (한국어) |
+| :---: | :---: |
+| ![Specialist Agents](docs/assets/ui/specialist-agents.png) | <img src="docs/assets/ui/rag-chat-ko-mobile.png" alt="Mobile Korean RAG Chat" width="260" /> |
+| *5 versioned agents (`Case orchestrator`, `Regulatory evidence`, `Internal knowledge`, `Impact analysis`, `Verification`) with explicit synthetic/unapproved labeling.* | *Full Korean localization (`질문에서 이해로.`) and mobile-first responsive layout.* |
+
+---
+
+## Core Capabilities
+
+### 1. Authoritative FDA Acquisition & Lifecycle Pipeline
+- Controlled FDA acquisition enforcing host/IP validation, redirect limits, response bounds, `robots.txt` & crawl-delay compliance, and FDA DataTables JSON/HTML discovery.
+- Configurable three-year discovery/backfill window with an auditable five-year soft-retirement gate (removes aged letters from active search/RAG without deleting retained source evidence).
+- Idempotent `NEW` / `UPDATED` notification outbox with SMTP disabled by default in local/test environments.
+
+### 2. Cited RAG Chat, Letter Dossiers & Bilingual Translation
+- **RAG Chat (`Ask AI`):** Source-grounded answers with clickable citations linked to exact retained FDA passage anchors.
+- **Drug Letter Dossiers:** Persists validated Korean full-letter translations, structured GMP findings, and practical summaries against the exact `DocumentVersion`, enabling letter-constrained follow-up chat.
+- **Bilingual Switch (`EN` / `한국어`):** Entire navigation, workflows, and controls switch dynamically while keeping official FDA source text authoritative.
+- **Account-Free Viewer Access + Role Controls:** Public visitors browse with isolated 30-day anonymous browser sessions (`viewer` role); case creation, formal approvals, and admin operations remain role-protected.
+
+### 3. PharmaAgent OS — Governed Multi-Agent & MCP Platform
+- **5 Versioned Agents** (`contracts/agents/`): `case-orchestrator` (`v1.0.0`), `regulatory-evidence-agent` (`v1.3.0`), `internal-knowledge-agent` (`v1.1.0`), `impact-analysis-agent` (`v1.0.2`), and `verification-agent` (`v1.2.1`).
+- **3 Private MCP Tool Bundles** (`contracts/tools/`): `regulatory-mcp`, `knowledge-mcp`, and `workflow-mcp` exposing 16 deny-by-default tools and 10 versioned skills (`contracts/skills/`).
+- **Durable Execution & Assurance:** Bounded LangGraph runtime with optional Temporal outer workflow, deterministic schema validators with bounded retries, Control Tower telemetry & kill switches, multi-trial evaluation gates, and draft/read-only Email, Slack/Teams, Notion, and A2A integrations.
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+  U["Employee / Reviewer (EN · 한국어)"] --> W["Next.js 16 Portal (Neumorphic UI)"]
+  W --> A["FastAPI Control & API Plane (Authz + Audit)"]
+  A --> P["Policy & Approval Service"]
+  A --> Q["DB Job Queue / Temporal Workflow"]
+  Q --> R["Bounded LangGraph Runtime"]
+  R --> G["Private MCP Gateway (16 Deny-by-Default Tools)"]
+  G --> F["Regulatory Evidence Adapter"]
+  G --> K["Internal Knowledge Adapter"]
+  G --> O["Draft-Only Integration Outbox"]
+  F --> D[("PostgreSQL + pgvector & Immutable Object Store")]
+  K --> D
+  R --> V["Deterministic Validators & Artifact Composer"]
+  A --> E[("Append-Only Case Events, Evals & OTel Telemetry")]
 ```
 
-## Local development
+### Design & Safety Boundaries
+- **Deterministic Admission:** Only verified `Product: Drugs` records enter active search/RAG; `UNVERIFIED`, `AMBIGUOUS`, and `OUT_OF_SCOPE` documents are blocked.
+- **Untrusted Input Isolation:** Raw FDA HTML and attachments are sanitized and never rendered directly.
+- **ACL-Before-Retrieval:** Authorization and corpus filters execute before lexical (FTS) and 1,536-dim `pgvector` retrieval.
+- **Decision Support Boundary:** The platform supports regulatory intelligence and human review; it does not declare noncompliance, initiate CAPA, or mutate controlled QMS/EDMS/MES/LIMS records.
 
-### 1. Optional local data services
+---
 
-The API defaults to SQLite and local immutable objects, so these services are not
-required for the first run. To exercise the deployment-shaped dependencies:
+## Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | Next.js `16.3`, React `19.2`, TypeScript `5.9`, TanStack Query `5`, Motion `13`, Pretendard Variable Font, `jose` |
+| **Backend & Agents** | Python `3.12+`, FastAPI, SQLAlchemy `2.0` (`asyncpg` / `aiosqlite`), Pydantic Settings, LangGraph, Temporalio, OpenTelemetry |
+| **Data & Vector Search** | PostgreSQL `16` + `pgvector` (1,536-dim embeddings + FTS), Versioned S3-compatible/MinIO Object Storage, Redis |
+| **Contracts & Schemas** | OpenAPI `3.1` (`contracts/api_contract.yaml`), JSON Schema, SQL DDL (`contracts/schema.sql`), Versioned YAML Agent/MCP Specs |
+| **Testing & CI** | `pytest` (63 modules), `ruff`, `vitest` (29 test files), Playwright (Chromium/Firefox/WebKit), GitHub Actions + CodeQL |
+
+---
+
+## Repository Map
+
+```text
+apps/web/             Next.js portal (App Router, neumorphic design system, Vitest + Playwright)
+services/api/         FastAPI service, FDA ingestion, RAG router, MCP servers, LangGraph/Temporal workers, pytest suite
+contracts/            SQL schema, OpenAPI 3.1 spec, AI summary schema, taxonomy, agent/skill/MCP YAML contracts
+fixtures/             Explicitly labeled fictional development & evaluation fixtures
+infra/                Docker Compose (PostgreSQL/pgvector, Redis, MinIO) and Railway/Vercel deployment configs
+docs/                 ADRs, logical & agent-platform architecture, threat model, runbooks, UI assets
+tests/fixtures/       Shared source fixtures and negative scope examples
+```
+
+---
+
+## Quick Local Setup
+
+### 1. Optional Infrastructure Services (PostgreSQL/pgvector, Redis, MinIO)
+> The API defaults to SQLite and local immutable object storage, so Docker is optional for a quick first run.
 
 ```powershell
 Copy-Item infra/local/.env.example infra/local/.env
-# Replace the local-only password placeholders before starting the stack.
+# Replace local-only password placeholders before starting
 docker compose --env-file infra/local/.env -f infra/local/compose.yaml up -d --wait
 ```
 
-This starts loopback-only PostgreSQL/pgvector, authenticated Redis, and versioned
-MinIO. See `infra/local/README.md` for lifecycle and data-removal cautions.
-
-### 2. API
-
+### 2. Backend API (`services/api`)
 ```powershell
 cd services/api
 py -3.13 -m venv .venv
@@ -116,32 +138,9 @@ python -m app.cli seed-demo
 uvicorn app.main:app --reload --port 8000
 ```
 
-Development API calls use explicit identity headers:
+> **Optional Grounded AI / Embeddings:** Keep credentials in `services/api/.env` (gitignored), set `LLM_PROVIDER=gemini` (or approved provider) and `EMBEDDING_ENABLED=true`. See `services/api/README.md` for details.
 
-```text
-X-Dev-User: local.user
-X-Dev-Roles: viewer
-```
-
-Use `reviewer` or `admin` only for the matching local workflow. Development
-header authentication cannot start in production mode.
-
-Optional grounded AI answers use an allowlisted Gemini profile. Keep the credential only
-in `services/api/.env` (which is ignored), set `LLM_PROVIDER=gemini`,
-`GEMINI_API_KEY`, and the `CHAT_*_MODEL_ID` values from `.env.example`, then restart the API.
-`auto` routes low-latency single-letter work to Fast, broad/multi-letter work to
-Balanced, and internal workflow comparison support to Deep. Enable semantic
-retrieval separately with `EMBEDDING_ENABLED=true`; its model and 1,536-dimensional
-vector space are independent of the selected chat model.
-Persisted document translation and analysis use their separately configured
-`DOCUMENT_*` model profile with strict structured-output and source-integrity
-validation. See `services/api/README.md` for the grounding and
-production-approval boundary.
-
-### 3. Portal
-
-In a second terminal:
-
+### 3. Web Portal (`apps/web`)
 ```powershell
 cd apps/web
 Copy-Item .env.example .env.local
@@ -149,104 +148,31 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. If the API is unavailable, the portal visibly
-switches to its isolated preview dataset; it never presents preview data as live.
-The main chat fails closed and displays a connection error instead of substituting
-a canned answer when grounded retrieval is unavailable.
-Use the `EN` / `한국어` control in the portal header to change the interface
-language. The preference is retained in the browser.
+Open **`http://localhost:3000`**. Use the header `EN` / `한국어` toggle to switch languages. When the backend API is offline, the portal clearly displays its isolated preview state and fails closed on live grounded chat.
 
-The portal opens directly without login or provider accounts. Configure
-`PORTAL_SESSION_SECRET` for anonymous browser isolation and the API-session RSA
-settings in `apps/web/.env.example` for the private backend connection. Public
-visitors receive viewer authority; approval and administration remain controlled.
-See `docs/runbooks/authentication.md` for setup and verification.
-
-After installing the API and portal dependencies, Windows users can start both
-services as persistent hidden local processes from the repository root:
-
+### 4. Quality & Test Suites
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
-```
-
-The launcher creates and seeds its isolated local database on first use. Stop only
-the processes recorded by that launcher with `scripts\stop-local.ps1`.
-
-### 4. Quality checks
-
-```powershell
+# Backend lint & tests
 cd services/api
 .\.venv\Scripts\ruff.exe check app tests
 .\.venv\Scripts\pytest.exe
 
-cd ../../apps/web
+# Frontend lint, typecheck, unit tests & production build
+cd ..\..\apps\web
 npm run lint
 npm run typecheck
 npm test
 npm run build
-```
 
-Contract and deployment validation commands are documented alongside the files
-under `contracts/` and `infra/`. The current non-secret Railway staging map is in
-[`infra/deployment/railway/README.md`](infra/deployment/railway/README.md).
-
-To exercise deployment-spanning agent runs, start the optional Compose
-`agent-platform` profile and run `pharma-temporal-worker` from the API virtual
-environment. The database ledger remains authoritative and the database queue is
-the safe fallback when Temporal is disabled.
-
-## Safety boundaries
-
-- Corpus admission is deterministic. AI never decides Product scope.
-- `UNVERIFIED`, `AMBIGUOUS`, and `OUT_OF_SCOPE` content cannot enter user search
-  or retrieval.
-- FDA HTML and attachments are untrusted input and are never rendered raw.
-- Authorization and corpus filters are applied before lexical/vector retrieval.
-- Generated answers must cite stored official-source anchors and report when
-  evidence is insufficient.
-- The service is regulatory intelligence and human decision support. It does not
-  initiate CAPA, declare an internal compliance gap, or replace controlled quality
-  records.
-
-## Production handoff
-
-The included deployment material is a baseline, not approval to bypass Daewoong
-controls. Before backend production activation, configure the server assertion boundary and
-replace local storage and example endpoints with approved private managed services, KMS/secrets,
-SIEM, enterprise AI gateway, backup/restore, and notification integrations. All
-release-blocking controls in `SECURITY_CONTROL_MATRIX.md` still require recorded
-verification evidence.
-
-The same SQLAlchemy runtime can use SQLite locally or a managed PostgreSQL
-`DATABASE_URL`; PostgreSQL stores approved chunk vectors with pgvector. Raw source
-objects use the local filesystem during development and the implemented private
-S3-compatible immutable adapter in cloud environments. Production rollout still
-requires controlled database migrations/bootstrap, managed bucket provisioning,
-plus an exercised data migration and restore procedure.
-
-## UI audit implementation (10 September 2026)
-
-See [the implementation and qualification record](docs/assurance/ui-audit-20260910.md)
-for the audit-to-code mapping, checks, deployment order and remaining manual checks.
-The authoritative source plan is `PHARMA_AGENT_OS_IMPLEMENTATION_PLAN.md`; current
-implementation status is `PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md`.
-
-Conversations, research tasks and bookmarks belong to a non-renewing, 30-day
-anonymous browser session. Clearing cookies or expiry may remove access without
-deleting stored records. Export important work before expiry. Personal review
-drafts use local browser storage; they are not submitted team review records.
-The interface explains these differences on the relevant save surfaces.
-
-Run the deterministic Chromium/Firefox/WebKit suite after building the web app:
-
-```powershell
-cd apps/web
-npm ci
+# Cross-browser Playwright verification (Chromium, Firefox, WebKit)
 npx playwright install chromium firefox webkit
-npm run build
 npm run test:browser
 ```
 
-Browser tests start an isolated loopback fixture API and use fictional records.
-They do not call production, generate model answers or send messages. CI attaches
-traces, screenshots and route network measurements to the tested commit.
+---
+
+## Architecture & Assurance Documentation
+
+- **Product & Visual Design:** [`PRODUCT.md`](PRODUCT.md) · [`DESIGN.md`](DESIGN.md) · [`docs/product/UX_SPEC.md`](docs/product/UX_SPEC.md) · [`docs/product/PHARMA_AGENT_OS_SPEC.md`](docs/product/PHARMA_AGENT_OS_SPEC.md)
+- **Architecture & ADRs:** [`docs/architecture/logical-architecture.md`](docs/architecture/logical-architecture.md) · [`docs/architecture/agent-platform.md`](docs/architecture/agent-platform.md) · [`docs/architecture/agentic-rag-and-chat.md`](docs/architecture/agentic-rag-and-chat.md) · [`docs/adr/`](docs/adr/)
+- **Security & Handover:** [`SECURITY_CONTROL_MATRIX.md`](SECURITY_CONTROL_MATRIX.md) · [`HANDOFF.md`](HANDOFF.md) · [`PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md`](PHARMA_AGENT_OS_IMPLEMENTATION_HANDOFF.md) · [`docs/assurance/launch-readiness-20260906.md`](docs/assurance/launch-readiness-20260906.md)
